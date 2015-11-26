@@ -24,6 +24,7 @@ return array(
             'personaAuth' => 'Finna\View\Helper\Root\Factory::getPersonaAuth',
             'piwik' => 'Finna\View\Helper\Root\Factory::getPiwik',
             'primo' => 'Finna\View\Helper\Root\Factory::getPrimo',
+            'search' => 'Finna\View\Helper\Root\Factory::getSearch',
             'record' => 'Finna\View\Helper\Root\Factory::getRecord',
             'recordImage' => 'Finna\View\Helper\Root\Factory::getRecordImage',
             'recordLink' => 'Finna\View\Helper\Root\Factory::getRecordLink',
@@ -37,7 +38,6 @@ return array(
             'checkboxFacetCounts' =>
                 'Finna\View\Helper\Root\CheckboxFacetCounts',
             'resultfeed' => 'Finna\View\Helper\Root\ResultFeed',
-            'search' => 'Finna\View\Helper\Root\Search',
             'translationEmpty' => 'Finna\View\Helper\Root\TranslationEmpty',
             'truncateUrl' => 'Finna\View\Helper\Root\TruncateUrl',
             'userPublicName' => 'Finna\View\Helper\Root\UserPublicName',

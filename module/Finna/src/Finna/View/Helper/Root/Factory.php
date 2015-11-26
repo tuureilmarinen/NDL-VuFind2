@@ -112,6 +112,23 @@ class Factory extends \VuFind\View\Helper\Root\Factory
     }
 
     /**
+     * Construct the Search helper.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return Search
+     */
+    public static function getSearch(ServiceManager $sm)
+    {
+        $serviceLocator = $sm->getServiceLocator();
+        return new Search(
+            $serviceLocator->get('VuFind\SearchResultsPluginManager'),
+            $serviceLocator->get('VuFind\DbTablePluginManager'),
+            $serviceLocator->get('VuFind\SessionManager')
+        );
+    }
+
+    /**
      * Construct the Navibar view helper.
      *
      * @param ServiceManager $sm Service manager.

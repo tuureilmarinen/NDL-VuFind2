@@ -48,6 +48,23 @@ class Search extends \VuFind\Db\Table\Search
     }
 
     /**
+     * Get an array of rows for the specified session in reverse order
+     *
+     * @param string $sid Session ID of current user.
+     *
+     * @return array      Matching SearchEntry objects.
+     */
+    public function getPreviousSearches($sid)
+    {
+        $callback = function ($select) use ($sid) {
+            $select->where->equalTo('session_id', $sid);
+            $select->order('id DESC');
+            $select->limit(10);
+        };
+        return $this->select($callback);
+    }
+
+    /**
      * Get distinct view URLs with scheduled alerts.
      *
      * @return array URLs
@@ -149,6 +166,7 @@ class Search extends \VuFind\Db\Table\Search
         $hash = null;
 
         // Duplicate elimination
+        $newUrl = $newSearch->getUrlQuery()->getParams();
         foreach ($searchHistory as $oldSearch) {
             // Deminify the old search (note that if we have a resource, we need
             // to grab the contents -- this is necessary for PostgreSQL compatibility
@@ -157,7 +175,6 @@ class Search extends \VuFind\Db\Table\Search
             $dupSearch = $minSO->deminify($manager);
             // See if the classes and urls match
             $oldUrl = $dupSearch->getUrlQuery()->getParams();
-            $newUrl = $newSearch->getUrlQuery()->getParams();
             if (get_class($dupSearch) == get_class($newSearch)
                 && $oldUrl == $newUrl
             ) {

@@ -26,6 +26,11 @@
  * @link     http://vufind.org/wiki/vufind2:developer_manual Wiki
  */
 namespace Finna\View\Helper\Root;
+use minSO;
+use fminSO;
+use \VuFind\Search\Results\PluginManager;
+use \VuFind\Db\Table\PluginManager as TableManager;
+use \Zend\Session\SessionManager;
 
 /**
  * Helper class for displaying search-related HTML chunks.
@@ -38,6 +43,96 @@ namespace Finna\View\Helper\Root;
  */
 class Search extends \VuFind\View\Helper\Bootstrap3\Search
 {
+    /*
+     * Results manager
+     *
+     * @var PluginManager
+     */
+    protected $resultsManager;
+
+    /*
+     * Table manager
+     *
+     * @var TableManager
+     */
+    protected $tableManager;
+
+    /*
+     * Session manager
+     *
+     * @var SessionManager
+     */
+    protected $sessionManager;
+
+    /**
+     * Constructor
+     *
+     * @param PluginManager  $resultsManager Results manager
+     * @param TableManager   $tableManager   Table manager
+     * @param SessionManager $sessionManager Session manager
+     */
+    public function __construct(PluginManager $resultsManager,
+        TableManager $tableManager, SessionManager $sessionManager
+    ) {
+        $this->resultsManager = $resultsManager;
+        $this->tableManager = $tableManager;
+        $this->sessionManager = $sessionManager;
+    }
+
+    /**
+     * Create a new search object with filters from a previous search
+     *
+     * @param \VuFind\Search\Base\Results $search         Search object
+     * @param \VuFind\Search\Base\Results $previousSearch Previous search object
+     *
+     * @return \VuFind\Search\Base\Results New search object
+     */
+    public function getSearchWithPreviousFilters(\VuFind\Search\Base\Results $search,
+        \VuFind\Search\Base\Results $previousSearch
+    ) {
+        // TODO: Try to do this cleaner with $search->params() when urlQueryHelper
+        // cache is fixed.
+        $minSO = new fminSO($search);
+        $minSO->setParentSO(new minSO($search));
+        $minSOPrevious = new minSO($previousSearch);
+        $minSO->getParentSO()->f = $minSOPrevious->f;
+        return $minSO->deminify($this->resultsManager);
+    }
+
+    /**
+     * Retrieve any previous search from history of current session
+     *
+     * @param \VuFind\Search\Base\Results $currentSearch Current search object
+     *
+     * @return false|\VuFind\Search\Base\Results
+     */
+    public function getPreviousSearch(\VuFind\Search\Base\Results $currentSearch)
+    {
+        $searchClass = $currentSearch->getParams()->getSearchClassId();
+        $currentId = $currentSearch->getSearchId();
+
+        // Retrieve search history
+        $searchTable = $this->tableManager->get('Search');
+        $searches = $searchTable
+            ->getPreviousSearches($this->sessionManager->getId());
+
+        // Try to find a suitable previous search
+        foreach ($searches as $search) {
+            $minSO = $search->getSearchObject();
+            $searchObject = $minSO->deminify($this->resultsManager);
+            // Ignore current search
+            if ($searchObject->getSearchId() == $currentId) {
+                continue;
+            }
+            // Stop if we encounter a different search class
+            if ($searchObject->getParams()->getSearchClassId() != $searchClass) {
+                break;
+            }
+            return $searchObject;
+        }
+        return false;
+    }
+
     /**
      * Support function to display spelling suggestions.
      *
