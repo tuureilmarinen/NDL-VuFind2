@@ -16,7 +16,7 @@
         var params = {
           lookfor: '',
           limit: 1,
-          field: ['title', 'buildings', 'images', 'recordPage'],
+          field: ['authors', 'title', 'buildings', 'images', 'recordPage'],
           view: 'jsonp',
           filter: ['online_boolean:1', '~format:0/Image/', '~format:0/PhysicalObject/', '~building:0/HKM/', '~building:0/SLS/'],
           page: 1+Math.floor(Math.random()*maxPage)
@@ -36,10 +36,14 @@
           var building = data.records[0]['buildings'][0]['translated'];
           var title = data.records[0]['title'];
           var href = 'https://finna.fi' + data.records[0]['recordPage'];
-
+          var author = '';
+          if ('authors' in data.records[0] && 'main' in data.records[0].authors) {
+             author = data.records[0].authors.main
+          }
           $("#pic").load(function() {
             $("#title").html(title);
             $("#building").html(building);
+            $("#author").html(author);
             $("#link").html(href).attr("href", href);
             $("#container").removeClass("hide");
             clearTimeout(timeout);
@@ -105,8 +109,9 @@
   <body>
     <div id="container">
       <div class="info">
-        <div id="building"></div>
+        <div id="author"></div>
         <div id="title"></div>
+        <div id="building"></div>
         <a target="_blank" href="#" id="link"></a>
       </div>
       <img id="pic"></img>
