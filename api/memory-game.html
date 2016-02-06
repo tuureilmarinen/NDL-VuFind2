@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Finna API</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript">
+
+    // Simple memory game using Finna API (see: api.finna.fi)
+
+    var cnt = location.href.match(/pics=([^&]+)/);
+    if (cnt && cnt[1] > 1) {
+      cnt = cnt[1];
+    } else {
+      cnt = 7;
+    }
+
+    var maxPage = 1;
+    var timeout = null;
+    var base = 'https://api.finna.fi';
+    var openImg = false;
+    var score = 0;
+    var interval = null;
+    var block = false;
+    
+    function shuffle(o){
+      for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+      return o; 
+    }
+    function render(imgs) {      
+      $.each(imgs, function(ind, obj) {
+        var src = obj['src'];
+        var img = $('<img/>').addClass('slide').addClass('open').attr('src', src);
+        var el = $('div.master').clone().removeClass('master').attr('data-src', src).on('click', function() {
+          if (block || $(this).hasClass('open')) {
+            return;
+          }
+          $(this).toggleClass('open');
+          if (!openImg) {
+            openImg = $(this);
+          } else {
+            if (openImg.attr('data-src') == $(this).attr('data-src')) {
+              score++;
+              openImg.fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+              $(this).fadeOut(100).fadeIn(100).fadeOut(100).fadeIn(100);
+              openImg = null;
+              if (score == cnt) {
+                setTimeout(function() {
+                  $('div.slide').fadeOut(0);
+                  $('div.slide.duplicate').remove();
+                  $('div.slide').addClass('credits');
+                  $('div.slide').fadeIn(200);
+                }, 1000);
+              }
+            } else {
+              var self = $(this);
+              block = true;
+              clearInterval(interval);
+              interval = setTimeout(function() {
+                openImg.removeClass('open');
+                self.removeClass('open');
+                window.openImg = null;
+                window.block = false;
+              }, 1000);
+            }
+
+          }
+        }).appendTo($('#container'));
+        if (obj['duplicate']) {
+          el.addClass('duplicate');
+        }
+        el.find('img').addClass('slide').addClass('open').attr('src', src);
+        var info = el.find('.info');
+        info.find('.building').text(obj['building']);
+        info.find('.title').text(obj['title']);
+        info.find('.link').text(obj['link']).attr('href', obj['link']);
+      });
+      $('div.master').remove();
+    }
+    function getImages() {
+      var url = base + '/v1/search?';
+      var params = {
+        lookfor: '',
+        limit: cnt,
+        field: ['id', 'title', 'buildings', 'images'],
+        view: 'jsonp',
+        filter: ['online_boolean:1', '~format:0/Image/', '~format:0/PhysicalObject/', '~building:0/HKM/'],
+        page: 1+Math.floor(Math.random()*maxPage),
+        lng: 'fi'
+      };
+
+      url += $.param(params) + '&callback=?';
+      $.getJSON(url, function(data) {
+        resultCnt = data["resultCount"];
+        if (resultCnt == 0) {
+          return;
+        }
+        if (maxPage == 1) {
+          maxPage = Math.floor(resultCnt/cnt);
+          getImages();
+        } else {
+          var imgs = [];
+          $.each(data.records, function(ind, obj) {
+            var data = {
+              src: base + obj['images'][0],
+              title: obj['title'],
+              building: obj['buildings'][0]['translated'],
+              link: 'http://finna.fi/Record/' + obj['id']
+            };
+            imgs.push(data);
+            var data = JSON.parse(JSON.stringify(data));
+            data.duplicate = 1;
+            imgs.push(data);
+          });
+          imgs = shuffle(imgs);
+          render(imgs);
+        }
+      });
+    };
+    $(document).on("ready", function() {
+      getImages();
+    });
+    </script>
+
+    <style type="text/css">
+    body {
+      background: #000;
+      margin: 0;
+      margin-left: 10px;
+      height: 100%;
+      font-family: 'Helvetica neue', Arial, Helvetica, sans-serif;
+      font-size: 1em;
+      font-style: normal;
+    }
+    a {
+      color: white;
+      text-decoration: none;
+    }
+    #container {
+      text-align: center;
+      margin: 10px auto;
+      width: 90%;
+    }
+    .slide {      
+      width: 150px,
+      height: 150px;
+      min-height: 150px;
+      min-width: 150px;
+      display: inline-block;
+      margin: 10px;
+      background-color: white;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+    .slide.master {
+      display: none;
+    }
+    .slide.credits {
+      clear: both;
+      float: left;
+      background-color: #000;
+      width: 100%;
+    }
+    .slide .info {
+      display: none;
+    }
+    .slide.credits .info {
+      display: block;
+      padding: 10px;
+      text-align: left;
+      color: #fff;
+      margin-left: 1em;
+      width: 70%;
+      float: left;
+    }
+    .slide.credits img {
+      float: left;
+    }
+    .slide.credits .title {
+      font-size: 1.3em;
+      margin: 0.4em 0;
+    }
+    .slide .pic {
+      float: left;
+    }
+    .slide img {
+      display: none;
+      margin: 0;
+    }
+    .slide.open img {
+      width: 150px;
+      height: 150px;
+      display: block;
+    }
+    </style>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="master slide">
+        <div class="pic">
+          <img src="#"></img>
+        </div>
+        <div class="info">
+          <div class="building"></div>
+          <div class="title"></div>
+          <a target="_blank" href="#" class="link"></a>          
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
