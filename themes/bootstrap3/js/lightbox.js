@@ -1,5 +1,5 @@
 /*global $, document, CustomEvent, VuFind, window */
-VuFind.lightbox = (function() {
+VuFind.register('lightbox', function() {
   // State
   var _originalUrl = false;
   var _currentUrl = false;
@@ -38,7 +38,7 @@ VuFind.lightbox = (function() {
       });
     } catch (e) {
       event = document.createEvent('CustomEvent');
-      event.initCustomEvent(msg, true, true, details);  
+      event.initCustomEvent(msg, true, true, details);
     }
     return document.dispatchEvent(event);
   };
@@ -63,13 +63,14 @@ VuFind.lightbox = (function() {
     if ('undefined' == typeof type) {
       type = 'info';
     }
-    _html('<div class="alert alert-'+type+'">'+message+'</div><button class="btn btn-default" data-dismiss="modal">' + VuFind.translate('close') + '</button>');
+    _html('<div class="flash-message alert alert-'+type+'">'+message+'</div>'
+        + '<button class="btn btn-default" data-dismiss="modal">' + VuFind.translate('close') + '</button>');
     _modal.modal('show');
   };
   var flashMessage = function(message, type) {
-    _modalBody.find('.alert,.fa.fa-spinner').remove();
-    _modalBody.find('h2:first-child')
-      .after('<div class="alert alert-'+type+'">'+message+'</div>');
+    _modalBody.find('.flash-message,.fa.fa-spinner').remove();
+    _modalBody.find('h2:first-of-type')
+      .after('<div class="flash-message alert alert-'+type+'">'+message+'</div>');
   };
 
   /**
@@ -142,6 +143,15 @@ VuFind.lightbox = (function() {
           _refreshPage();
           return;
         }
+        // Place Hold error isolation
+        if (obj.url.match(/\/Record/) && (obj.url.match(/Hold\?/) || obj.url.match(/Request\?/))) {
+          var testDiv = $('<div/>').html(html)
+          var error = testDiv.find('.flash-message.alert-danger');
+          if (error.length && testDiv.find('.record').length) {
+            showAlert(error[0].innerHTML, 'danger');
+            return false;
+          }
+        }
         if ( // Close the lightbox after deliberate login
           obj.method                                                                // is a form
           && ((obj.url.match(/MyResearch/) && !obj.url.match(/Bulk/))               // that matches login/create account
@@ -160,6 +170,7 @@ VuFind.lightbox = (function() {
           } else {
             VuFind.lightbox.refreshOnClose = true;
           }
+          _currentUrl = _originalUrl; // Now that we're logged in, where were we?
         }
         _update(html);
       })
@@ -202,7 +213,7 @@ VuFind.lightbox = (function() {
         obj.type = 'POST';
         obj.data = $(this).data('lightboxPost');
       }
-      _lightboxTitle = $(this).data('lightboxTitle');
+      _lightboxTitle = $(this).data('lightboxTitle') || '';
       ajax(obj);
       _currentUrl = this.href;
       VuFind.modal('show');
@@ -293,6 +304,30 @@ VuFind.lightbox = (function() {
     $('form[data-lightbox] [type=submit]').click(_storeClickedStatus);
   };
 
+  var reset = function() {
+    _html(VuFind.translate('loading') + '...');
+    _originalUrl = false;
+    _currentUrl = false;
+    _lightboxTitle = '';
+  };
+  var init = function() {
+    _modal = $('#modal');
+    _modalBody = _modal.find('.modal-body');
+    _modal.on('hide.bs.modal', function() {
+      if (VuFind.lightbox.refreshOnClose) {
+        _refreshPage();
+      }
+      _emit('VuFind.lightbox.closing');
+    });
+    _modal.on('hidden.bs.modal', function() {
+      VuFind.lightbox.reset();
+      _emit('VuFind.lightbox.closed');
+    });
+
+    VuFind.modal = function(cmd) { _modal.modal(cmd); };
+    bind();
+  };
+
   // Reveal
   return {
     // Properties
@@ -304,32 +339,9 @@ VuFind.lightbox = (function() {
     bind: bind,
     flashMessage: flashMessage,
     reload: reload,
-    reset:  function() {
-      _html(VuFind.translate('loading') + '...');
-      _originalUrl = false;
-      _currentUrl = false;
-      _lightboxTitle = '';
-    },
-
-    // Ready
-    ready: function() {
-      _modal = $('#modal');
-      _modalBody = _modal.find('.modal-body');
-      _modal.on('hide.bs.modal', function() {
-        if (VuFind.lightbox.refreshOnClose) {
-          _refreshPage();
-        }
-        _emit('VuFind.lightbox.closing');
-      });
-      _modal.on('hidden.bs.modal', function() {
-        VuFind.lightbox.reset();
-        _emit('VuFind.lightbox.closed');
-      });
-
-      VuFind.modal = function(cmd) { _modal.modal(cmd); };
-      bind();
-    }
+    // Reset
+    reset: reset,
+    // Init
+    init: init
   };
-})();
-
-$(document).ready(VuFind.lightbox.ready);
+});
