@@ -216,6 +216,7 @@ $config = [
             ],
             'db_table' => [
                 'factories' => [
+                    'resource' => 'Finna\Db\Table\Factory::getResource',
                     'user' => 'Finna\Db\Table\Factory::getUser',
                     'userlist' => 'Finna\Db\Table\Factory::getUserList',
                 ],
@@ -291,6 +292,7 @@ $config = [
                     'solrdefault' => 'Finna\RecordDriver\Factory::getSolrDefault',
                     'solrmarc' => 'Finna\RecordDriver\Factory::getSolrMarc',
                     'solread' => 'Finna\RecordDriver\Factory::getSolrEad',
+                    'solrforward' => 'Finna\RecordDriver\Factory::getSolrForward',
                     'solrlido' => 'Finna\RecordDriver\Factory::getSolrLido',
                     'solrqdc' => 'Finna\RecordDriver\Factory::getSolrQdc',
                     'primo' => 'Finna\RecordDriver\Factory::getPrimo'
@@ -345,6 +347,15 @@ $config = [
             'Finna\RecordDriver\SolrEad' => [
                 'tabs' => [
                     'HierarchyTree' => 'HierarchyTree',
+                    'UserComments' => 'UserComments',
+                    'Reviews' => 'Reviews',
+                    'Map' => 'Map',
+                    'Details' => 'StaffViewArray',
+                ],
+                'defaultTab' => null,
+            ],
+            'Finna\RecordDriver\SolrForward' => [
+                'tabs' => [
                     'UserComments' => 'UserComments',
                     'Reviews' => 'Reviews',
                     'Map' => 'Map',
