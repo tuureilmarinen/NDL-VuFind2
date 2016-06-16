@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Finna API</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript">
+
+    // Finna top-level organisation list using facet filtering (see: api.finna.fi)
+    $(document).on("ready", function() {
+      var base = 'https://api.finna.fi';
+      var url = base + '/v1/search?';
+      var params = {
+        lookfor: '',
+        limit: 0,                        // No records
+        view: 'jsonp',
+        facet: ['building'],
+        facetFilter: ['building:"^0/"'], // Only top-level facets
+        lng: 'fi'
+      };
+
+      url += $.param(params) + '&callback=?';
+      $.getJSON(url, function(data) {
+        if (data.resultCnt == 0) {
+          return;
+        }
+        var names = [];
+        var codes = [];
+        var values = {};
+        $.each(data.facets.building, function(ind, obj) {
+          names.push(obj.translated);
+          if (match = obj.value.match(/^0\/([^\/]*)/)) {
+            var code = match[1].toLowerCase();
+            codes.push(code);
+            values[obj.translated] = code;
+          }
+        });
+        names = names.sort();
+
+        var table = $('table tbody').show();
+        $.each(names, function(ind, obj) {
+          var organisation = values[obj];
+          var row = $('<tr/>').attr('data-organisation', organisation);
+          row.appendTo(table);
+          row.append($('<td/>').text(obj));
+          row.append($('<td/>').addClass('code').text(organisation));
+        });
+
+        // Query Kirjastohakemisto API (see: api.kirjastot.fi)
+        url = 'https://api.kirjastot.fi/v3/consortium?';
+        params = {
+           with: 'finna',
+           lang: 'fi',
+           limit: 10000
+        };
+        url += $.param(params) + '&finna:id=' + codes.join(',');
+        $.getJSON(url, function(data) {
+          if (data.total) {
+            $.each(data.items, function(ind, obj) {
+              if ('finna' in obj && 'finna_id' in obj.finna) {
+                $('table tr[data-organisation="' + obj.finna.finna_id + '"]').addClass("success");
+              }
+            });
+          }
+        });
+
+        $('body').removeClass('loading').addClass('loaded');
+      });
+    });
+    </script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <style>
+    body.loading .loaded {
+      display: none;
+    }
+    body.loaded .loading {
+      display: none;
+    }
+    body table td.code {
+      font-family: monospace;
+    }
+    </style>
+  </head>
+
+  <body class="loading">
+    <div class="container">
+      <h1>Finnan organisaatiot</h1>
+      <p class="loading">Hetki...</p>
+      <p class="loaded"><span class="text-success">Vihreällä merkittyjen</span> organisaatioiden Finna ID on syötetty Kirjastohakemistoon.</p>
+      <table class="table loaded">
+        <thead>
+          <th>Nimi</th>
+          <th>Kirjastohakemiston Finna ID</th>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </body>
+</html>
