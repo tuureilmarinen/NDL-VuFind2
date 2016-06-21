@@ -25,6 +25,10 @@ fallback_login_field = LAST_NAME
 ; account.
 ;secondary_login_field = "LAST_NAME:Last Name"
 
+; Optional list of blacklisted passwords that cannot be used to log in.
+;login_password_blacklist[] = "0000"
+;login_password_blacklist[] = "1234"
+
 ; These settings affect the Fund list used as a limiter in the "new items" module:
 [Funds]
 ; Uncomment this line to turn off the fund list entirely.
@@ -46,6 +50,15 @@ fallback_login_field = LAST_NAME
 ; fund.  Set it to 0 for top-level funds only.  Set it to a FUND_ID deeper in the
 ; fund tree to filter out unwanted values.  Leave it commented out to get all funds.
 ;parent_fund = 0
+
+; This section controls call slip behavior (storage retrieval requests in VuFind).
+[StorageRetrievalRequests]
+; Colon-separated list of call slip statuses (see CALL_SLIP_STATUS_TYPE table in
+; Voyager's database) that control whether a call slip is displayed. Only slips
+; matching statuses in this list will be displayed. Current Voyager versions (as of
+; May 2016) don't immediately delete a call slip from the database when it has been
+; processed and converted to a hold, which may confuse users.
+display_statuses = 1:2:3:5:8:9
 
 ; Status rankings can be used to either promote or demote certain item statuses when
 ; determining the status to be displayed. The lower the rank, the higher the 
