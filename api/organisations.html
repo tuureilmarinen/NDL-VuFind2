@@ -31,7 +31,7 @@
         $.each(data.facets.building, function(ind, obj) {
           names.push(obj.translated);
           if (match = obj.value.match(/^0\/([^\/]*)/)) {
-            var code = match[1].toLowerCase();
+            var code = match[1];
             codes.push(code);
             values[obj.translated] = code;
           }
@@ -44,28 +44,56 @@
           var row = $('<tr/>').attr('data-organisation', organisation);
           row.appendTo(table);
           row.append($('<td/>').text(obj));
-          row.append($('<td/>').addClass('code').text(organisation));
+          var td = row.append($('<td/>').addClass('code').append($('<span/>').text(organisation)));
         });
 
         // Query Kirjastohakemisto API (see: api.kirjastot.fi)
-        url = 'https://api.kirjastot.fi/v3/consortium?';
+        base = 'https://api.kirjastot.fi/v3/'
         params = {
            with: 'finna',
            lang: 'fi',
            limit: 10000
         };
-        url += $.param(params) + '&finna:id=' + codes.join(',');
+        url = base + 'consortium?' + $.param(params) + '&finna:id=' + codes.join(',');
         $.getJSON(url, function(data) {
           if (data.total) {
             $.each(data.items, function(ind, obj) {
               if ('finna' in obj && 'finna_id' in obj.finna) {
-                $('table tr[data-organisation="' + obj.finna.finna_id + '"]').addClass("success");
-              }
+                var row = $('table tr[data-organisation="' + obj.finna.finna_id + '"]');
+                row.addClass("success").data('id', obj.id);
+                row.find('.code > span')
+                   .attr('title', 'Näytä kirjastohakemiston toimipisteet')
+                   .addClass('text-primary')
+                   .one('click', function() {
+                      // Fetch libraries for a consortium
+                      params = {
+                        consortium: $(this).closest('tr').data('id'),
+                        lang: 'fi',
+                        limit: 10000,
+                      };
+                      url = base + 'library?' + $.param(params);
+                      $.getJSON(url, function(data) {
+                        if (data.total) {
+                          var libraries = data.items.map(function(obj) {
+                            return obj.name + ' (' + obj.id + ')';
+                          }).sort();
+
+                          var ul = $('<ul/>');
+                          ul.html(libraries.map(function(obj) {
+                            return $('<li/>').text(obj)
+                          }));
+                          row.find('.code')
+                             .append(
+                                $('<p/>').addClass('title').text('Kirjastohakemiston toimipisteiden tunnisteet:')
+                             ).append(ul);
+                        }
+                      });
+                   });
+                }
             });
+            $('body').removeClass('loading').addClass('loaded');
           }
         });
-
-        $('body').removeClass('loading').addClass('loaded');
       });
     });
     </script>
@@ -78,8 +106,12 @@
     body.loaded .loading {
       display: none;
     }
-    body table td.code {
-      font-family: monospace;
+    tr.success .code > span {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    tr .title {
+      margin-top: 1em;
     }
     </style>
   </head>
