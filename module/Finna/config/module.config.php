@@ -149,6 +149,8 @@ $config = [
         'invokables' => [
             'adminapi' => 'Finna\Controller\AdminApiController',
             'ajax' => 'Finna\Controller\AjaxController',
+            'digi' => 'Finna\Controller\DigiController',
+            'digirecord' => 'Finna\Controller\DigiRecordController',
             'searchapi' => 'Finna\Controller\SearchApiController',
             'combined' => 'Finna\Controller\CombinedController',
             'comments' => 'Finna\Controller\CommentsController',
@@ -246,6 +248,7 @@ $config = [
             'recommend' => [
                 'factories' => [
                     'collectionsidefacets' => 'Finna\Recommend\Factory::getCollectionSideFacets',
+                    'digiNavigation' => 'Finna\Recommend\Factory::getDigiNavigation',
                     'sidefacets' => 'Finna\Recommend\Factory::getSideFacets',
                     'sidefacetsdeferred' => 'Finna\Recommend\Factory::getSideFacetsDeferred',
                 ],
@@ -257,6 +260,7 @@ $config = [
             ],
             'search_backend' => [
                 'factories' => [
+                    'Digi' => 'Finna\Search\Factory\DigiBackendFactory',
                     'MetaLib' => 'Finna\Search\Factory\MetaLibBackendFactory',
                     'Primo' => 'Finna\Search\Factory\PrimoBackendFactory',
                     'Solr' => 'Finna\Search\Factory\SolrDefaultBackendFactory',
@@ -276,6 +280,7 @@ $config = [
                 'abstract_factories' => ['Finna\Search\Results\PluginFactory'],
                 'factories' => [
                     'combined' => 'Finna\Search\Results\Factory::getCombined',
+                    'digi' => 'Finna\Search\Results\Factory::getDigi',
                     'favorites' => 'Finna\Search\Results\Factory::getFavorites',
                     'metalib' => 'Finna\Search\Results\Factory::getMetaLib',
                     'solr' => 'Finna\Search\Results\Factory::getSolr',
@@ -290,6 +295,7 @@ $config = [
             ],
             'recorddriver' => [
                 'factories' => [
+                    'digi' => 'Finna\RecordDriver\Factory::getDigi',
                     'metalib' => 'Finna\RecordDriver\Factory::getMetaLib',
                     'solrdefault' => 'Finna\RecordDriver\Factory::getSolrDefault',
                     'solrmarc' => 'Finna\RecordDriver\Factory::getSolrMarc',
@@ -406,6 +412,7 @@ $config = [
 ];
 
 $recordRoutes = [
+   'digirecord' => 'DigiRecord',
    'metalibrecord' => 'MetaLibRecord'
 ];
 
@@ -417,6 +424,7 @@ $dynamicRoutes = [
 
 $staticRoutes = [
     'Browse/Database', 'Browse/Journal',
+    'Digi/Results',
     'LocationService/Modal',
     'MetaLib/Home', 'MetaLib/Search', 'MetaLib/Advanced',
     'PCI/Home', 'PCI/Search', 'PCI/Record'

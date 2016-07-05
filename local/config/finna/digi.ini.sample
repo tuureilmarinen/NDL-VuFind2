@@ -1,0 +1,12 @@
+[Parent_Config]
+relative_path = 'searches.ini'
+override_full_sections = "Sorting"
+
+[General]
+enabled = 0
+url = "http://tethys.lib.helsinki.fi"
+
+[Sorting]
+relevance = sort_relevance
+main_date_str desc = sort_year
+main_date_str asc = "sort_year asc"

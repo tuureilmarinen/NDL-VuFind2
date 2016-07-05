@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014.
+ * Copyright (C) The National Library of Finland 2014-16.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -41,6 +41,23 @@ use Zend\ServiceManager\ServiceManager;
  */
 class Factory
 {
+    /**
+     * Factory for DIGI record driver.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return MetaLib
+     */
+    public static function getDigi(ServiceManager $sm)
+    {
+        $conf = $sm->getServiceLocator()->get('VuFind\Config')->get('Digi');
+        $driver = new Digi(
+            $sm->getServiceLocator()->get('VuFind\Config')->get('config'),
+            $conf, $conf
+        );
+        return $driver;
+    }
+
     /**
      * Factory for SolrDefault record driver.
      *

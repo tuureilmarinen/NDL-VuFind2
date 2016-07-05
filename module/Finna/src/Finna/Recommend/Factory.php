@@ -5,7 +5,7 @@
  * PHP version 5
  *
  * Copyright (C) Villanova University 2014.
- * Copyright (C) The National Library of Finland 2015.
+ * Copyright (C) The National Library of Finland 2015-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -56,6 +56,20 @@ class Factory
         return new CollectionSideFacets(
             $sm->getServiceLocator()->get('VuFind\Config'),
             $sm->getServiceLocator()->get('VuFind\HierarchicalFacetHelper')
+        );
+    }
+
+    /**
+     * Factory for DIGI navigation module.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return SideFacets
+     */
+    public static function getDigiNavigation(ServiceManager $sm)
+    {
+        return new DigiNavigation(
+            $sm->getServiceLocator()->get('VuFind\Config')
         );
     }
 

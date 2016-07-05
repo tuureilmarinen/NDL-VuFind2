@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2015.
+ * Copyright (C) The National Library of Finland 2015-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -22,6 +22,7 @@
  * @category VuFind
  * @package  Search
  * @author   Mika Hatakka <mika.hatakka@helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:developer_manual Wiki
  */
@@ -34,6 +35,7 @@ use Zend\ServiceManager\ServiceLocatorInterface;
  * @category VuFind
  * @package  Search
  * @author   Mika Hatakka <mika.hatakka@helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:developer_manual Wiki
  */
@@ -64,7 +66,7 @@ class PluginFactory extends \VuFind\Search\Options\PluginFactory
             return new \Finna\Search\Favorites\Options(
                 $serviceLocator->getServiceLocator()->get('VuFind\Config')
             );
-        } else if ($name == 'solr' || $name == 'metalib' || $name == 'combined') {
+        } else if (in_array($name, ['solr', 'metalib', 'combined', 'digi'])) {
             $this->defaultNamespace = 'Finna\Search';
             $class = $this->getClassName($name, $requestedName);
             return new $class(

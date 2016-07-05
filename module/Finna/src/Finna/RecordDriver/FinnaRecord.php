@@ -104,4 +104,15 @@ trait FinnaRecord
         }
         return null;
     }
+
+    /**
+     * Pass record image URL to /Cover/Show action as a query parameter
+     * (instead of record ID).
+     *
+     * @return boolean
+     */
+    public function loadRecordImageFromUrl()
+    {
+        return false;
+    }
 }

@@ -165,6 +165,21 @@ class Loader extends \VuFind\Cover\Loader
     }
 
     /**
+     * Load a record image from URL.
+     *
+     * @param string $url   URL
+     * @param int    $index Image index
+     *
+     * @return void
+     */
+    public function loadRecordImageFromURL($url, $index = 0)
+    {
+        $this->index = $index;
+        $this->url = $url;
+        return parent::fetchFromAPI();
+    }
+
+    /**
      * Get all valid identifiers as an associative array.
      *
      * @return array

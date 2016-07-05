@@ -38,6 +38,7 @@
          || ($module === 'metalib' && $action === 'search' && $this->searchType != 'advanced')
          || ($module === 'primo' && $action === 'search' && $this->searchType != 'advanced')
          || ($module == 'combined' && $action == 'results')
+         || ($module == 'digi' && $action == 'results')
       ) {
          $searchTabs = $this->searchtabs()->getTabConfig($this->searchClassId, $this->lookfor, $this->searchIndex, $this->searchType, $hiddenFilters, $this->layout()->savedTabs);
          $this->layout()->finnaMainTabs = $this->context($this)->renderInContext('search/searchTabs', ['searchTabs' => $searchTabs, 'hiddenFilters' => $hiddenFilters]);

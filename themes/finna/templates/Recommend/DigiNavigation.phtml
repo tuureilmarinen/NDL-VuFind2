@@ -1,0 +1,28 @@
+<?
+  $params = $results->getParams();
+  $currentHandler = $params->getHandler();
+  $searchLink = $params->getExternalSearchLink();
+?>
+<div class="navigation">
+  <h4><i class="fa fa-arrow-down visible-xs pull-left"></i> <?=$this->translate('Narrow Search')?></h4>
+  <div>
+    <ul>
+      <? foreach (['newspaper', 'journal', 'printing'] as $handler): ?>
+      <? $active = $handler === $currentHandler; ?>
+      <li<?= $active ? ' class="active"' : ''?>>
+        <? if (!$active): ?>
+        <a href="<?= $results->getUrlQuery()->replaceFacet('handler', $handler)?>">
+        <? endif; ?>
+          <?=$this->translate("digi-{$handler}")?>
+          <? if (!$active): ?>
+        </a>
+          <? endif; ?>
+      </li>
+      <? endforeach ?>
+    </ul>
+  </div>
+  <div class="external-link">
+    <strong><?=$this->translate('digi-more-link')?></strong>
+    <p><a href="<?=$searchLink?>">digi.kansalliskirjasto.fi</a></p>
+  </div>
+</div>
