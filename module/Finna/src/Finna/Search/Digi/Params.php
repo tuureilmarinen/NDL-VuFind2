@@ -56,7 +56,8 @@ class Params extends \VuFind\Search\Base\Params
     protected $sortMap = [
        'relevance' => 'RELEVANCE',
        'main_date_str desc' => 'DATE_DESC',
-       'main_date_str asc' => 'DATE'
+       'main_date_str asc' => 'DATE',
+       'last_indexed desc' => 'IMPORT_DATE'
     ];
 
     /**
