@@ -93,7 +93,8 @@ class Connector implements \Zend\Log\LoggerAwareInterface
 
         $url = $this->host;
         $url .= $types[$type]['handler']
-            . '?offset=' . ($params->get('offset') ? $params->get('offset')[0] : 0);
+            . '?offset=' . ($params->get('offset') ? $params->get('offset')[0] : 0)
+            . '&count=' . ($params->get('limit') ? $params->get('limit')[0] : 20);
 
         if (isset($types[$type]['type'])) {
             $url .= '&type=' . $types[$type]['type'];
