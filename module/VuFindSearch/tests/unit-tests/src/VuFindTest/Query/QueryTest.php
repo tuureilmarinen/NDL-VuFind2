@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category VuFind
  * @package  Search
@@ -49,17 +49,30 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testContainsTerm()
     {
-        $q = new Query('test query');
+        $q = new Query('test query we<(ird');
 
-        // Should contain both actual terms:
+        // Should contain all actual terms (even those containing regex chars):
         $this->assertTrue($q->containsTerm('test'));
         $this->assertTrue($q->containsTerm('query'));
+        $this->assertTrue($q->containsTerm('we<(ird'));
 
         // Should not contain a non-present term:
         $this->assertFalse($q->containsTerm('garbage'));
 
         // Should not contain a partial term (matches on word boundaries):
         $this->assertFalse($q->containsTerm('tes'));
+    }
+
+    /**
+     * Test replaceTerm() method
+     *
+     * @return void
+     */
+    public function testReplaceTerm()
+    {
+        $q = new Query('test query we<(ird');
+        $q->replaceTerm('we<(ird', 'we>(ird');
+        $this->assertEquals('test query we>(ird', $q->getString());
     }
 
     /**
