@@ -979,13 +979,13 @@ class AjaxController extends \VuFind\Controller\AjaxController
      */
     public function getOrganisationInfoAjax()
     {
-        $this->disableSessionWrites();  // avoid session write timing bug
+        // Session is required here, so don't call disableSessionWrites.
         if (null === ($parent = $this->params()->fromQuery('parent'))) {
             return $this->handleError('getOrganisationInfo: missing parent');
         }
 
         $params = $this->params()->fromQuery('params');
-        $session = new SessionContainer('OrganisationInfo');
+        $session = []; //new SessionContainer('OrganisationInfo');
         $action = $params['action'];
         $buildings = isset($params['buildings'])
             ? explode(',', $params['buildings']) : null;
