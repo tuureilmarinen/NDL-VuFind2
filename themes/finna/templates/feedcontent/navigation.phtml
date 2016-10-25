@@ -2,12 +2,16 @@
 <ul class="article-links">
 <? foreach ($this->items as $item): ?>
   <?
-    $link = $this->baseUrl . $cnt;
+    $selected = $numeric
+      ? $element === $cnt
+      : $element === $item['id'];
+
+    $link = $item['link'];
     if ($this->feedUrl) {
        $link .= '?feedUrl=' . $this->escapeHtmlAttr($this->feedUrl);
     }
   ?>
-  <li><?= $cnt != $num ? ('<a href="' . $link . '">' . $item . '</a>') : $item ?></li>
-  <? $cnt++;?>
+  <li><?= !$selected ? ('<a href="' . $link . '">' . $this->escapeHtml($item['title']) . '</a>') : $this->escapeHtml($item['title']) ?></li>
+  <? $cnt++; ?>
 <?endforeach;?>
 </ul>

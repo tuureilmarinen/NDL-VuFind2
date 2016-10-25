@@ -295,6 +295,7 @@ class Feed implements \Zend\Log\LoggerAwareInterface
         }
 
         $content = [
+            'id' => 'getId',
             'title' => 'getTitle',
             'text' => 'getContent',
             'image' => 'getEnclosure',
@@ -311,7 +312,6 @@ class Feed implements \Zend\Log\LoggerAwareInterface
         $cnt = 0;
         $xpath = null;
 
-        $cnt = 0;
         foreach ($channel as $item) {
             if (!$xpath) {
                 $xpath = $item->getXpath();
@@ -351,11 +351,18 @@ class Feed implements \Zend\Log\LoggerAwareInterface
                             }
                         }
                     } else if ($setting == 'link' && $showFullContentOnSite) {
+                        if (!$itemId = $item->getId()) {
+                            $itemId = $cnt;
+                        }
                         $link = $urlHelper->fromRoute(
                             'feed-content-page',
-                            ['page' => $id, 'element' => $cnt]
+                            ['page' => $id, 'element' => urlencode($itemId)]
                         );
                         $value = $link;
+                    } else if ($setting == 'id') {
+                        if (!$value) {
+                            $value = $cnt;
+                        }
                     } else {
                         if (is_string($value)) {
                             $value = strip_tags($value);
