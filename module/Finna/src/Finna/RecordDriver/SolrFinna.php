@@ -152,6 +152,17 @@ trait SolrFinna
     }
 
     /**
+     * Get the full title of the record.
+     *
+     * @return string
+     */
+    public function getFullTitle()
+    {
+        return isset($this->fields['title_full']) ?
+            $this->fields['title_full'] : '';
+    }
+
+    /**
      * Return genres
      *
      * @return array
@@ -329,6 +340,25 @@ trait SolrFinna
     }
 
     /**
+     * Get organisation info ID (Kirjastohakemisto Finna ID).
+     *
+     * @return string
+     */
+    public function getOrganisationInfoId()
+    {
+        $building = $this->getBuilding();
+        if (is_array($building)) {
+            $building = $building[0];
+        }
+
+        if (preg_match('/^0\/([^\/]*)\/$/', $building, $matches)) {
+            // strip leading '0/' and trailing '/' from top-level building code
+            return $matches[1];
+        }
+        return null;
+    }
+
+    /**
      * Get all the original languages associated with the record
      *
      * @return array
@@ -365,10 +395,10 @@ trait SolrFinna
             $urls = array_keys($urls);
             if ($index == 0) {
                 $url = $urls[0];
+            } elseif (isset($urls[$index])) {
+                $url = $urls[$index];
             } else {
-                if (isset($urls[$index])) {
-                    $url = $urls[$index];
-                }
+                $url = null;
             }
             if (!is_array($url)) {
                 $params = ['id' => $this->getUniqueId(), 'url' => $url];

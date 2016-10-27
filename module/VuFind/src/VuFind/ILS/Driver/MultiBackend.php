@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category VuFind
  * @package  ILSdrivers
@@ -701,8 +701,8 @@ class MultiBackend extends AbstractBase
     /**
      * Get request groups
      *
-     * @param integer $id     BIB ID
-     * @param array   $patron Patron information returned by the patronLogin
+     * @param int   $id     BIB ID
+     * @param array $patron Patron information returned by the patronLogin
      * method.
      *
      * @return array  An array of associative arrays with requestGroupId and
@@ -1044,7 +1044,8 @@ class MultiBackend extends AbstractBase
         if ($driver
             && $this->methodSupported($driver, 'placeILLRequest', compact($details))
         ) {
-            $details = $this->stripIdPrefixes($details, $source, ['id']);
+            // Patron is not stripped so that the correct library can be determined
+            $details = $this->stripIdPrefixes($details, $source, ['id'], ['patron']);
             return $driver->placeILLRequest($details);
         }
         throw new ILSException('No suitable backend driver found');
@@ -1161,6 +1162,51 @@ class MultiBackend extends AbstractBase
         }
         throw new ILSException('No suitable backend driver found');
     }
+
+    /**
+     * Check whether the patron is blocked from placing requests (holds/ILL/SRR).
+     *
+     * @param array $patron Patron data from patronLogin().
+     *
+     * @return mixed A boolean false if no blocks are in place and an array
+     * of block reasons if blocks are in place
+     */
+    public function getRequestBlocks($patron)
+    {
+        $source = $this->getSource($patron['cat_username']);
+        $driver = $this->getDriver($source);
+        if ($driver
+            && $this->methodSupported($driver, 'getRequestBlocks', compact('patron'))
+        ) {
+            return $driver->getRequestBlocks(
+                $this->stripIdPrefixes($patron, $source)
+            );
+        }
+        throw new ILSException('No suitable backend driver found');
+    }
+
+    /**
+     * Check whether the patron has any blocks on their account.
+     *
+     * @param array $patron Patron data from patronLogin().
+     *
+     * @return mixed A boolean false if no blocks are in place and an array
+     * of block reasons if blocks are in place
+     */
+    public function getAccountBlocks($patron)
+    {
+        $source = $this->getSource($patron['cat_username']);
+        $driver = $this->getDriver($source);
+        if ($driver
+            && $this->methodSupported($driver, 'getAccountBlocks', compact('patron'))
+        ) {
+            return $driver->getAccountBlocks(
+                $this->stripIdPrefixes($patron, $source)
+            );
+        }
+        throw new ILSException('No suitable backend driver found');
+    }
+
 
     /**
      * Function which specifies renew, hold and cancel settings.
@@ -1425,12 +1471,13 @@ class MultiBackend extends AbstractBase
     * array or array of arrays
     * @param string $source       Source code
     * @param array  $modifyFields Fields to be modified in the array
+    * @param array  $ignoreFields Fields to be ignored during recursive processing
     *
     * @return mixed     Modified array or empty/null if that input was
     *                   empty/null
     */
     protected function stripIdPrefixes($data, $source,
-        $modifyFields = ['id', 'cat_username']
+        $modifyFields = ['id', 'cat_username'], $ignoreFields = []
     ) {
         if (!isset($data) || empty($data)) {
             return $data;
@@ -1439,6 +1486,9 @@ class MultiBackend extends AbstractBase
 
         foreach ($array as $key => $value) {
             if (is_array($value)) {
+                if (in_array($key, $ignoreFields)) {
+                    continue;
+                }
                 $array[$key] = $this->stripIdPrefixes(
                     $value, $source, $modifyFields
                 );

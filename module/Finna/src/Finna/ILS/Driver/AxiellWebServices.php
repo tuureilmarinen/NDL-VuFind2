@@ -74,6 +74,13 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     protected $defaultPickUpLocation;
 
     /**
+     * Regional hold
+     *
+     * @var Boolean
+     */
+    protected $regionalHold = false;
+
+    /**
      * Arena Member code of the institution
      *
      * @var string
@@ -300,11 +307,14 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         $this->defaultPickUpLocation
-            = (isset($this->config['Holds']['defaultPickUpLocation']))
+            = isset($this->config['Holds']['defaultPickUpLocation'])
             ? $this->config['Holds']['defaultPickUpLocation'] : false;
         if ($this->defaultPickUpLocation == '0') {
             $this->defaultPickUpLocation = false;
         }
+
+        $this->regionalHold = isset($this->config['Holds']['regionalHold'])
+          ? $this->config['Holds']['regionalHold'] : false;
 
         if (isset($this->config['Debug']['durationLogPrefix'])) {
             $this->durationLogPrefix = $this->config['Debug']['durationLogPrefix'];
@@ -374,7 +384,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             'language' => $this->getLanguage(),
             'country' => 'FI',
             'reservationEntities' => $id,
-            'reservationType' => 'normal'
+            'reservationType' => $this->regionalHold ? 'regional' : 'normal'
         ];
 
         $result = $this->doSOAPRequest(
@@ -411,7 +421,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             if (is_object($organisation->branches->branch)) {
                 $locationsList[] = [
                     'locationID' =>
-                       $organisationID . '.' .  $organisation->branches->branch->id,
+                       $organisationID . '.' . $organisation->branches->branch->id,
                     'locationDisplay' => $organisation->branches->branch->name
                 ];
             } else {
@@ -779,7 +789,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
 
         if ($statusAWS->type != 'ok') {
             $message = $this->handleError($function, $statusAWS->message, $id);
-            if ($message == 'catalog_connection_failed') {
+            if ($message == 'ils_connection_failed') {
                 throw new ILSException('ils_offline_holdings_message');
             }
             return [];
@@ -1212,7 +1222,8 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             foreach ($info->messageServices->messageService as $service) {
                 $methods = [];
                 $serviceType = $service->serviceType;
-                $numOfDays = $service->nofDays->value;
+                $numOfDays = isset($service->nofDays->value)
+                    ? $service->nofDays->value : 'none';
                 $active = $service->isActive === 'yes';
 
                 $sendMethods = $this->objectToArray($service->sendMethods);
@@ -1317,7 +1328,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
 
         if ($statusAWS->type != 'ok') {
             $message = $this->handleError($function, $statusAWS->message, $username);
-            if ($message == 'catalog_connection_failed') {
+            if ($message == 'ils_connection_failed') {
                 throw new ILSException($message);
             }
             return [];
@@ -1331,7 +1342,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
 
         foreach ($loans as $loan) {
             $title = $loan->catalogueRecord->title;
-            if ($loan->note) {
+            if (!empty($loan->note)) {
                 $title .= ' (' . $loan->note . ')';
             }
 
@@ -1407,7 +1418,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
 
         if ($statusAWS->type != 'ok') {
             $message = $this->handleError($function, $statusAWS->message, $username);
-            if ($message == 'catalog_connection_failed') {
+            if ($message == 'ils_connection_failed') {
                 throw new ILSException($message);
             }
             return [];
@@ -1483,7 +1494,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
 
         if ($statusAWS->type != 'ok') {
             $message = $this->handleError($function, $statusAWS->message, $username);
-            if ($message == 'catalog_connection_failed') {
+            if ($message == 'ils_connection_failed') {
                 throw new ILSException($message);
             }
             return [];
@@ -1580,44 +1591,46 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         $username = $renewDetails['patron']['cat_username'];
         $password = $renewDetails['patron']['cat_password'];
 
-        foreach ($renewDetails['details'] as $id) {
-            $function = 'RenewLoans';
-            $functionResult = 'renewLoansResponse';
+        $function = 'RenewLoans';
+        $functionResult = 'renewLoansResponse';
 
-            $conf = [
-                'arenaMember' => $this->arenaMember,
-                'user' => $username,
-                'password' => $password,
-                'language' => 'en',
-                'loans' => [$id]
-            ];
+        $conf = [
+            'arenaMember' => $this->arenaMember,
+            'user' => $username,
+            'password' => $password,
+            'language' => 'en',
+            'loans' => $renewDetails['details']
+        ];
 
-            $result = $this->doSOAPRequest(
-                $this->loans_wsdl, $function, $functionResult, $username,
-                ['renewLoansRequest' => $conf]
-            );
+        $result = $this->doSOAPRequest(
+            $this->loans_wsdl, $function, $functionResult, $username,
+            ['renewLoansRequest' => $conf]
+        );
 
-            $statusAWS = $result->$functionResult->status;
+        $statusAWS = $result->$functionResult->status;
 
-            if ($statusAWS->type != 'ok') {
-                $message
-                    = $this->handleError($function, $statusAWS->message, $username);
-                if ($message == 'ils_connection_failed') {
-                    throw new ILSException('ils_offline_status');
-                }
+        if ($statusAWS->type != 'ok') {
+            $message
+                = $this->handleError($function, $statusAWS->message, $username);
+            if ($message == 'ils_connection_failed') {
+                throw new ILSException('ils_offline_status');
             }
+        }
 
-            $status
-                = trim($result->$functionResult->loans->loan->loanStatus->status);
+        $loans = $this->objectToArray($result->$functionResult->loans->loan);
+
+        foreach ($loans as $loan) {
+            $id = $loan->id;
+            $status = $loan->loanStatus->status;
             $success = $status === 'isRenewedToday';
 
             $results['details'][$id] = [
                 'success' => $success,
                 'status' => $success ? 'Loan renewed' : 'Renewal failed',
-                'sysMessage' => $status,
+                'sysMessage' => $this->mapStatus($status),
                 'item_id' => $id,
                 'new_date' => $this->formatDate(
-                    $result->$functionResult->loans->loan->loanDueDate
+                    $loan->loanDueDate
                 ),
                 'new_time' => ''
             ];
@@ -1822,6 +1835,32 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     }
 
     /**
+     * Check whether the patron is blocked from placing requests (holds/ILL/SRR).
+     *
+     * @param array $patron Patron data from patronLogin().
+     *
+     * @return mixed A boolean false if no blocks are in place and an array
+     * of block reasons if blocks are in place
+     */
+    public function getRequestBlocks($patron)
+    {
+        return false;
+    }
+
+    /**
+     * Check whether the patron has any blocks on their account.
+     *
+     * @param array $patron Patron data from patronLogin().
+     *
+     * @return mixed A boolean false if no blocks are in place and an array
+     * of block reasons if blocks are in place
+     */
+    public function getAccountBlocks($patron)
+    {
+        return false;
+    }
+
+    /**
      * Send a SOAP request
      *
      * @param string $wsdl           Name of the wsdl file
@@ -1865,6 +1904,10 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 "$function Response: "
                 . $this->formatXML($client->__getLastResponse())
             );
+        }
+
+        if (!isset($result->$functionResult->status)) {
+            throw new ILSException('ils_offline_status');
         }
 
         return $result;
@@ -2156,18 +2199,16 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     }
 
     /**
-     * Add instance-specific context to a cache key suffix to ensure that
-     * multiple drivers don't accidentally share values in the cache.
-     * This implementation works anywhere but can be overridden with something more
-     * performant.
+     * Method to ensure uniform cache keys for cached VuFind objects.
      *
-     * @param string $key Cache key suffix
+     * @param string|null $suffix Optional suffix that will get appended to the
+     * object class name calling getCacheKey()
      *
      * @return string
      */
-    protected function formatCacheKey($key)
+    protected function getCacheKey($suffix = null)
     {
-        return 'AxiellWebServices' . '-' . md5($this->arenaMember . "|$key");
+        return 'AxiellWebServices' . '-' . md5($this->arenaMember . "|$suffix");
     }
 
     /**
