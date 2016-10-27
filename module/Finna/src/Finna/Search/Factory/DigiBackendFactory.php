@@ -113,7 +113,8 @@ class DigiBackendFactory implements FactoryInterface
      */
     protected function createConnector()
     {
-        $host = 'http://tethys.lib.helsinki.fi/rest/binding-search/search/';
+        $host = 'http://digi.kansalliskirjasto.fi/rest/binding-search/search/';
+
         $client = $this->serviceLocator->get('VuFind\Http')->createClient();
         $configReader = $this->serviceLocator->get('VuFind\Config');
         $timeout = isset($this->config->General->timeout)
