@@ -94,96 +94,97 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $patron;
         }
 
-        $view = $this->createViewIfUnsupported('getMyTransactions');
-        if ($view === false) {
-            $view = parent::checkedoutAction();
-            $view->profile = $this->getCatalogProfile();
-            $transactions = count($view->transactions);
-            $renewResult = $view->renewResult;
-            if (isset($renewResult) && is_array($renewResult)) {
-                $renewedCount = 0;
-                $renewErrorCount = 0;
-                foreach ($renewResult as $renew) {
-                    if ($renew['success']) {
-                        $renewedCount++;
-                    } else {
-                        $renewErrorCount++;
-                    }
-                }
-                $flashMsg = $this->flashMessenger();
-                if ($renewedCount > 0) {
-                    $msg = $this->translate(
-                        'renew_ok', ['%%count%%' => $renewedCount,
-                        '%%transactionscount%%' => $transactions]
-                    );
-                    $flashMsg->setNamespace('info')->addMessage($msg);
-                }
-                if ($renewErrorCount > 0) {
-                    $msg = $this->translate(
-                        'renew_failed',
-                        ['%%count%%' => $renewErrorCount]
-                    );
-                    $flashMsg->setNamespace('error')->addMessage($msg);
+        if ($view = $this->createViewIfUnsupported('getMyTransactions')) {
+            return $view;
+        }
+
+        $view = parent::checkedoutAction();
+        $transactions = count($view->transactions);
+        $renewResult = $view->renewResult;
+        if (isset($renewResult) && is_array($renewResult)) {
+            $renewedCount = 0;
+            $renewErrorCount = 0;
+            foreach ($renewResult as $renew) {
+                if ($renew['success']) {
+                    $renewedCount++;
+                } else {
+                    $renewErrorCount++;
                 }
             }
-            // Handle sorting
-            $currentSort = $this->getRequest()->getQuery('sort', 'duedate');
-            $view->sortList = [
-                'duedate' => [
-                    'desc' => 'Due Date',
-                    'url' => '?sort=duedate',
-                    'selected' => $currentSort == 'duedate'
-                ],
-                'title' => [
-                    'desc' => 'Title',
-                    'url' => '?sort=title',
-                    'selected' => $currentSort == 'title'
-                ]
-            ];
-
-            $date = $this->getServiceLocator()->get('VuFind\DateConverter');
-            $sortFunc = function ($a, $b) use ($currentSort, $date) {
-                $aDetails = $a->getExtraDetail('ils_details');
-                $bDetails = $b->getExtraDetail('ils_details');
-                if ($currentSort == 'title') {
-                    $aTitle = is_a($a, 'VuFind\\RecordDriver\\SolrDefault')
-                         && !is_a($a, 'VuFind\\RecordDriver\\Missing')
-                         ? $a->getSortTitle() : '';
-                    if (!$aTitle) {
-                        $aTitle = isset($aDetails['title'])
-                            ? $aDetails['title'] : '';
-                    }
-                    $bTitle = is_a($b, 'VuFind\\RecordDriver\\SolrDefault')
-                         && !is_a($b, 'VuFind\\RecordDriver\\Missing')
-                         ? $b->getSortTitle() : '';
-                    if (!$bTitle) {
-                        $bTitle = isset($bDetails['title'])
-                            ? $bDetails['title'] : '';
-                    }
-                    $result = strcmp($aTitle, $bTitle);
-                    if ($result != 0) {
-                        return $result;
-                    }
-                }
-
-                try {
-                    $aDate = isset($aDetails['duedate'])
-                        ? $date->convertFromDisplayDate('U', $aDetails['duedate'])
-                        : 0;
-                    $bDate = isset($bDetails['duedate'])
-                        ? $date->convertFromDisplayDate('U', $bDetails['duedate'])
-                        : 0;
-                } catch (Exception $e) {
-                    return 0;
-                }
-
-                return $aDate - $bDate;
-            };
-
-            $transactions = $view->transactions;
-            usort($transactions, $sortFunc);
-            $view->transactions = $transactions;
+            $flashMsg = $this->flashMessenger();
+            if ($renewedCount > 0) {
+                $msg = $this->translate(
+                    'renew_ok', ['%%count%%' => $renewedCount,
+                    '%%transactionscount%%' => $transactions]
+                );
+                $flashMsg->setNamespace('info')->addMessage($msg);
+            }
+            if ($renewErrorCount > 0) {
+                $msg = $this->translate(
+                    'renew_failed',
+                    ['%%count%%' => $renewErrorCount]
+                );
+                $flashMsg->setNamespace('error')->addMessage($msg);
+            }
         }
+        // Handle sorting
+        $currentSort = $this->getRequest()->getQuery('sort', 'duedate');
+        $view->sortList = [
+            'duedate' => [
+                'desc' => 'Due Date',
+                'url' => '?sort=duedate',
+                'selected' => $currentSort == 'duedate'
+            ],
+            'title' => [
+                'desc' => 'Title',
+                'url' => '?sort=title',
+                'selected' => $currentSort == 'title'
+            ]
+        ];
+
+        $date = $this->getServiceLocator()->get('VuFind\DateConverter');
+        $sortFunc = function ($a, $b) use ($currentSort, $date) {
+            $aDetails = $a->getExtraDetail('ils_details');
+            $bDetails = $b->getExtraDetail('ils_details');
+            if ($currentSort == 'title') {
+                $aTitle = is_a($a, 'VuFind\\RecordDriver\\SolrDefault')
+                     && !is_a($a, 'VuFind\\RecordDriver\\Missing')
+                     ? $a->getSortTitle() : '';
+                if (!$aTitle) {
+                    $aTitle = isset($aDetails['title'])
+                        ? $aDetails['title'] : '';
+                }
+                $bTitle = is_a($b, 'VuFind\\RecordDriver\\SolrDefault')
+                     && !is_a($b, 'VuFind\\RecordDriver\\Missing')
+                     ? $b->getSortTitle() : '';
+                if (!$bTitle) {
+                    $bTitle = isset($bDetails['title'])
+                        ? $bDetails['title'] : '';
+                }
+                $result = strcmp($aTitle, $bTitle);
+                if ($result != 0) {
+                    return $result;
+                }
+            }
+
+            try {
+                $aDate = isset($aDetails['duedate'])
+                    ? $date->convertFromDisplayDate('U', $aDetails['duedate'])
+                    : 0;
+                $bDate = isset($bDetails['duedate'])
+                    ? $date->convertFromDisplayDate('U', $bDetails['duedate'])
+                    : 0;
+            } catch (Exception $e) {
+                return 0;
+            }
+
+            return $aDate - $bDate;
+        };
+
+        $transactions = $view->transactions;
+        usort($transactions, $sortFunc);
+        $view->transactions = $transactions;
+        $view->blocks = $this->getILS()->getAccountBlocks($patron);
         return $view;
     }
 
@@ -213,6 +214,82 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         $view->sortList = $this->createSortList();
+
+        return $view;
+    }
+
+    /**
+     * Show user's own favorite list (max. 1000) to the view
+     *
+     * @return mixed
+     */
+    public function sortListAction()
+    {
+        // Fail if lists are disabled:
+        if (!$this->listsEnabled()) {
+            throw new ForbiddenException('Lists disabled');
+        }
+
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->forceLogin();
+        }
+
+        $listId = $this->params()->fromRoute('id');
+        if (null === $listId) {
+            throw new ListPermissionException('Cannot sort all favorites list');
+        }
+
+        if ($this->formWasSubmitted('cancelOrdering')) {
+            return $this->redirect()->toRoute('userList', ['id' => $listID]);
+        }
+        if ($this->formWasSubmitted('saveOrdering')) {
+            $orderedList = json_decode(
+                $this->params()->fromPost('orderedList'), true
+            );
+            $table = $this->getTable('UserResource');
+            $listID = $this->params()->fromPost('list_id');
+            if (empty($listID) || empty($orderedList)
+                || !$table->saveCustomFavoriteOrder($user->id, $listID, $orderedList)
+            ) {
+                $this->flashMessenger()->addErrorMessage('An error has occurred');
+            } else {
+                // inLightbox (only instance)
+                if ($this->getRequest()->getQuery('layout', 'no') === 'lightbox'
+                    || 'layout/lightbox' == $this->layout()->getTemplate()
+                ) {
+                    $response = $this->getResponse();
+                    $response->setStatusCode(205);
+                    return $response;
+                }
+                return $this->redirect()->toRoute('userList', ['id' => $listID]);
+            }
+        }
+
+        // If we got this far, we just need to display the favorites:
+        try {
+            $runner = $this->getServiceLocator()->get('VuFind\SearchRunner');
+
+            // We want to merge together GET, POST and route parameters to
+            // initialize our search object:
+            $request = $this->getRequest()->getQuery()->toArray()
+                + $this->getRequest()->getPost()->toArray()
+                + ['id' => $listId];
+
+            $setupCallback = function ($runner, $params, $searchId) {
+                $params->setLimit(1000);
+            };
+            $results = $runner->run($request, 'Favorites', $setupCallback);
+
+            return $this->createViewModel(
+                ['params' => $results->getParams(), 'results' => $results]
+            );
+        } catch (ListPermissionException $e) {
+            if (!$this->getUser()) {
+                return $this->forceLogin();
+            }
+            throw $e;
+        }
 
         return $view;
     }
@@ -281,6 +358,10 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             = isset($config->Site->hideProfileEmailAddress)
             && $config->Site->hideProfileEmailAddress;
 
+        if ($patron = $this->catalogLogin()) {
+            $view->blocks = $this->getILS()->getAccountBlocks($patron);
+        }
+
         return $view;
     }
 
@@ -294,11 +375,11 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         if (!is_array($patron = $this->catalogLogin())) {
             return $patron;
         }
-        $catalog = $this->getILS();
-        $view = $this->createViewIfUnsupported('updateAddress', true);
-        if ($view) {
+        if ($view = $this->createViewIfUnsupported('updateAddress', true)) {
             return $view;
         }
+
+        $catalog = $this->getILS();
         $updateConfig = $catalog->checkFunction('updateAddress', $patron);
         $profile = $catalog->getMyProfile($patron);
         $fields = [];
@@ -473,6 +554,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
     public static function getFavoritesSortList()
     {
         return [
+            'custom_order' => 'sort_custom_order',
             'id desc' => 'sort_saved',
             'id' => 'sort_saved asc',
             'title' => 'sort_title',
@@ -494,13 +576,47 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $patron;
         }
 
-        $view = $this->createViewIfUnsupported('getMyHolds');
-        if ($view === false) {
-            $view = parent::holdsAction();
-            $view->recordList = $this->orderAvailability($view->recordList);
-            $view->profile = $this->getCatalogProfile();
+        if ($view = $this->createViewIfUnsupported('getMyHolds')) {
+            return $view;
         }
+
+        $view = parent::holdsAction();
+        $view->recordList = $this->orderAvailability($view->recordList);
+        $view->blocks = $this->getILS()->getAccountBlocks($patron);
         return $view;
+    }
+
+    /**
+     * Save favorite custom order into DB
+     *
+     * @return mixed
+     */
+    public function saveCustomOrderAction()
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->forceLogin();
+        }
+
+        if ($this->formWasSubmitted('opcode')
+            && $this->params()->fromPost('opcode') == 'save_order'
+        ) {
+            $this->session->url = empty($listID)
+                ? $this->url()->fromRoute('myresearch-favorites')
+                : $this->url()->fromRoute('userList', ['id' => $listID]);
+
+            $orderedList = $this->params()->fromPost('orderedList');
+            $table = $this->getTable('UserResource');
+            $listID = $this->params()->fromPost('list_id');
+            if (empty($listID) || empty($orderedList)
+                || !$table->saveCustomFavoriteOrder($user->id, $listID, $orderedList)
+            ) {
+                $this->flashMessenger()->addErrorMessage('An error has occurred');
+            }
+            return $this->redirect()->toRoute('userList', ['id' => $listID]);
+        } else {
+            return $this->redirect()->toRoute('userList', ['id' => $listID]);
+        }
     }
 
     /**
@@ -544,12 +660,14 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $patron;
         }
 
-        $view = $this->createViewIfUnsupported('StorageRetrievalRequests', true);
-        if ($view === false) {
-            $view = parent::storageRetrievalRequestsAction();
-            $view->recordList = $this->orderAvailability($view->recordList);
-            $view->profile = $this->getCatalogProfile();
+        if ($view = $this->createViewIfUnsupported('StorageRetrievalRequests', true)
+        ) {
+            return $view;
         }
+
+        $view = parent::storageRetrievalRequestsAction();
+        $view->recordList = $this->orderAvailability($view->recordList);
+        $view->blocks = $this->getILS()->getAccountBlocks($patron);
         return $view;
     }
 
@@ -565,12 +683,13 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $patron;
         }
 
-        $view = $this->createViewIfUnsupported('ILLRequests', true);
-        if ($view === false) {
-            $view = parent::illRequestsAction();
-            $view->recordList = $this->orderAvailability($view->recordList);
-            $view->profile = $this->getCatalogProfile();
+        if ($view = $this->createViewIfUnsupported('ILLRequests', true)) {
+            return $view;
         }
+
+        $view = parent::illRequestsAction();
+        $view->recordList = $this->orderAvailability($view->recordList);
+        $view->blocks = $this->getILS()->getAccountBlocks($patron);
         return $view;
     }
 
@@ -586,13 +705,14 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $patron;
         }
 
-        $view = $this->createViewIfUnsupported('getMyFines');
-        if ($view === false) {
-            $view = parent::finesAction();
-            $view->profile = $this->getCatalogProfile();
-            if (isset($patron['source'])) {
-                $result = $this->handleOnlinePayment($patron, $view->fines, $view);
-            }
+        if ($view = $this->createViewIfUnsupported('getMyFines')) {
+            return $view;
+        }
+
+        $view = parent::finesAction();
+        $view->blocks = $this->getILS()->getAccountBlocks($patron);
+        if (isset($patron['source'])) {
+            $result = $this->handleOnlinePayment($patron, $view->fines, $view);
         }
         return $view;
     }
@@ -652,13 +772,36 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
     }
 
     /**
+     * Add account blocks to the flash messenger as errors.
+     *
+     * @param \VuFind\ILS\Connection $catalog Catalog connection
+     * @param array                  $patron  Patron details
+     *
+     * @return void
+     */
+    public function addAccountBlocksToFlashMessenger($catalog, $patron)
+    {
+        // We don't use the flash messenger for blocks.
+    }
+
+    /**
      * Create sort list for public list page.
      * If no sort option selected, set first one from the list to default.
      *
+     * @param list $list List object
+     *
      * @return array
      */
-    protected function createSortList()
+    protected function createSortList($list = null)
     {
+        $view = parent::mylistAction();
+        $user = $this->getUser();
+        $table = $this->getTable('UserResource');
+
+        if (empty($list) && $results = $view->results) {
+            $list = $results->getListObject();
+        }
+
         $sortOptions = self::getFavoritesSortList();
         $sort = isset($_GET['sort']) ? $_GET['sort'] : false;
         if (!$sort) {
@@ -666,13 +809,25 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             $sort = key($sortOptions);
         }
         $sortList = [];
+
+        if (empty($list)
+            || ((! $list->public
+            && $table->getCustomFavoriteOrder($list->id, $user->id) === false)
+            || ($list->public
+            && $table->getCustomFavoriteOrder($list->id) === false))
+        ) {
+            array_shift($sortOptions);
+            if ($sort == 'custom_order') {
+                $sort = 'id desc';
+            }
+        }
+
         foreach ($sortOptions as $key => $value) {
             $sortList[$key] = [
                 'desc' => $value,
-                'selected' => $key === $sort,
+                'selected' => $key === $sort
             ];
         }
-
         return $sortList;
     }
 
@@ -863,19 +1018,4 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         );
     }
 
-    /**
-     * Get the current patron profile.
-     *
-     * @return mixed
-     */
-    protected function getCatalogProfile()
-    {
-        $patron = $this->catalogLogin();
-        if (is_array($patron)) {
-            $catalog = $this->getILS();
-            $profile = $catalog->getMyProfile($patron);
-            return $profile;
-        }
-        return null;
-    }
 }
