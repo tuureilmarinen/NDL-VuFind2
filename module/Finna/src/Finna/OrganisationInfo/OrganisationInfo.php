@@ -163,7 +163,7 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
             $building = $building[0];
         }
 
-        if (preg_match('/^0\/([a-zA-z0-9]*)\/$/', $building, $matches)) {
+        if (preg_match('/^0\/([^\/]*)\/$/', $building, $matches)) {
             // strip leading '0/' and trailing '/' from top-level building code
             return $matches[1];
         }
@@ -710,6 +710,9 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
 
             $data['openTimes'] = $this->parseSchedules($item['schedules']);
 
+            $data['openNow'] = isset($data['openTimes']['openNow'])
+                ? $data['openTimes']['openNow'] : false
+            ;
             $result[] = $data;
         }
         usort($result, [$this, 'sortList']);
@@ -808,7 +811,11 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
                     }
                 }
                 if ($includeAllServices) {
-                    $data = [$this->getField($service, 'name')];
+                    $name = $this->getField($service, 'custom_name');
+                    if (!$name) {
+                        $name = $this->getField($service, 'name');
+                    }
+                    $data = [$name];
                     $desc = $this->getField($service, 'short_description');
                     if ($desc) {
                         $data[] = $desc;
@@ -880,7 +887,7 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
             'friday', 'saturday', 'sunday'
         ];
 
-        $openNow = false;
+        $openNow = null;
         $openToday = false;
         $currentWeek = false;
         foreach ($data as $day) {
@@ -924,8 +931,8 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
             if (!empty($day['sections']['selfservice']['times'])) {
                 foreach ($day['sections']['selfservice']['times'] as $time) {
                     $res = $this->extractDayTime($now, $time, $today, true);
-                    if (!empty($res['openNow'])) {
-                        $openNow = true;
+                    if (isset($res['openNow'])) {
+                        $openNow = $res['openNow'];
                     }
                     if (empty($day['times'])) {
                         $res['result']['selfserviceOnly'] = true;
@@ -941,8 +948,8 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
             // Staff times
             foreach ($day['times'] as $time) {
                 $res = $this->extractDayTime($now, $time, $today);
-                if (!empty($res['openNow'])) {
-                    $openNow = true;
+                if (isset($res['openNow'])) {
+                    $openNow = $res['openNow'];
                 }
                 if (!empty($info)) {
                     $res['result']['info'] = $info;
@@ -984,7 +991,11 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
             }
         }
 
-        return compact('schedules', 'openNow', 'openToday', 'currentWeek');
+        $result = compact('schedules', 'openToday', 'currentWeek');
+        if ($openNow !== null) {
+            $result['openNow'] = $openNow;
+        }
+        return $result;
     }
 
     /**
@@ -1018,7 +1029,11 @@ class OrganisationInfo implements \Zend\Log\LoggerAwareInterface
                 $result['openNow'] = true;
             }
         }
-        return compact('result', 'openNow');
+        $result = ['result' => $result];
+        if ($today) {
+            $result['openNow'] = $openNow;
+        }
+        return $result;
     }
 
     /**
