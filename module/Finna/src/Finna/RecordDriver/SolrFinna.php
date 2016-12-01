@@ -415,6 +415,11 @@ trait SolrFinna
         $params = parent::getThumbnail($size);
         if ($params && !is_array($params)) {
             $params = ['url' => $params];
+        } elseif (!isset($params['isbn'])) {
+            // Allow also invalid ISBNs
+            if ($isbn = $this->getFirstISBN()) {
+                $params['invisbn'] = $isbn;
+            }
         }
         return $params;
     }
@@ -422,7 +427,7 @@ trait SolrFinna
     /**
      * Return record format.
      *
-     * @return string.
+     * @return string
      */
     public function getRecordType()
     {
@@ -446,9 +451,36 @@ trait SolrFinna
     }
 
     /**
+     * Return the first ISBN found in the record.
+     *
+     * @return mixed
+     */
+    public function getFirstISBN()
+    {
+        // Get all the ISBNs and initialize the return value:
+        $isbns = $this->getISBNs();
+        $isbn13 = false;
+
+        // Loop through the ISBNs:
+        foreach ($isbns as $isbn) {
+            // Strip off any unwanted notes:
+            if ($pos = strpos($isbn, ' ')) {
+                $isbn = substr($isbn, 0, $pos);
+            }
+
+            $isbn = \VuFindCode\ISBN::normalizeISBN($isbn);
+            $length = strlen($isbn);
+            if ($length == 10 || $length == 13) {
+                return $isbn;
+            }
+        }
+        return $isbn13;
+    }
+
+    /**
      * Return SFX Object ID
      *
-     * @return string.
+     * @return string
      */
     public function getSfxObjectId()
     {
@@ -458,7 +490,7 @@ trait SolrFinna
     /**
      * Return record source.
      *
-     * @return string.
+     * @return string
      */
     public function getSource()
     {
@@ -536,15 +568,15 @@ trait SolrFinna
             || in_array('1/Book/eBookSection/', $formats)
         ) {
             return 'BookSection';
-        } else if (in_array('0/Book/', $formats)) {
+        } elseif (in_array('0/Book/', $formats)) {
             return 'Book';
-        } else if (in_array('1/Journal/Article/', $formats)
+        } elseif (in_array('1/Journal/Article/', $formats)
             || in_array('1/Journal/eArticle/', $formats)
         ) {
             return 'Article';
-        } else if (in_array('0/Journal/', $formats)) {
+        } elseif (in_array('0/Journal/', $formats)) {
             return 'Journal';
-        } else if (isset($formats[0])) {
+        } elseif (isset($formats[0])) {
             $format = explode('/', $formats[0]);
             if (isset($format[1])) {
                 return $format[1];
@@ -552,7 +584,7 @@ trait SolrFinna
             if ($formats[0] instanceof \VuFind\I18n\TranslatableStringInterface) {
                 return $formats[0]->getDisplayString();
             }
-        } else if (strlen($this->getCleanISSN()) > 0) {
+        } elseif (strlen($this->getCleanISSN()) > 0) {
             return 'Journal';
         }
         return 'Book';
