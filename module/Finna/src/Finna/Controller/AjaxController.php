@@ -641,6 +641,8 @@ class AjaxController extends \VuFind\Controller\AjaxController
      */
     public function getOrganisationPageFeedAjax()
     {
+        $this->disableSessionWrites();  // avoid session write timing bug
+
         if (null === ($id = $this->params()->fromQuery('id'))) {
             return $this->handleError('getOrganisationPageFeed: missing feed id');
         }
@@ -958,6 +960,8 @@ class AjaxController extends \VuFind\Controller\AjaxController
      */
     public function getMyListsAjax()
     {
+        $this->disableSessionWrites();  // avoid session write timing bug
+
         // Fail if lists are disabled:
         if (!$this->listsEnabled()) {
             return $this->output('Lists disabled', self::STATUS_ERROR, 400);
@@ -1022,6 +1026,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
 
         if ($action == 'lookup') {
             $params['link'] = $this->params()->fromQuery('link') === '1';
+            $params['parentName'] = $this->params()->fromQuery('parentName');
         }
 
         $lang = $this->getServiceLocator()->get('VuFind\Translator')->getLocale();
@@ -1393,8 +1398,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
     public function registerOnlinePaymentAction()
     {
         $this->outputMode = 'json';
-        $params = $this->getRequest()->getPost()->toArray();
-        $res = $this->processPayment($params);
+        $res = $this->processPayment($this->getRequest());
         $returnUrl = $this->url()->fromRoute('myresearch-fines');
         return $res['success']
             ? $this->output($returnUrl, self::STATUS_OK)
@@ -1402,14 +1406,14 @@ class AjaxController extends \VuFind\Controller\AjaxController
     }
 
     /**
-     * Handle Paytrail notification request.
+     * Handle online payment handler notification request.
      *
      * @return void
      */
-    public function paytrailNotifyAction()
+    public function onlinePaymentNotifyAction()
     {
-        $params = $this->getRequest()->getQuery()->toArray();
-        $this->processPayment($params);
+        $this->outputMode = 'json';
+        $this->processPayment($this->getRequest());
         // This action does not return anything but a HTTP 200 status.
         exit();
     }
@@ -1520,6 +1524,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
      */
     protected function getFacetDataAjax()
     {
+        $this->disableSessionWrites();  // avoid session write timing bug
         if ($type = $this->getBrowseAction($this->getRequest())) {
             $config
                 = $this->getServiceLocator()->get('VuFind\Config')->get('browse');
