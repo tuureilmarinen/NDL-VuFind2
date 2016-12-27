@@ -61,6 +61,17 @@ class Loader extends \VuFind\Record\Loader
     public function load($id, $source = DEFAULT_SEARCH_BACKEND,
         $tolerateMissing = false
     ) {
+        if ($source == 'MetaLib') {
+            if ($tolerateMissing) {
+                $record = $this->recordFactory->get('Missing');
+                $record->setRawData(['id' => $id]);
+                $record->setSourceIdentifier($source);
+                return $record;
+            }
+            throw new RecordMissingException(
+                'Record ' . $source . ':' . $id . ' does not exist.'
+            );
+        }
         $missingException = false;
         try {
             $result = parent::load($id, $source, $tolerateMissing);
@@ -99,7 +110,26 @@ class Loader extends \VuFind\Record\Loader
      */
     public function loadBatch($ids)
     {
-        $records = parent::loadBatch($ids);
+        // Separate MetaLib ids that are loaded separately
+        $loadIds = $metalibIds = $recIds = [];
+        foreach ($ids as $key => $data) {
+            if (!is_array($data)) {
+                $parts = explode('|', $data, 2);
+                $data = ['source' => $parts[0], 'id' => $parts[1]];
+            }
+            $recId = $data['id'];
+            $metalib = isset($data['source']) && $data['source'] == 'MetaLib';
+            if ($metalib) {
+                $metalibIds[] = $recId;
+            } else {
+                $loadIds[] = $data;
+            }
+            $recIds[] = $recId;
+        }
+
+        $result = [];
+
+        $records = parent::loadBatch($loadIds);
 
         // Check the results for missing MetaLib records and try to load them with
         // their old MetaLib IDs
@@ -114,7 +144,19 @@ class Loader extends \VuFind\Record\Loader
             }
         }
 
-        return $records;
+        $metalibIds = array_flip($metalibIds);
+        foreach ($recIds as $recId) {
+            if (isset($metalibIds[$recId])) {
+                $record = $this->recordFactory->get('Missing');
+                $record->setRawData(['id' => $recId]);
+                $record->setSourceIdentifier('MetaLib');
+                $result[] = $record;
+            } else {
+                $result[] = array_shift($records);
+            }
+        }
+
+        return $result;
     }
 
     /**
