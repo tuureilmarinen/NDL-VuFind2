@@ -146,12 +146,14 @@
       <? endif; ?>
     <? else: ?>
     <div class="row">
-      <form class="form-inline col-xs-12" method="post" name="bulkActionForm" action="<?=$this->url('cart-searchresultsbulk')?>">
-        <?=$this->context($this)->renderInContext('search/bulk-action-buttons.phtml', ['idPrefix' => ''])?>
-         <?= $this->authorizationNote($searchClassId) ?>
+      <div class="col-xs-12">
+        <?= $this->authorizationNote($searchClassId) ?>
+        <form id="search-cart-form" class="form-inline" method="post" name="bulkActionForm" action="<?=$this->url('cart-searchresultsbulk')?>" data-lightbox data-lightbox-onsubmit="bulkFormHandler">
+        </form>
+        <?=$this->context($this)->renderInContext('search/bulk-action-buttons.phtml', ['idPrefix' => '', 'formAttr' => 'search-cart-form'])?>
         <?=$this->render('search/list-' . $this->params->getView() . '.phtml')?>
-        <?=$this->context($this)->renderInContext('search/bulk-action-buttons.phtml', ['idPrefix' => 'bottom_'])?>
-      </form>
+        <?=$this->context($this)->renderInContext('search/bulk-action-buttons.phtml', ['idPrefix' => 'bottom_', 'formAttr' => 'search-cart-form'])?>
+      </div>
     </div>
     <? endif; ?>
   </div>
