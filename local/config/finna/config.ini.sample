@@ -389,6 +389,9 @@ maxBooleanClauses = 1024
 timeout = 30
 ; Whether to shuffle Solr URLs when an array of them is defined. Default is false.
 ;shuffle = true
+; List of regexp filters that block invalid searches
+;search_filters[] = "(.[,\s]){30,}"
+;search_filters[] = "[^\s,.\-]{100,}"
 
 ; Enable/Disable searching reserves using the "reserves" Solr core.  When enabling
 ; this feature, you also need to uncomment the relevant line in solr/solr.xml and
@@ -578,7 +581,7 @@ noCoverAvailableImage = images/noCover2.gif
 summarycachetime = 1440
 
 ; How long feed content is cached locally in minutes.
-; Set this to false or comment out to disable caching.
+; Set this to 0 to disable caching.
 feedcachetime = 10
 
 ; You can select from Syndetics, SyndeticsPlus, Amazon Editorial, Amazon, Booksite
