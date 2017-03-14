@@ -79,7 +79,7 @@ class Factory extends \VuFind\Service\Factory
     public static function getCookieManager(ServiceManager $sm)
     {
         if (Console::isConsole()) {
-            return false;
+            return new \VuFind\Cookie\CookieManager([]);
         }
         return parent::getCookieManager($sm);
     }
