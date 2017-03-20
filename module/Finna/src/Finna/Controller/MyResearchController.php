@@ -1143,9 +1143,15 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $tag['tag'];
         };
 
+        $setupCallback = function ($searchRunner, $params, $runningSearchId) {
+            $params->setLimit(1000);
+        };
+
         $userLists = [];
         foreach ($user->getLists() as $list) {
-            $listRecords = $runner->run(['id' => $list->id], 'Favorites');
+            $listRecords = $runner->run(
+                ['id' => $list->id], 'Favorites', $setupCallback
+            );
             $outputList = [
                 'title' => $list->title,
                 'description' => $list->description,
