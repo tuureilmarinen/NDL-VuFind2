@@ -151,6 +151,7 @@ $config = [
         'factories' => [
             'browse' => 'Finna\Controller\Factory::getBrowseController',
             'record' => 'Finna\Controller\Factory::getRecordController',
+            'cart' => 'Finna\Controller\Factory::getCartController',
         ],
         'invokables' => [
             'ajax' => 'Finna\Controller\AjaxController',
@@ -193,13 +194,13 @@ $config = [
             'VuFind\ILSAuthenticator' => 'Finna\Auth\Factory::getILSAuthenticator',
             'VuFind\ILSConnection' => 'Finna\Service\Factory::getILSConnection',
             'VuFind\ILSHoldLogic' => 'Finna\Service\Factory::getILSHoldLogic',
-            'VuFind\DbTablePluginManager' => 'Finna\Service\Factory::getDbTablePluginManager',
             'VuFind\AuthManager' => 'Finna\Auth\Factory::getManager',
             'VuFind\RecordLoader' => 'Finna\Service\Factory::getRecordLoader',
-            'VuFind\SearchResultsPluginManager' => 'Finna\Service\Factory::getSearchResultsPluginManager',
             'VuFind\SearchSpecsReader' => 'Finna\Service\Factory::getSearchSpecsReader',
             'VuFind\SearchTabsHelper' => 'Finna\Service\Factory::getSearchTabsHelper',
             'VuFind\YamlReader' => 'Finna\Service\Factory::getYamlReader',
+            'VuFind\Cart' => 'Finna\Service\Factory::getCart',
+            'VuFind\Mailer' => 'Finna\Mailer\Factory',
         ],
         'invokables' => [
             'VuFind\HierarchicalFacetHelper' => 'Finna\Search\Solr\HierarchicalFacetHelper',
@@ -227,26 +228,25 @@ $config = [
             ],
             'db_table' => [
                 'factories' => [
+                    'comments' => 'Finna\Db\Table\Factory::getComments',
+                    'comments-inappropriate' => 'Finna\Db\Table\Factory::getCommentsInappropriate',
+                    'comments-record' => 'Finna\Db\Table\Factory::getCommentsRecord',
+                    'due-date-reminder' => 'Finna\Db\Table\Factory::getDueDateReminder',
+                    'fee' => 'Finna\Db\Table\Factory::getFee',
                     'resource' => 'Finna\Db\Table\Factory::getResource',
+                    'search' => 'Finna\Db\Table\Factory::getSearch',
+                    'session' => 'Finna\Db\Table\Factory::getSession',
+                    'transaction' => 'Finna\Db\Table\Factory::getTransaction',
                     'user' => 'Finna\Db\Table\Factory::getUser',
                     'userlist' => 'Finna\Db\Table\Factory::getUserList',
-                ],
-                'invokables' => [
-                    'comments' => 'Finna\Db\Table\Comments',
-                    'comments-inappropriate' => 'Finna\Db\Table\CommentsInappropriate',
-                    'comments-record' => 'Finna\Db\Table\CommentsRecord',
-                    'due-date-reminder' => 'Finna\Db\Table\DueDateReminder',
-                    'fee' => 'Finna\Db\Table\Fee',
-                    'search' => 'Finna\Db\Table\Search',
-                    'session' => 'Finna\Db\Table\Session',
-                    'transaction' => 'Finna\Db\Table\Transaction',
-                    'userresource' => 'Finna\Db\Table\UserResource',
+                    'userresource' => 'Finna\Db\Table\Factory::getUserResource',
                 ],
             ],
             'ils_driver' => [
                 'factories' => [
                     'axiellwebservices' => 'Finna\ILS\Driver\Factory::getAxiellWebServices',
                     'demo' => 'Finna\ILS\Driver\Factory::getDemo',
+                    'koharest' => 'Finna\ILS\Driver\Factory::getKohaRest',
                     'multibackend' => 'Finna\ILS\Driver\Factory::getMultiBackend',
                     'voyager' => 'Finna\ILS\Driver\Factory::getVoyager',
                     'voyagerrestful' => 'Finna\ILS\Driver\Factory::getVoyagerRestful'
@@ -279,6 +279,10 @@ $config = [
             ],
             'search_params' => [
                 'abstract_factories' => ['Finna\Search\Params\PluginFactory'],
+                'factories' => [
+                    'solr' => 'Finna\Search\Params\Factory::getSolr',
+                    'combined' => 'Finna\Search\Params\Factory::getCombined',
+                ],
             ],
             'search_results' => [
                 'abstract_factories' => ['Finna\Search\Results\PluginFactory'],
@@ -430,49 +434,5 @@ $routeGenerator = new \VuFind\Route\RouteGenerator();
 $routeGenerator->addRecordRoutes($config, $recordRoutes);
 $routeGenerator->addDynamicRoutes($config, $dynamicRoutes);
 $routeGenerator->addStaticRoutes($config, $staticRoutes);
-
-// API routes
-/*$config['router']['routes']['searchApi'] = [
-    'type' => 'Zend\Mvc\Router\Http\Literal',
-    'verb' => 'get,post,options',
-    'options' => [
-        'route'    => '/api/search',
-        'defaults' => [
-            'controller' => 'SearchApi',
-            'action'     => 'search',
-        ]
-    ],
-];
-$config['router']['routes']['searchApiv1'] = [
-    'type' => 'Zend\Mvc\Router\Http\Literal',
-    'verb' => 'get,post,options',
-    'options' => [
-        'route'    => '/v1/search',
-        'defaults' => [
-            'controller' => 'SearchApi',
-            'action'     => 'search',
-        ]
-    ]
-];
-$config['router']['routes']['searchApiRecord'] = [
-    'type' => 'Zend\Mvc\Router\Http\Literal',
-    'options' => [
-        'route'    => '/api/record',
-        'defaults' => [
-            'controller' => 'SearchApi',
-            'action'     => 'record',
-        ]
-    ]
-];
-$config['router']['routes']['searchApiRecordv1'] = [
-    'type' => 'Zend\Mvc\Router\Http\Literal',
-    'options' => [
-        'route'    => '/v1/record',
-        'defaults' => [
-            'controller' => 'SearchApi',
-            'action'     => 'record',
-        ]
-    ]
-];*/
 
 return $config;

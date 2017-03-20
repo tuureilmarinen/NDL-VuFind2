@@ -72,6 +72,8 @@ class Factory extends \VuFind\Service\Factory
     /**
      * Construct the cookie manager.
      *
+     * Finna: console check and default session name
+     *
      * @param ServiceManager $sm Service manager.
      *
      * @return \VuFind\Cookie\CookieManager
@@ -81,7 +83,29 @@ class Factory extends \VuFind\Service\Factory
         if (Console::isConsole()) {
             return new \VuFind\Cookie\CookieManager([]);
         }
-        return parent::getCookieManager($sm);
+
+        $config = $sm->get('VuFind\Config')->get('config');
+        $path = '/';
+        if (isset($config->Cookies->limit_by_path)
+            && $config->Cookies->limit_by_path
+        ) {
+            $path = $sm->get('Request')->getBasePath();
+            if (empty($path)) {
+                $path = '/';
+            }
+        }
+        $secure = isset($config->Cookies->only_secure)
+            ? $config->Cookies->only_secure
+            : false;
+        $domain = isset($config->Cookies->domain)
+            ? $config->Cookies->domain
+            : null;
+        $session_name = isset($config->Cookies->session_name)
+            ? $config->Cookies->session_name
+            : 'FINNA_SESSION';
+        return new \VuFind\Cookie\CookieManager(
+            $_COOKIE, $path, $domain, $secure, $session_name
+        );
     }
 
     /**
@@ -205,18 +229,6 @@ class Factory extends \VuFind\Service\Factory
     }
 
     /**
-     * Construct the Search\Results Plugin Manager.
-     *
-     * @param ServiceManager $sm Service manager.
-     *
-     * @return \Finna\Search\Results\PluginManager
-     */
-    public static function getSearchResultsPluginManager(ServiceManager $sm)
-    {
-        return static::getGenericPluginManager($sm, 'Search\Results');
-    }
-
-    /**
      * Construct the search specs reader.
      *
      * @param ServiceManager $sm Service manager.
@@ -266,6 +278,26 @@ class Factory extends \VuFind\Service\Factory
     {
         return new \Finna\Config\YamlReader(
             $sm->get('VuFind\CacheManager')
+        );
+    }
+
+    /**
+     * Construct the cart.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return \VuFind\Cart
+     */
+    public static function getCart(ServiceManager $sm)
+    {
+        $config = $sm->get('VuFind\Config')->get('config');
+        $active = isset($config->Site->showBookBag)
+            ? (bool)$config->Site->showBookBag : false;
+        $size = isset($config->Site->bookBagMaxSize)
+            ? $config->Site->bookBagMaxSize : 100;
+        return new \VuFind\Cart(
+            $sm->get('VuFind\RecordLoader'), $sm->get('VuFind\CookieManager'),
+            $size, $active
         );
     }
 }

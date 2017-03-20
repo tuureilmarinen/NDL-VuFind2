@@ -238,9 +238,10 @@ class OnlinePaymentMonitor extends AbstractService
             $report[$t->driver]++;
             $expiredCnt++;
 
-            if (!$this->transactionTable->setTransactionReported(
+            $result = $this->transactionTable->setTransactionReported(
                 $t->transaction_id
-            )) {
+            );
+            if (!$result) {
                 $this->err(
                     '    Failed to update transaction '
                     . $t->transaction_id . 'as reported'
@@ -299,9 +300,10 @@ class OnlinePaymentMonitor extends AbstractService
                 $this->catalog->markFeesAsPaid(
                     $patron, $t->amount, $t->transaction_id
                 );
-                if (!$this->transactionTable->setTransactionRegistered(
+                $result = $this->transactionTable->setTransactionRegistered(
                     $t->transaction_id
-                )) {
+                );
+                if (!$result) {
                     $this->err(
                         '    Failed to update transaction '
                         . $t->transaction_id . 'as registered'
@@ -317,12 +319,13 @@ class OnlinePaymentMonitor extends AbstractService
                 $this->err('      ' . $e->getMessage());
                 $this->logException($e);
 
-                if ($this->transactionTable->setTransactionRegistrationFailed(
+                $result = $this->transactionTable->setTransactionRegistrationFailed(
                     $t->transaction_id, $e->getMessage()
-                )) {
+                );
+                if (!$result) {
                     $this->err(
                         'Error updating transaction ' . $t->transaction_id
-                        . ' status: ' . 'registering failed'
+                        . ' status: registration failed'
                     );
                 }
                 $failedCnt++;
