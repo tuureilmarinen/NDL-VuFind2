@@ -239,9 +239,7 @@ class DueDateReminders extends AbstractService
             $remindLoans = $results['remindLoans'];
             $remindCnt = count($remindLoans);
             $errorCnt = count($errors);
-            //if ($remindCnt || $errorCnt) {
-            // Disable sending errors until we get the mechanism improved
-            if ($remindCnt) {
+            if ($remindCnt || $errorCnt) {
                 $this->msg(
                     "$remindCnt reminders and $errorCnt errors to send for user"
                     . " {$user->username} (id {$user->id})"
