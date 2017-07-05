@@ -57,6 +57,22 @@ class Factory
     }
 
     /**
+     * Factory for SolrAuth record driver.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return SolrAuth
+     */
+    public static function getSolrAuth(ServiceManager $sm)
+    {
+        return new SolrAuth(
+            $sm->getServiceLocator()->get('VuFind\Config')->get('config'),
+            null,
+            $sm->getServiceLocator()->get('VuFind\Config')->get('searches')
+        );
+    }
+
+    /**
      * Factory for SolrDefault record driver.
      *
       * @param ServiceManager $sm Service manager.
@@ -84,6 +100,23 @@ class Factory
     public static function getSolrEad(ServiceManager $sm)
     {
         $driver = new SolrEad(
+            $sm->getServiceLocator()->get('VuFind\Config')->get('config'),
+            null,
+            $sm->getServiceLocator()->get('VuFind\Config')->get('searches')
+        );
+        return $driver;
+    }
+
+    /**
+     * Factory for SolrEad3 record driver.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return SolrEad
+     */
+    public static function getSolrEad3(ServiceManager $sm)
+    {
+        $driver = new SolrEad3(
             $sm->getServiceLocator()->get('VuFind\Config')->get('config'),
             null,
             $sm->getServiceLocator()->get('VuFind\Config')->get('searches')

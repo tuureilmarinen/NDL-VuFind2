@@ -32,7 +32,8 @@ use VuFind\Exception\RecordMissing as RecordMissingException,
     VuFind\RecordDriver\PluginManager as RecordFactory,
     VuFindSearch\Service as SearchService,
     VuFind\Record\Cache,
-    Finna\Db\Table\Resource;
+    Finna\Db\Table\Resource,
+    Zend\Config\Config;
 
 /**
  * Record loader
@@ -48,18 +49,45 @@ use VuFind\Exception\RecordMissing as RecordMissingException,
 class Loader extends \VuFind\Record\Loader
 {
     /**
+     * Datasource configuration 
+     *
+     * @var \Zend\Config\Config
+     */
+    protected $datasources;
+
+    /**
+     * Constructor
+     *
+     * @param SearchService $searchService Search service
+     * @param RecordFactory $recordFactory Record loader
+     * @param Config        $datasources   Datasources configuration
+     * @param Cache         $recordCache   Record Cache
+     */
+    public function __construct(SearchService $searchService,
+        RecordFactory $recordFactory, Config $datasources, Cache $recordCache = null
+    ) {
+        $this->searchService = $searchService;
+        $this->recordFactory = $recordFactory;
+        $this->datasources = $datasources;
+        $this->recordCache = $recordCache;
+    }
+
+    /**
      * Given an ID and record source, load the requested record object.
      *
      * @param string $id              Record ID
      * @param string $source          Record source
      * @param bool   $tolerateMissing Should we load a "Missing" placeholder
      * instead of throwing an exception if the record cannot be found?
+     * @param array  $authorityParams Authority parameters:
+     * - recordSource: Biblio record data source
+     * - authorityType: Authority record type
      *
      * @throws \Exception
      * @return \VuFind\RecordDriver\AbstractBase
      */
     public function load($id, $source = DEFAULT_SEARCH_BACKEND,
-        $tolerateMissing = false
+        $tolerateMissing = false, $authorityParams = null
     ) {
         if ($source == 'MetaLib') {
             if ($tolerateMissing) {
@@ -72,6 +100,15 @@ class Loader extends \VuFind\Record\Loader
                 'Record ' . $source . ':' . $id . ' does not exist.'
             );
         }
+        if ($source == 'SolrAuth') {
+            $recordSource = $authorityParams['recordSource'];
+            $type = $authorityParams['authorityType'];
+            
+            if (isset($this->datasources[$recordSource]['authority'][$type])) {
+                $id = $this->datasources[$recordSource]['authority'][$type] . ".$id";
+            }
+        }
+
         $missingException = false;
         try {
             $result = parent::load($id, $source, $tolerateMissing);

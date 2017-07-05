@@ -644,6 +644,15 @@ label.list-group-item {border-radius:0;font-weight:normal;margin-top:0;padding-l
     }
 }
 
+.record .authority-info {
+    .less-link, .fa-spinner {
+        display: none;
+    }
+    &.loading .fa-spinner {
+        display: inline-block;
+    }
+}
+
 @media(max-width:@screen-xs-max) {
     .cover-wrapper {
         text-align: center;

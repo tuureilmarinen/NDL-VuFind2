@@ -554,6 +554,37 @@ class AjaxController extends \VuFind\Controller\AjaxController
      *
      * @return \Zend\Http\Response
      */
+    public function getAuthorityInfoAjax()
+    {
+        $this->disableSessionWrites();  // avoid session write timing bug
+        $id = $this->params()->fromQuery('id');
+        $source = $this->params()->fromQuery('source');        
+        $type = $this->params()->fromQuery('type');
+
+        if (!$id || !$type) {
+            return $this->output('', self::STATUS_ERROR, 400);
+        }
+
+        $driver = $this->getRecordLoader()->load(
+            $id, 'SolrAuth', false,
+            ['authorityType' => $type, 'recordSource' => $source]
+        );
+        if (!$driver) {
+            return $this->output('', self::STATUS_OK);
+        }
+
+        $html = $this->getViewRenderer()->partial(
+            'ajax/authority.phtml', ['driver' => $driver]
+        );
+
+        return $this->output($html, self::STATUS_OK);
+    }
+    
+    /**
+     * Return record description in JSON format.
+     *
+     * @return \Zend\Http\Response
+     */
     public function getDescriptionAjax()
     {
         $this->disableSessionWrites();  // avoid session write timing bug

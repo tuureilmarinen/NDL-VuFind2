@@ -297,6 +297,7 @@ $config = [
                 'factories' => [
                     'Primo' => 'Finna\Search\Factory\PrimoBackendFactory',
                     'Solr' => 'Finna\Search\Factory\SolrDefaultBackendFactory',
+                    'SolrAuth' => 'Finna\Search\Factory\SolrAuthBackendFactory',
                 ],
                 'aliases' => [
                     // Allow Solr core names to be used as aliases for services:
@@ -334,9 +335,11 @@ $config = [
             'recorddriver' => [
                 'factories' => [
                     'eds' => 'Finna\RecordDriver\Factory::getEDS',
+                    'solrauth' => 'Finna\RecordDriver\Factory::getSolrAuth',
                     'solrdefault' => 'Finna\RecordDriver\Factory::getSolrDefault',
                     'solrmarc' => 'Finna\RecordDriver\Factory::getSolrMarc',
                     'solread' => 'Finna\RecordDriver\Factory::getSolrEad',
+                    'solread3' => 'Finna\RecordDriver\Factory::getSolrEad3',
                     'solrforward' => 'Finna\RecordDriver\Factory::getSolrForward',
                     'solrlido' => 'Finna\RecordDriver\Factory::getSolrLido',
                     'solrqdc' => 'Finna\RecordDriver\Factory::getSolrQdc',

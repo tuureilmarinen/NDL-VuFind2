@@ -225,6 +225,7 @@ class Factory extends \VuFind\Service\Factory
         return new \Finna\Record\Loader(
             $sm->get('VuFind\Search'),
             $sm->get('VuFind\RecordDriverPluginManager'),
+            $sm->get('VuFind\Config')->get('datasources'),
             $sm->get('VuFind\RecordCache')
         );
     }
