@@ -1446,3 +1446,7 @@ enabled = 1
 ; Version of the terms of service. A new acceptance is required if the version is
 ; updated.
 version = 1
+
+; Authority info
+[Authority]
+enabled = true
