@@ -48,20 +48,6 @@ namespace Finna\RecordDriver;
 class SolrEad3 extends SolrEad
 {
     /**
-     * Get authority Id
-     *
-     * @return string
-     */
-    public function getAuthorityId()
-    {
-        $record = $this->getSimpleXML();
-        return isset($record->did->origination->name)
-            ? (string)$record->did->origination->name
-                ->attributes()->identifier
-            : '';
-    }
-
-    /**
      * Get origination
      *
      * @return string
