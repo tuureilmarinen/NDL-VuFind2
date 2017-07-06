@@ -6,7 +6,6 @@
 <? if ($authority && ($authorityLink = $this->authority()->link($url, $data, $authority['id'], $authority['type'], $this->driver->getDatasource()))): ?>
   <?=$authorityLink?>
   <?=$this->authority()->recordInfo()?>
-  <p>daa</p>
 <? else: ?>
   <a href="<?=$url?>"><?=$this->escapeHtml($data)?></a>
 <? endif; ?>
