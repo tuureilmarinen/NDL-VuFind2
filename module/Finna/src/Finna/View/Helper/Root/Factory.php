@@ -49,6 +49,19 @@ class Factory extends \VuFind\View\Helper\Root\Factory
      *
      * @return Autocomplete
      */
+    public static function getAuthority(ServiceManager $sm)
+    {
+        $config = $sm->getServiceLocator()->get('VuFind\Config')->get('config');
+        return new Authority($config);
+    }
+
+    /**
+     * Construct the Autocomplete helper.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return Autocomplete
+     */
     public static function getAutocomplete(ServiceManager $sm)
     {
         $config = $sm->getServiceLocator()->get('VuFind\Config')->get('searches');

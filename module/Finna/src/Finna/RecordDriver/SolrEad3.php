@@ -60,7 +60,7 @@ class SolrEad3 extends SolrEad
     }
 
     /**
-     * Get origination
+     * Get extended origination info
      *
      * @return string
      */

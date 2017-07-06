@@ -649,25 +649,27 @@ a.authority {
     clear: left;
 }
 
-.record .authority {
-    & .fa {
-        vertical-align: middle;
-    }
-    .fa.hide-info {
-        display: none;
-    }
-
-    &.loaded {
-        .authority-info {
+.record {
+    .authority {
+        & .fa {
+            vertical-align: middle;
+        }
+        .fa.hide-info {
             display: none;
         }
-        & .fa-hide-info {
-            display: block;
+        
+        &.loaded {
+            .authority-info {
+                display: none;
+            }
+            & .fa-hide-info {
+                display: block;
+            }
         }
-    }
-    &.loaded.open {
-        .authority-info {
-            display: block;
+        &.loaded.open {
+            .authority-info {
+                display: block;
+            }
         }
     }
     

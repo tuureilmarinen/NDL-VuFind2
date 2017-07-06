@@ -3,6 +3,7 @@ return [
     'extends' => 'bootstrap3',
     'helpers' => [
         'factories' => [
+            'authority' => 'Finna\View\Helper\Root\Factory::getAuthority',
             'authorizationNote' => 'Finna\View\Helper\Root\Factory::getAuthorizationNote',
             'autocomplete' => 'Finna\View\Helper\Root\Factory::getAutocomplete',
             'browse' => 'Finna\View\Helper\Root\Factory::getBrowse',

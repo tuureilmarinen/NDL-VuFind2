@@ -19,7 +19,7 @@
 </table>
 <? endif; ?>
 
-<? // NOTE: fullrecord outputted for debugging purposes.
+<? // NOTE: fullrecord outputted for debugging purposes. ?>
 <? $rawFieldData = $this->driver->getRawData(); ?>
 <? if (!empty($rawFieldData['fullrecord']) && strncmp($rawFieldData['fullrecord'], '<', 1) == 0): ?>
 <pre id="record-data" style="display: none;">

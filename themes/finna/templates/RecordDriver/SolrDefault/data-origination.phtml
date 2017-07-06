@@ -1,2 +1,12 @@
 <? //Don't add START and END comments ?>
-<?=$this->record($this->driver)->getLink('author', $data, ['a-tag' => true, 'authority' => $this->driver->getOriginationExtended()])?>
+<?
+  $url = $this->record($this->driver)->getLink('author', $data);
+  $authority = $this->driver->getOriginationExtended()
+?>
+<? if ($authority && ($authorityLink = $this->authority()->link($url, $data, $authority['id'], $authority['type'], $this->driver->getDatasource()))): ?>
+  <?=$authorityLink?>
+  <?=$this->authority()->recordInfo()?>
+  <p>daa</p>
+<? else: ?>
+  <a href="<?=$url?>"><?=$this->escapeHtml($data)?></a>
+<? endif; ?>

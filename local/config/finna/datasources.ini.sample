@@ -2,11 +2,12 @@
 
 ; Each section name corresponds to the data source id
 ; Available settings are:
-; feedbackEmail   Email address for feedback
-; mainView        Main view directory
-; institution     Institution code
-; disablePatronFunctions    Set true if datasource does not have patron functionality, can be left out
-; authority       Map to authority index sources
+; feedbackEmail           Email address for feedback
+; mainView                Main view directory
+; institution             Institution code
+; disablePatronFunctions  Set true if datasource does not have patron functionality, can be left out
+; authority['<type>']     Map to authority index sources where <type> is authority record type
+;                         (Origination, Personal Name)
 ;
 ; This configuration file is compatible with RecordManager's datasources.ini, so the
 ; same file can be shared by RecordManager and VuFind.
@@ -31,3 +32,4 @@ onlinePayment['productCode'] = 'demo_001'
 onlinePayment['transactionFeeProductCode'] = 'demo_002'
 ; Product code mappings from the fine types to
 onlinePayment['productCodeMappings'] = 'Overdue=demo_003:Long Overdue=demo_004'
+

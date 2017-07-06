@@ -1,16 +1,13 @@
 /*global VuFind,checkSaveStatuses*/
 finna.record = (function() {
     var initAuthorityInfo = function() {
-        $('a.authority').each(function(ind, el) {
+        $('.authority').each(function(ind, el) {
             var element = $(el);
             var content = null;
-            var openBtn = element.find('.fa.show-info');
-            var closeBtn = element.find('.fa.hide-info');
+            var openBtn = element.find('.show-info');
+            var closeBtn = element.find('.hide-info');
             var wrapper = null;
-
-            wrapper = $('<div/>').addClass('wrap authority');
-            wrapper = element.wrap(wrapper).parent();
-            element.removeClass('authority');
+            var info = element.nextAll('.authority-info').first();
 
             openBtn.click(function() {
                 if (!element.data('loaded')) {
@@ -19,34 +16,31 @@ finna.record = (function() {
                     url += '&type=' + data.type + '&source=' + data.source;
                     url += '&id=' + data.authority;
  
-                    var container = $('<div/>').addClass('authority-info');
-                    container.append($('<i/>').addClass('fa fa-spin fa-spinner'));
-                    wrapper.append(container);
-
                     var callback = function(response) {
-                        container.html(
+                        info.html(
                             response.data.length ? response.data : VuFind.translate('error_occurred')
                         );
 
                         closeBtn.click(function() {
-                            wrapper.toggleClass('open', false);
+                            element.toggleClass('open', false);
                             openBtn.show();
                             closeBtn.hide();
-                            
+                            info.toggleClass('hidden', true);
                             return false;
                         });
                         closeBtn.show();
-                        wrapper.toggleClass('loading', false);
-                        wrapper.addClass('loaded');
+                        element.addClass('loaded');
                         element.data('loaded', 1);
                     };
-                    wrapper.toggleClass('open', true);
+                    element.toggleClass('open', true);
 
                     $.getJSON(url, callback).fail(function() {
                         element.hide();
                     });
                 }
-                wrapper.toggleClass('open', true);
+                element.toggleClass('open', true);
+                info.toggleClass('hidden', false);
+
                 openBtn.hide();
                 closeBtn.show();
                 

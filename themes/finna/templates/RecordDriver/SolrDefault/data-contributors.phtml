@@ -1,10 +1,23 @@
 <? //Don't add START and END comments ?>
 <? if (!empty($data)): ?>
   <div class="truncate-field">
-    <? foreach ($data as $author): ?>
-      <?=$this->record($this->driver)->getLink('author', $author['name'], ['a-tag' => true, 'authority' => $author])?><? if (!empty($author['date'])): ?><span class="author-date">, <?=$this->escapeHtml($author['date']) ?></span><? endif; ?><? if (!empty($author['role'])): ?><span class="author-role">, <?=mb_strtolower($this->transEsc('CreatorRoles::' . $author['role']), 'UTF-8') ?></span><? endif; ?>
+    <? foreach ($data as $index => $author): ?>
+    <?
+      $url = $this->record($this->driver)->getLink('author', $author['name']);
+      $label = $this->escapeHtml($author['name']);
+    ?>
+    <? if (empty($author['id']) || !($authorityLink = $this->authority()->link($url, $label, $author['id'], $author['type'], $this->driver->getDatasource()))): ?>
+       <?=($index > 0 ? '<br/> ' : '')?><a href="<?=$url?>"><?=$label?></a>
+    <? else: ?>
+       <?=$authorityLink?>
+    <? endif; ?>
+
+    <? if (!empty($author['date'])): ?><span class="author-date">, <?=$this->escapeHtml($author['date']) ?></span><? endif; ?><? if (!empty($author['role'])): ?><span class="author-role">, <?=mb_strtolower($this->transEsc('CreatorRoles::' . $author['role']), 'UTF-8') ?></span><? endif; ?>
     <? if (!empty($author['description'])): ?>
       <span class="author-description"> (<?=$this->escapeHtml($author['description'])?>)</span>
+    <? endif; ?>
+    <? if ($authorityLink): ?>
+      <?=$this->authority()->recordInfo()?>
     <? endif; ?>
     <? endforeach; ?>
   </div>
