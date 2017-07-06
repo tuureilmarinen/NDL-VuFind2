@@ -50,20 +50,6 @@ class SolrAuth extends \VuFind\RecordDriver\SolrAuth
     use SolrFinna;
 
     /**
-     * Get authority title
-     *
-     * @return string|null
-     */
-    public function getTitle()
-    {
-        $record = $this->getSimpleXML();
-        if (isset($record->cpfDescription->identity->nameEntry->part[0])) {
-            return (string)$record->cpfDescription->identity->nameEntry->part[0];
-        }
-        return null;
-    }
-
-    /**
      * Get the original record as a SimpleXML object
      *
      * @return SimpleXMLElement The record as SimpleXML

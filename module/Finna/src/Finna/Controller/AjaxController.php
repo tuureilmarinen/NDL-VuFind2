@@ -565,11 +565,15 @@ class AjaxController extends \VuFind\Controller\AjaxController
             return $this->output('', self::STATUS_ERROR, 400);
         }
 
-        $driver = $this->getRecordLoader()->load(
-            $id, 'SolrAuth', false,
-            ['authorityType' => $type, 'recordSource' => $source]
-        );
-        if (!$driver) {
+        try {
+            $driver = $this->getRecordLoader()->load(
+                $id, 'SolrAuth', false,
+                ['authorityType' => $type, 'recordSource' => $source]
+            );
+            if (!$driver) {
+                return $this->output('', self::STATUS_OK);
+            }
+        } catch (\Exception $e) {
             return $this->output('', self::STATUS_OK);
         }
 

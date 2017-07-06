@@ -644,12 +644,43 @@ label.list-group-item {border-radius:0;font-weight:normal;margin-top:0;padding-l
     }
 }
 
-.record .authority-info {
-    .less-link, .fa-spinner {
+a.authority {
+    float: left;
+    clear: left;
+}
+
+.record .authority {
+    & .fa {
+        vertical-align: middle;
+    }
+    .fa.hide-info {
         display: none;
     }
-    &.loading .fa-spinner {
-        display: inline-block;
+
+    &.loaded {
+        .authority-info {
+            display: none;
+        }
+        & .fa-hide-info {
+            display: block;
+        }
+    }
+    &.loaded.open {
+        .authority-info {
+            display: block;
+        }
+    }
+    
+    .authority-info {
+        border-top: 1px solid gray;
+        border-bottom: 1px solid gray;
+
+        margin: 10px 0;
+        padding: 10px 0 10px 10px;
+
+        table {
+            margin-bottom: 0;
+        }
     }
 }
 

@@ -338,6 +338,7 @@ $config = [
                     'solrauth' => 'Finna\RecordDriver\Factory::getSolrAuth',
                     'solrdefault' => 'Finna\RecordDriver\Factory::getSolrDefault',
                     'solrmarc' => 'Finna\RecordDriver\Factory::getSolrMarc',
+                    'solreac' => 'Finna\RecordDriver\Factory::getSolrEac',
                     'solread' => 'Finna\RecordDriver\Factory::getSolrEad',
                     'solread3' => 'Finna\RecordDriver\Factory::getSolrEad3',
                     'solrforward' => 'Finna\RecordDriver\Factory::getSolrForward',

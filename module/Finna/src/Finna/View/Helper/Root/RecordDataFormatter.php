@@ -44,6 +44,27 @@ namespace Finna\View\Helper\Root;
 class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
 {
     /**
+    * Filter unnecessary fields from authority records.
+    *
+    * @param array $coreFields data to filter.
+    *
+    * @return array
+    */
+    public function filterAuthorityFields($coreFields)
+    {
+        $include = [
+          'Title', 'Other Titles'
+        ];
+        $fields = [];
+        foreach ($coreFields as $key => $val) {
+            if (in_array($key, $include)) {
+                $fields[$key] = $val;
+            }
+        }
+        return $fields;
+    }
+
+    /**
     * Filter unnecessary fields from Marc records.
     *
     * @param array $coreFields data to filter.
@@ -120,6 +141,26 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     {
         $filter = [
             'Contributors', 'Organisation', 'Inventory ID', 'Online Access',
+            'Access', 'Item Description FWD', 'Published in', 'Published',
+            'Source Collection'
+        ];
+        foreach ($filter as $key) {
+            unset($coreFields[$key]);
+        }
+        return $coreFields;
+    }
+
+    /**
+    * Filter unnecessary fields from EAD3 records.
+    *
+    * @param array $coreFields data to filter.
+    *
+    * @return array
+    */
+    public function filterEAD3Fields($coreFields)
+    {
+        $filter = [
+            'Organisation', 'Inventory ID', 'Online Access',
             'Access', 'Item Description FWD', 'Published in', 'Published',
             'Source Collection'
         ];

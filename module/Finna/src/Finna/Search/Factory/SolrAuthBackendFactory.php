@@ -29,6 +29,8 @@
  * @link     https://vufind.org Main Site
  */
 namespace Finna\Search\Factory;
+use VuFindSearch\Backend\Solr\Response\Json\RecordCollectionFactory;
+use VuFindSearch\Backend\Solr\Connector;
 
 /**
  * Factory for the authority SOLR backend.
@@ -52,4 +54,21 @@ class SolrAuthBackendFactory extends \VuFind\Search\Factory\SolrAuthBackendFacto
         parent::__construct();
         $this->solrCore = 'biblio';
     }
+
+    /**
+     * Create the SOLR backend.
+     *
+     * @param Connector $connector Connector
+     *
+     * @return \VuFindSearch\Backend\Solr\Backend
+     */
+    protected function createBackend(Connector $connector)
+    {
+        $backend = parent::createBackend($connector);
+        $manager = $this->serviceLocator->get('VuFind\RecordDriverPluginManager');
+        $factory = new RecordCollectionFactory([$manager, 'getSolrRecord']);
+        $backend->setRecordCollectionFactory($factory);
+        return $backend;
+    }
+
 }

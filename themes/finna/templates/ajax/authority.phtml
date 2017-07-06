@@ -1,7 +1,29 @@
 <!-- START of: finna - ajax/authority.phtml -->
+<?
+  
+  $formatter = $this->recordDataFormatter();
+  $coreFields = $formatter->getData(
+     $driver, $formatter->filterAuthorityFields($formatter->getDefaults('authority'))
+  );
+?>
+<? var_export($coreFields, true) ?>
+
+<? $description = $driver->getDescription(); ?>
+<? if (!empty($description)): ?>
+<div class="description"><?= $description ?></div>
+<? endif; ?>
+
+<? if (!empty($coreFields)): ?>
+<table class="table table-finna-record record-details">
+  <? foreach ($coreFields as $key => $current): ?>
+  <tr class="<?=$current['context']['class'];?>"><th><?=$this->transEsc($key)?>:</th><td><?=$current['value']?></td></tr>
+  <? endforeach; ?>
+</table>
+<? endif; ?>
+
 <? $rawFieldData = $this->driver->getRawData(); ?>
 <? if (!empty($rawFieldData['fullrecord']) && strncmp($rawFieldData['fullrecord'], '<', 1) == 0): ?>
-<pre id="record-data">
+<pre id="record-data" style="display: none;">
 <?
   $dom = new DOMDocument('1.0');
   $dom->preserveWhiteSpace = false;

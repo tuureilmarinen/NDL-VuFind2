@@ -45,52 +45,20 @@ namespace Finna\RecordDriver;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
-class SolrEad3 extends SolrEad
+class SolrEac extends SolrAuth
 {
     /**
-     * Get authority Id
+     * Get an array of alternative titles for the record.
      *
-     * @return string
+     * @return array
      */
-    public function getAuthorityId()
+    public function getAlternativeTitles()
     {
-        $record = $this->getSimpleXML();
-        return isset($record->did->origination->name)
-            ? (string)$record->did->origination->name
-                ->attributes()->identifier
-            : '';
-    }
-
-    /**
-     * Get origination
-     *
-     * @return string
-     */
-    public function getOrigination()
-    {
-        $record = $this->getSimpleXML();
-        return isset($record->did->origination->name->part)
-            ? (string)$record->did->origination->name->part : '';
-    }
-
-    /**
-     * Get origination
-     *
-     * @return string
-     */
-    public function getOriginationExtended()
-    {
-        $record = $this->getSimpleXML();
-        if (!isset($record->did->origination->name)
-            || !isset($record->did->origination->name->attributes()->identifier)
-        ) {
-            return false;
+        $titles = [];
+        foreach ($this->getSimpleXML()->xpath('cpfDescription/identity/nameEntryParallel/nameEntry') as $name) {
+            $titles[] = $name->part[0];
         }
-        return [
-           'name' => $this->getOrigination(),
-           'id' => $record->did->origination->name->attributes()->identifier,
-           'type' => 'Origination'
-        ];
+        return $titles;
     }
 
     /**
@@ -98,18 +66,39 @@ class SolrEad3 extends SolrEad
      *
      * @return string|null
      */
-    public function getRelations()
+    public function getDescription()
     {
-        $relations = [];
-        foreach ($this->getSimpleXML()->xpath('relations/relation') as $relation) {
-            error_log("rel: " . var_export($relation, true));
-            
-            $relations[] = [
-               'id' => $relation->attributes()->href,
-               'name' => (string)$relation->relationentry,
-               'type' => 'Personal Name'
-            ];
+        $record = $this->getSimpleXML();
+        if (isset($record->cpfDescription->description->biogHist->p)) {
+            return $record->cpfDescription->description->biogHist->p;
         }
-        return $relations;
+        return null;
+    }
+
+    /**
+     * Get authority title
+     *
+     * @return string|null
+     */
+    public function getTitle()
+    {
+        $record = $this->getSimpleXML();
+        if (isset($record->cpfDescription->identity->nameEntry->part[0])) {
+            return (string)$record->cpfDescription->identity->nameEntry->part[0];
+        }
+        return null;
+    }
+
+    /**
+     * Get the original record as a SimpleXML object
+     *
+     * @return SimpleXMLElement The record as SimpleXML
+     */
+    public function getSimpleXML()
+    {
+        if ($this->simpleXML === null) {
+            $this->simpleXML = simplexml_load_string($this->fields['fullrecord']);
+        }
+        return $this->simpleXML;
     }
 }

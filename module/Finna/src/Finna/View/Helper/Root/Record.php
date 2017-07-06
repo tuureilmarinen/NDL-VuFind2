@@ -184,6 +184,31 @@ class Record extends \VuFind\View\Helper\Root\Record
         $result .= $this->getView()->plugin('searchTabs')
             ->getCurrentHiddenFilterParams($this->driver->getSourceIdentifier());
 
+        // Wrap URL in a-tag?
+        if (!empty($params['a-tag'])) {
+            $wrapperParams = [
+               'link' => $result,
+               'label' => $lookfor
+            ];
+            if (isset($params['authority'])
+                && !empty($this->config->Authority->enabled)
+            ) {
+                // Render authority link
+                $authorityParams = $params['authority'];
+                foreach (['id', 'type'] as $required) {
+                    if (!isset($authorityParams[$required])) {
+                        $authorityParams = null;
+                        break;
+                    }
+                }
+                if ($authorityParams) {
+                    $wrapperParams['authority'] = $params['authority'];
+                    $wrapperParams['recordSource'] = $this->driver->getDatasource();
+                }
+            }
+            $result = $this->renderTemplate('link-wrapper.phtml', $wrapperParams);
+        }
+        
         return $result;
     }
 

@@ -53,6 +53,7 @@ class RecordDataFormatterFactory
         $helper = new RecordDataFormatter();
         $helper->setDefaults('core', $this->getDefaultCoreSpecs());
         $helper->setDefaults('description', $this->getDefaultDescriptionSpecs());
+        $helper->setDefaults('authority', $this->getDefaultAuthoritySpecs());
         return $helper;
     }
 
@@ -634,6 +635,17 @@ class RecordDataFormatterFactory
                 'context' => ['class' => 'recordInspection']
             ]
         );
+        $spec->setTemplateLine(
+            'Relations', 'getRelations',
+            'data-contributors.phtml',
+            [
+                'context' => ['class' => 'recordRelations'],
+                'labelFunction' => function () {
+                     return 'Contributors';
+                }
+            ]
+        );
+
         return $spec->getArray();
     }
 
@@ -664,6 +676,19 @@ class RecordDataFormatterFactory
         $spec->setLine('Finding Aid', 'getFindingAids');
         $spec->setLine('Publication_Place', 'getHierarchicalPlaceNames');
         $spec->setTemplateLine('Author Notes', true, 'data-authorNotes.phtml');
+        return $spec->getArray();
+    }
+
+    /**
+     * Get default specifications for displaying data in the description tab.
+     *
+     * @return array
+     */
+    public function getDefaultAuthoritySpecs()
+    {
+        $spec = new \VuFind\View\Helper\Root\RecordDataFormatter\SpecBuilder();
+        $spec->setLine('Title', 'getTitle');
+        $spec->setLine('Other Titles', 'getAlternativeTitles');
         return $spec->getArray();
     }
 }

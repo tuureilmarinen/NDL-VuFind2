@@ -1,45 +1,58 @@
 /*global VuFind,checkSaveStatuses*/
 finna.record = (function() {
     var initAuthorityInfo = function() {
-        var element = $('.authority-info');
-        var content = null;
-        var moreLink = element.find('.more-link');
-        var lessLink = element.find('.less-link');
-        
-        moreLink.click(function() {
-            if (!element.data('loaded')) {
-                var id = element.data('id');
-                var source = element.data('source');
-                var url = VuFind.path + '/AJAX/JSON?method=getAuthorityInfo';
-                url += '&type=origination&source=' + source;
-                url += '&id=' + id;
-                var callback = function(response) {
-                    if (response.data.length > 0) {
-                        $('<div/>').addClass('content').html(response.data).prependTo(element);
-                    }
-                    lessLink.click(function() {
-                        element.data('loaded', 1);
-                        element.find('.content').hide();
-                        
-                        moreLink.show();
-                        lessLink.hide();
-                    });
-                    lessLink.show();
-                    element.toggleClass('loading', false);
-                };
-                element.toggleClass('loading', true);
-                $.getJSON(url, callback).fail(function() {
-                    element.toggleClass('loading', false);
-                    element.hide();
-                });
-                moreLink.hide();
-            } else {
-                element.find('.content').show();
+        $('a.authority').each(function(ind, el) {
+            var element = $(el);
+            var content = null;
+            var openBtn = element.find('.fa.show-info');
+            var closeBtn = element.find('.fa.hide-info');
+            var wrapper = null;
 
-                moreLink.hide();
-                lessLink.show();
-            }
-        });   
+            wrapper = $('<div/>').addClass('wrap authority');
+            wrapper = element.wrap(wrapper).parent();
+            element.removeClass('authority');
+
+            openBtn.click(function() {
+                if (!element.data('loaded')) {
+                    var data = element.data();
+                    var url = VuFind.path + '/AJAX/JSON?method=getAuthorityInfo';
+                    url += '&type=' + data.type + '&source=' + data.source;
+                    url += '&id=' + data.authority;
+ 
+                    var container = $('<div/>').addClass('authority-info');
+                    container.append($('<i/>').addClass('fa fa-spin fa-spinner'));
+                    wrapper.append(container);
+
+                    var callback = function(response) {
+                        container.html(
+                            response.data.length ? response.data : VuFind.translate('error_occurred')
+                        );
+
+                        closeBtn.click(function() {
+                            wrapper.toggleClass('open', false);
+                            openBtn.show();
+                            closeBtn.hide();
+                            
+                            return false;
+                        });
+                        closeBtn.show();
+                        wrapper.toggleClass('loading', false);
+                        wrapper.addClass('loaded');
+                        element.data('loaded', 1);
+                    };
+                    wrapper.toggleClass('open', true);
+
+                    $.getJSON(url, callback).fail(function() {
+                        element.hide();
+                    });
+                }
+                wrapper.toggleClass('open', true);
+                openBtn.hide();
+                closeBtn.show();
+                
+                return false;
+            });   
+        });
     }
 
     var initDescription = function() {
