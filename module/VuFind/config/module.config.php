@@ -539,7 +539,6 @@ $config = [
                     'pazpar2' => 'VuFind\RecordDriver\Factory::getPazpar2',
                     'primo' => 'VuFind\RecordDriver\Factory::getPrimo',
                     'solrauth' => 'VuFind\RecordDriver\Factory::getSolrAuth',
-                    'solrautheac' => 'VuFind\RecordDriver\Factory::getSolrAuthEac',
                     'solrdefault' => 'VuFind\RecordDriver\Factory::getSolrDefault',
                     'solrmarc' => 'VuFind\RecordDriver\Factory::getSolrMarc',
                     'solrmarcremote' => 'VuFind\RecordDriver\Factory::getSolrMarcRemote',
