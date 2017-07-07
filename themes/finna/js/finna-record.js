@@ -3,7 +3,6 @@ finna.record = (function() {
     var initAuthorityInfo = function() {
         $('.authority').each(function(ind, el) {
             var element = $(el);
-            var content = null;
             var openBtn = element.find('.show-info');
             var closeBtn = element.find('.hide-info');
             var info = element.nextAll('.authority-info').first();
