@@ -6,7 +6,6 @@ finna.record = (function() {
             var content = null;
             var openBtn = element.find('.show-info');
             var closeBtn = element.find('.hide-info');
-            var wrapper = null;
             var info = element.nextAll('.authority-info').first();
 
             openBtn.click(function() {

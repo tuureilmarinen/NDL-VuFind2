@@ -70,5 +70,4 @@ class SolrAuthBackendFactory extends \VuFind\Search\Factory\SolrAuthBackendFacto
         $backend->setRecordCollectionFactory($factory);
         return $backend;
     }
-
 }
