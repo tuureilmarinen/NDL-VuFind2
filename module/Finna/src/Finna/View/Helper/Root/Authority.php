@@ -48,14 +48,7 @@ class Authority extends \Zend\View\Helper\AbstractHelper
     /**
      * Constructor
      *
-     * @param string|bool                      $url        Piwik address
-     * (false if disabled)
-     * @param int                              $siteId     Piwik site ID
-     * @param bool                             $customVars Whether to track
-     * additional information in custom variables
-     * @param Zend\Mvc\Router\Http\RouteMatch  $router     Request
-     * @param Zend\Http\PhpEnvironment\Request $request    Request
-     * @param \VuFind\Translator               $translator Translator
+     * @param Zend\Config\Config $config Configuration
      */
     public function __construct($config)
     {
@@ -63,9 +56,13 @@ class Authority extends \Zend\View\Helper\AbstractHelper
     }
 
     /**
-     * Returns Piwik code (if active) or empty string if not.
+     * Returns HTML for a authority link.
      *
-     * @param array $params Parameters
+     * @param string $url          Link URL
+     * @param string $label        Link label
+     * @param string $id           Authority id
+     * @param string $type         Authority type
+     * @param string $recordSource Biblio record datasource
      *
      * @return string|null
      */
@@ -83,6 +80,11 @@ class Authority extends \Zend\View\Helper\AbstractHelper
         );
     }
 
+    /**
+     * Returns HTML for a authority info container on record page.
+     *
+     * @return string
+     */
     public function recordInfo()
     {
         return $this->getView()->render('Helpers/authority-info.phtml');

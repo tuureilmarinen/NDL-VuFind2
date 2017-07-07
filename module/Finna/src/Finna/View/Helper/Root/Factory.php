@@ -43,11 +43,11 @@ use Zend\ServiceManager\ServiceManager;
 class Factory extends \VuFind\View\Helper\Root\Factory
 {
     /**
-     * Construct the Autocomplete helper.
+     * Construct the Authority info helper.
      *
      * @param ServiceManager $sm Service manager.
      *
-     * @return Autocomplete
+     * @return Authority
      */
     public static function getAuthority(ServiceManager $sm)
     {
