@@ -10,7 +10,7 @@ finna.record = (function() {
             var info = element.nextAll('.authority-info').first();
 
             openBtn.click(function() {
-                if (!element.data('loaded')) {
+                if (!element.hasClass('loaded')) {
                     var data = element.data();
                     var url = VuFind.path + '/AJAX/JSON?method=getAuthorityInfo';
                     url += '&type=' + data.type + '&source=' + data.source;
@@ -30,7 +30,6 @@ finna.record = (function() {
                         });
                         closeBtn.show();
                         element.addClass('loaded');
-                        element.data('loaded', 1);
                     };
                     element.toggleClass('open', true);
 

@@ -183,7 +183,7 @@ class Record extends \VuFind\View\Helper\Root\Record
 
         $result .= $this->getView()->plugin('searchTabs')
             ->getCurrentHiddenFilterParams($this->driver->getSourceIdentifier());
-        
+
         return $result;
     }
 
