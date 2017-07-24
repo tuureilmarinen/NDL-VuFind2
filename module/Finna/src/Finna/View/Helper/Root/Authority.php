@@ -62,11 +62,12 @@ class Authority extends \Zend\View\Helper\AbstractHelper
      * @param string $label        Link label
      * @param string $id           Authority id
      * @param string $type         Authority type
+     * @param string $role         Authority role
      * @param string $recordSource Biblio record datasource
      *
      * @return string|null
      */
-    public function link($url, $label, $id, $type, $recordSource)
+    public function link($url, $label, $id, $type, $role, $recordSource)
     {
         if (empty($this->config->Authority->enabled)) {
             return null;
@@ -75,7 +76,8 @@ class Authority extends \Zend\View\Helper\AbstractHelper
         return $this->getView()->render(
             'RecordDriver/SolrDefault/link-authority.phtml', [
                'url' => $url, 'label' => $label,
-               'id' => $id, 'type' => $type, 'recordSource' => $recordSource
+               'id' => $id, 'type' => $type, 'role' => $role,
+               'recordSource' => $recordSource
             ]
         );
     }

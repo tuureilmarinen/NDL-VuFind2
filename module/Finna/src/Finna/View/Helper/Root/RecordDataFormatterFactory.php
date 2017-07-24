@@ -636,10 +636,10 @@ class RecordDataFormatterFactory
             ]
         );
         $spec->setTemplateLine(
-            'Relations', 'getRelations',
+            'Contributors', 'getContributors',
             'data-contributors.phtml',
             [
-                'context' => ['class' => 'recordRelations'],
+                'context' => ['class' => 'recordContributors'],
                 'labelFunction' => function () {
                      return 'Contributors';
                 }

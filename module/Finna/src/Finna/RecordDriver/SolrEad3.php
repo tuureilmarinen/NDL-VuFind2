@@ -80,22 +80,28 @@ class SolrEad3 extends SolrEad
     }
 
     /**
-     * Return description
+     * Return contributors
      *
-     * @return string|null
+     * @return array|null
      */
-    public function getRelations()
+    public function getContributors()
     {
-        $relations = [];
-        foreach ($this->getSimpleXML()->xpath('relations/relation') as $relation) {
-            error_log("rel: " . var_export($relation, true));
-            
-            $relations[] = [
-               'id' => $relation->attributes()->href,
-               'name' => (string)$relation->relationentry,
-               'type' => 'Personal Name'
+        $result = [];
+        foreach ($this->getSimpleXML()->xpath('controlaccess/name') as $name) {
+            $data = [
+               'id' => $name->attributes()->identifier,
+               'type' => 'Personal Name',
+               'role' => $name->attributes()->relator
             ];
+            foreach ($name->xpath('part') as $part) {
+                if ($part->attributes()->localtype == 'Ensisijainen nimi') {
+                    // Assume first entry is the current name
+                    $data['name'] = (string)$part;
+                    $result[] = $data;
+                    break;
+                }
+            }
         }
-        return $relations;
+        return $result;
     }
 }
