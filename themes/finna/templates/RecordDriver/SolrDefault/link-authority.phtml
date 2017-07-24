@@ -1,3 +1,3 @@
-<div class="authority" data-authority="<?=$this->id?>" data-source="<?=$this->recordSource?>" data-type="<?=$this->type?>">
+<div class="authority ajax-content" data-authority="<?=$this->id?>" data-source="<?=$this->recordSource?>" data-type="<?=$this->type?>" data-content-updated-trigger="content-updated">
   <a href="<?=$this->url?>"><?=$this->label?><? if (!empty($this->role)): ?><span class="role">, <?=mb_strtolower($this->transEsc('CreatorRoles::' . $this->role), 'UTF-8') ?></span> <?endif?><i class="show-info fa fa-arrow-down"></i><i class="hide-info fa fa-arrow-up"></i></a>
 </div>

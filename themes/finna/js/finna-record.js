@@ -6,8 +6,20 @@ finna.record = (function() {
             var openBtn = element.find('.show-info');
             var closeBtn = element.find('.hide-info');
             var info = element.nextAll('.authority-info').first();
+            var contentTrigger = element.data('content-updated-trigger');
 
+            var contentUpdatedCallback = function() {
+                if (contentTrigger.length) {
+                    element.trigger(contentTrigger);
+                }
+            };
             openBtn.click(function() {
+                element.toggleClass('open', true);
+                info.toggleClass('hidden', false);
+
+                openBtn.hide();
+                closeBtn.show();
+
                 if (!element.hasClass('loaded')) {
                     var data = element.data();
                     var url = VuFind.path + '/AJAX/JSON?method=getAuthorityInfo';
@@ -28,18 +40,16 @@ finna.record = (function() {
                         });
                         closeBtn.show();
                         element.addClass('loaded');
+                        contentUpdatedCallback();
                     };
                     element.toggleClass('open', true);
 
                     $.getJSON(url, callback).fail(function() {
                         element.hide();
                     });
+                } else {
+                    contentUpdatedCallback();
                 }
-                element.toggleClass('open', true);
-                info.toggleClass('hidden', false);
-
-                openBtn.hide();
-                closeBtn.show();
                 
                 return false;
             });   

@@ -154,20 +154,39 @@ finna.layout = (function() {
                 $('.less-link').hide();
 
                 self.nextAll('.more-link').first().click(function(event) {
-                    $(this).hide();
-                    $(this).next('.less-link').show();
-                    $(this).prev('.truncate-field').css('height', 'auto');
-                    notifyTruncateChange(self);
+                    self.trigger('show-more');
                 });
-
                 self.nextAll('.less-link').first().click(function(event) {
-                    $(this).hide();
-                    $(this).prev('.more-link').show();
-                    $(this).prevAll('.truncate-field').first().css('height', truncation[index]-1+'px');
-                    notifyTruncateChange(self);
+                    self.trigger('show-less');
                 });
                 self.addClass('truncated');
             }
+            // Exit truncated mode when a child event with dynamic content
+            // triggers a content-updated event
+            self.find('.ajax-content').each(function(ind) {
+                var ajaxElement = $(this);
+                var callback = ajaxElement.data('content-updated-trigger');
+                if (callback.length) {
+                    ajaxElement.on(callback, function() {
+                        self.trigger('show-more');
+                    });
+                }
+            });
+            
+            self.on('show-more', function() {
+                self.nextAll('.more-link').first().hide();
+                self.nextAll('.less-link').first().show();
+                self.css('height', 'auto');
+                notifyTruncateChange(self);
+            });
+
+            self.on('show-less', function() {
+                self.nextAll('.more-link').first().show();
+                self.nextAll('.less-link').first().hide();
+                self.css('height', truncation[index]-1+'px');
+                notifyTruncateChange(self);
+            });
+
             notifyTruncateChange(self);
             self.trigger('truncate-done', [self]);
         });
