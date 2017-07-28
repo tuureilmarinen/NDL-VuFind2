@@ -4,18 +4,17 @@
 name = finna_feedback
 title = "Feedback"
 
-email[sender-name] = "Finna-palaute"
-email[sender-email] = "noreply@finna.fi"
-email[subject] = "Palautetta Finnasta"
+email-sender-name = "Finna-palaute"
+email-sender-address = "noreply@finna.fi"
+email-subject = "Palautetta Finnasta"
 
-email[reply-to-email] = email
-email[reply-to-name] = name
+email-reply-to-address = email
+email-reply-to-name = name
 
 
 [category]
 type = select
 active[] = metadata
-;active[] = usability
 label = "feedback_category"
 options[] = "general|feedback_category_general"
 options[] = "metadata|feedback_category_metadata"
@@ -25,8 +24,6 @@ options[] = "technical|feedback_category_technical"
 [comments]
 label = "feedback_message"
 type = textarea
-settings[] = "rows=8"
-settings[] = "cols=50"
 required = true
 
 [url]

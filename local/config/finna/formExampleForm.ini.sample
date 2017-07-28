@@ -28,16 +28,21 @@
 ;
 ;   The following are required when using the email-action (i.e. where the form data is sent as an email):
 ;
-;   email[sender-name]     Sender name
-;   email[sender-email]    Sender email address
-;   email[recipient-name]  Recipient name|<section>
-;   email[recipient-email] Recipient email address. May be an email address or the submitted
-;                          value of the form element specified by <section>. The latter is
-;                          supported only for element types with options (select, multiselect, radio).
-;                          Option values are not exposed as plain text in the UI. 
-;   email[subject] Email   Email subject
-;   email[reply-to-name]   Form element that specifies the Reply-to name of the email message
-;   email[reply-to-email]  Form element that specifies the Reply-to email address of the email message
+;   email-sender-name       Sender name
+;   email-sender-address    Sender email address
+;   email-recipient-name    Recipient name
+;   email-recipient-address Recipient email address|_<section>_
+;                           May be an email address or the submitted
+;                           value of the form element specified by <section>. The latter is
+;                           supported only for element types with options (select, multiselect, radio).
+;                           Option values are not exposed as plain text in the UI.
+;
+;                           Example: use submitted value from form field 'building' as the recipient address:
+;                             email-recipient-address = "_building_"
+;
+;   email-subject           Email subject
+;   email-reply-to-name     Form element that specifies the Reply-to name of the email message
+;   email-reply-to-address  Form element that specifies the Reply-to email address of the email message
 ;
 ; __form_sort__ -section (optional)
 ;
@@ -45,6 +50,12 @@
 ; The position of a form element can be overridden by using
 ; <element-id> = <position> entries.
 ; Re-ordered item pushes its follower(s) forward.
+;
+; Example: move a locally created form element 'building' to the beginning:
+;
+;   [__form_sort__]
+;   building = 0
+;
 ;
 ; All other sections define a form element with the following options:
 ;

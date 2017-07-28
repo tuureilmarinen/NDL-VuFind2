@@ -73,8 +73,18 @@ trait DynamicFormTrait
      */
     protected function getFormEmailSettings($config)
     {
-        return !empty($config['General']['email'])
-            ? $config['General']['email'] : null;
+        $email = [];
+        foreach (
+           ['email-sender-name', 'email-sender-address', 'email-subject',
+            'email-reply-to-address', 'email-reply-to-name',
+            'email-recipient-name', 'email-recipient-address',
+           ] as $key
+        ) {
+            if (!empty($config['General'][$key])) {
+                $email[substr($key, 6)] = $config['General'][$key];
+            }
+        }
+        return $email;
     }
 
     /**
@@ -86,9 +96,9 @@ trait DynamicFormTrait
      */
     protected function getFormRecipientElement($config)
     {
-        if (!empty($config['General']['email']['recipient-email'])) {
-            $recipient = $config['General']['email']['recipient-email'];
-            if ($recipient[0] == '<' && $recipient[strlen($recipient) - 1] == '>') {
+        if (!empty($config['General']['email-recipient-address'])) {
+            $recipient = $config['General']['email-recipient-address'];
+            if ($recipient[0] == '_' && $recipient[strlen($recipient) - 1] == '_') {
                 return substr($recipient, 1, -1);
             }
         }
@@ -132,7 +142,7 @@ trait DynamicFormTrait
                 );
             }
         }
-        
+
         return $elements;
     }
 
@@ -203,8 +213,16 @@ trait DynamicFormTrait
         if ($from < 0 || $to < 0) {
             return $elements;
         }
-        $move = array_splice($elements, $from, 1);
-        array_splice($elements, $to, 0, $move);
-        return $elements;
+
+        $keys = array_keys($elements);
+        $vals = array_values($elements);
+        
+        $move = array_splice($keys, $from, 1);
+        array_splice($keys, $to, 0, $move);
+
+        $move = array_splice($vals, $from, 1);
+        array_splice($vals, $to, 0, $move);
+
+        return array_combine($keys, $vals);
     }
 }

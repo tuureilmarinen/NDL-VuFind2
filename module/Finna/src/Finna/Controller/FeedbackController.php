@@ -106,7 +106,7 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
 
             $config = $this->serviceLocator->get('VuFind\Config')
                 ->get('config');
-            $emailConfig = $formConfig['General']['email'];
+            $emailConfig = $this->getFormEmailSettings($formConfig);
 
             $subject = !empty($emailConfig['subject'])
                 ? $emailConfig['subject'] : 'Your Library';
@@ -121,12 +121,12 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
             if (!$recipientElement = $this->getFormRecipientElement($formConfig)) {
                 $recipientEmail = $config->Site->email;
             }
-            
+
             $recipientName = !empty($emailConfig['recipient-name'])
                 ? $emailConfig['recipient-name'] : 'Your Library';
 
-            $senderEmail = !empty($emailConfig['sender-email'])
-                ? $emailConfig['sender-email'] : 'noreply@vufind.org';
+            $senderEmail = !empty($emailConfig['sender-address'])
+                ? $emailConfig['sender-address'] : 'noreply@vufind.org';
             $senderName = !empty($emailConfig['sender-name'])
                 ? $emailConfig['sender-name'] : 'VuFind Feedback';
 
@@ -196,10 +196,10 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
             $mail->setEncoding('UTF-8');
             $mail->setBody($message);
             $mail->setFrom($senderEmail, $senderName);
-            if (!empty($emailConfig['reply-to-email'])
+            if (!empty($emailConfig['reply-to-address'])
                 && !empty($emailConfig['reply-to-name'])
             ) {
-                $replyEmailField = $emailConfig['reply-to-email'];
+                $replyEmailField = $emailConfig['reply-to-address'];
                 $replyEmail = $this->params()->fromPost(
                     $replyEmailField, $this->params()->fromQuery($replyEmailField)
                 );
