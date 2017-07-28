@@ -1,0 +1,123 @@
+<!-- START of: finna - Helpers/dynamic-form-elements.phtml -->
+      <?
+        foreach ($this->form['elements'] as $key => $el): ?>
+      <?
+        $type = $el['type'];
+
+        // Custom form element, render partial
+        if ($type == 'custom') {
+           if (!empty($el['template'])) {
+              echo $this->partial($el['template'], ['data' => $el]);
+           }
+           continue;
+        }
+      
+        $id = $this->escapeHtmlAttr($el['id']);
+        $name = !empty($el['name']) ? $this->escapeHtmlAttr($el['name']) : $id;
+        $inputType = !empty($el['inputType']) ? $el['inputType'] : null;
+        $tag = null;
+        if (in_array($type, ['select', 'multiselect'])) {
+           $tag = 'select';
+        } else if ($type == 'input') {
+           $tag = 'input';
+        } else if ($type == 'textarea') {
+           $tag = 'textarea';
+        }
+        if (!$tag) {
+           continue;
+        }
+      ?>
+      <div class="row">
+        <div class="form-group col-xs-12">
+          <? if (!empty($el['title'])): ?>
+             <h4 class="control-title"><?= $this->translate($el['title']) ?></h4>              
+          <? endif ?>
+          <? if (!empty($el['help']['pre'])): ?>
+             <p class="info"><?= $this->translate($el['help']['pre']) ?></p>              
+          <? endif ?>
+          <? if (!empty($el['label'])): ?>
+          <label for="<?=$id?>" class="control-label" ><?= (!empty($el['required']) ? '* ' : '') . $this->transEsc($el['label']) ?>:</label>
+          <? endif ?>
+          <?
+            if ($inputType != 'radio') {
+               $attr = 'id="' . $this->escapeHtmlAttr($el['id']) . '"';
+               $attr .=  ' name="' . $name . '"';
+               $attr .= ' class="form-control form-control-' . $this->escapeHtmlAttr($type) . (!empty($inputType) ? ' form-control-' . $this->escapeHtmlAttr($type) . '-' . $this->escapeHtmlAttr($inputType) : '');
+               if (!empty($el['css'])) {
+                  $css = array_map(function($css) { return $this->escapeHtmlAttr($css); }, $el['css']);
+                  $attr .= (' ' . implode(' ', $css));
+               }
+               $attr .= '"';
+
+               if ($type == 'multiselect') {
+                  $attr .= ' multiple';
+               }
+               if (!empty($el['required'])) {
+                  $attr .= ' required aria-required="true"';
+               }
+               if (!empty($el['inputType'])) {
+                  $attr .= (' type="' . $this->escapeHtmlAttr($el['inputType']) . '"');
+                }
+
+               if (!empty($el['placeholder'])) {
+                  $attr .= (' placeholder="' . $this->escapeHtmlAttr($el['placeholder']) . '"');
+               }
+               if ($type != 'textarea' && !empty($el['value'])) {
+                  $attr .= (' value="' . $this->escapeHtmlAttr($el['value']) . '"');
+               }
+               if (!empty($el['settings'])) {
+                  foreach ($el['settings'] as $key => $val) {
+                     $attr .= (" $key" . '="' . $this->escapeHtmlAttr($val) . '"');
+                  }
+               }
+               $html = "<{$tag} {$attr}>";
+
+               if ($type == 'textarea' && !empty($el['value'])) {
+                  $html .= $el['value'];
+               } elseif (in_array($type, ['select', 'multiselect'])) {
+                  foreach ($el['options'] as $option) {
+                     $active =
+                        !empty($el['active'])
+                        && ((is_string($el['active']) && $option['id'] == $el['active'])
+                        || (is_array($el['active']) && in_array($option['id'], $el['active'])));
+                     $html .= '<option value="' . $this->escapeHtmlAttr($option['id']) . '"';
+                     if ($active) {
+                        $html .= ' selected="selected"';
+                     }
+                     $html .= '>' . $this->translate($option['label']) . '</option>';
+                  }
+               }
+               $html .= "</{$tag}>";
+          } else {
+               $html = '<br><label>';
+               foreach ($el['options'] as $option) {
+                  $html .= '<label class="radio-label">';
+                  $html .= '<input type="radio" name="' . $name . '"';
+                  $html .= ' value="' . $this->escapeHtmlAttr($option['id']) . '"';
+                  if (!empty($el['required'])) {
+                     $html .= ' required aria-required="true"';
+                  }
+
+                  $html .= ' class="form-control form-control-input form-control-input-radio';
+                  if (!empty($el['cssClass'])) {
+                     $html .= (' ' . $this->escapeHtmlAttr(implode(' ', $el['cssClass'])));
+                  }
+                  $html .= '"';
+                  if (isset($el['active']) && $option['id'] == $el['active']) {
+                     $html .= ' checked="checked"';
+                  }
+                  $html .= '> ';
+                  $html .= $this->translate($option['label']) . '</label><br>';
+               }
+               $html .= '</label>';
+            }
+          ?>
+          <?=$html?>
+          <? if (!empty($el['help']['post'])): ?>
+             <p class="info"><?= $this->translate($el['help']['post']) ?></p>              
+          <? endif ?>
+        </div>
+      </div>
+      <? endforeach ?>
+      <input type="hidden" name="form-id" value="<?=$this->form['id']?>"/>
+<!-- END of: finna - Helpers/dynamic-form-elements.phtml -->

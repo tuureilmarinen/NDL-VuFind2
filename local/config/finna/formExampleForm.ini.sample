@@ -1,0 +1,144 @@
+; Sample configuration for a dynamic form.
+;
+; The form can be shown on its own page by using the URL
+; /Feedback/Form/<form-id> ($this->url('dynamic-form', ['id' => <form-id>])
+; or by using the view helper 'dynamicForm' ($this->dynamicForm(<form-id>)).
+; The form configuration is read from 'form<form-id>.ini'.
+; If the form needs to use captcha, add <form-id> to config.ini > Captcha > forms.
+;
+; When using the view helper, it is possible to render:
+;   1. the whole form (form tag, submit, elements): $this->dynamicForm(<form-id>)
+;   2. or only the form elements: $this->dynamicForm(<form-id>, ['elementsOnly' => true]).
+; 
+; Each section (apart from 'General', which includes common form options and is required
+; only when the whole form is rendered), represents a form element.
+;
+; Supported options:
+;
+; General-section (required when the whole form is rendered):
+; 
+;   action     Form action as a route name. Default is Feedback/Email,
+;              which sends the form as an email. 
+;   name       Form name
+;   title      Page title and heading
+;   submit     Custom submit button label. Default is 'Submit'.
+;   response   Custom success response message. Default is 'Thank you for your feedback.'
+;   help[pre]  Help message that is shown at the beginning of the form.
+;   help[post] Help message that is shown at the end of the form.
+;
+;   The following are required when using the email-action (i.e. where the form data is sent as an email):
+;
+;   email[sender-name]     Sender name
+;   email[sender-email]    Sender email address
+;   email[recipient-name]  Recipient name|<section>
+;   email[recipient-email] Recipient email address. May be an email address or the submitted
+;                          value of the form element specified by <section>. The latter is
+;                          supported only for element types with options (select, multiselect, radio).
+;                          Option values are not exposed as plain text in the UI. 
+;   email[subject] Email   Email subject
+;   email[reply-to-name]   Form element that specifies the Reply-to name of the email message
+;   email[reply-to-email]  Form element that specifies the Reply-to email address of the email message
+;
+; __form_sort__ -section (optional)
+;
+; By default form elements are displayed in the order defined in the configuration.
+; The position of a form element can be overridden by using
+; <element-id> = <position> entries.
+; Re-ordered item pushes its follower(s) forward.
+;
+; All other sections define a form element with the following options:
+;
+;   disable     <boolean> Should the element be ignored from the form?
+;   label       <string>  Label
+;   type        <string>  Type (select, multiselect, input|<input-type>, textarea, radio or custom)
+;   template    <string>  Matters only with 'custom' type elements. Path to a template
+;                         file that handles the rendering of the element. The template
+;                         can access the element configuration via 'data' variable.
+;   required    <boolean> Required element? Default is false.
+;   value       <string>  Prefilled value. Name and email for a logged-in user
+;                         may be prefilled using "<user.name>" and "<user.email>" as value. (optional)
+;   settings    <array>   Attributes as key=value entries.
+;   css         <array>   CSS classes.
+;   options     <array>   Options (for select, multiselect and radio). Each option
+;                         is defined as "<option>|<label>"
+;   active      <array>   Selected options. Multiselect supports multiple options, select only one.
+;   help[pre]   <string>  Help text shown before the element.
+;   help[post   <string>  Help text shown after the element.
+;   title       <string>  Heading shown before the element.
+;
+;
+
+[General]
+;action = "<custom-action>"
+name = "my-form"
+title = "form-title"
+;submit = "custom-submit-label"
+;response = "custom-success-response"
+
+;help[pre] = "feedback_instructions_html"
+;help[post] = "feedback_instructions_html"
+
+email[sender-name] = "Sender name"
+email[sender-email] = "email@email.com"
+email[recipient-name] = "Recipient name"
+
+email[recipient-email] = "email@email.com"
+email[recipient-email] = "<building>"
+
+email[subject] = "Email subject"
+email[reply-to-email] = email
+email[reply-to-name] = name
+
+
+[building]
+type = select
+label = "feedback_building"
+recipientAddress = true
+options[] = "email@email.com|building_name_1"
+options[] = "email2@email.com|building_name_2"
+
+[category]
+type = multiselect
+active[] = metadata
+active[] = usability
+label = "feedback_category"
+options[] = "general|feedback_category_general"
+options[] = "metadata|feedback_category_metadata"
+options[] = "usability|feedback_category_usability"
+options[] = "technical|feedback_category_technical"
+
+[comments]
+label = "feedback_message"
+type = textarea
+settings[] = "rows=8"
+settings[] = "cols=50"
+required = true
+
+[url]
+type = "input|url"
+label = "feedback_url"
+placeholder = "https://..."
+css[] = "class1"
+css[]= "class2"
+settings[] = "size=50"
+
+[name]
+required = true
+type = input
+settings[] = "size=50"
+label = "feedback_name"
+value = "<user.name>"
+
+[email]
+type = "input|email"
+label = "feedback_email"
+settings[] = "size=50"
+value = "<user.email>"
+
+[yes-or-no]
+type = "input|radio"
+label = "yes-or-no"
+options[] = "1|yes-or-no_1"
+options[] = "0|yes-or-no_0"
+required = true
+

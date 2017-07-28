@@ -1,0 +1,49 @@
+<!-- START of: finna - Helpers/dynamic-form.phtml -->
+<? $title
+      = !empty($this->form['title']) && !$this->translationEmpty($this->form['title'])
+      ? $this->translate($this->form['title']) : null;
+?>
+<div class="row">
+  <div class="col-sm-6">
+    <? if ($title): ?>
+       <? $this->headTitle($title); $this->content()->setHeading($title); ?>
+    <? endif; ?>
+    <br>
+    <?=$this->flashmessages()?>
+    <? if (!empty($this->form['help']['pre']) && !$this->translationEmpty($this->form['help']['pre'])): ?>
+      <p><?=$this->translate($this->form['help']['pre']); ?></p>
+    <? endif; ?>
+    <form class="form <?=$this->escapeHtmlAttr($this->form['id'])?>"<?=!empty($this->form['name']) ? (' name="' . $this->escapeHtmlAttr($this->form['name']) . '"') : '' ?> method="post" action="<?=$this->url(!empty($this->form['action']) ? $this->form['action'] : 'feedback-email')?>">
+      <?= $this->partial('Helpers/dynamic-form-elements.phtml'); ?>
+      
+      <div class="row">
+        <div class="form-group col-xs-12">
+          <?=$this->recaptcha()->html($this->useRecaptcha) ?>
+        </div>
+      </div>
+
+      <div class="clear-col"></div>
+      <? if (!empty($this->form['help']['post']) && !$this->translationEmpty($this->form['help']['post'])): ?>
+      <p><?=$this->translate($this->form['help']['post']); ?></p>
+      <? endif; ?>
+
+      <div class="row">
+        <div class="form-group col-xs-12">
+          <input type="submit" name="submit" class="btn btn-primary" value="<?=$this->transEsc(!empty($this->form['submit']) ? $this->form['submit'] : 'Send')?>" />
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+<?
+  if ($title) {
+     $this->layout()->finnaMainHeader = $this->context($this)->renderInContext(
+         'content/header.phtml',
+         [
+           'heading' => $this->content()->getHeading(),
+         ]
+     );
+  }
+?>
+<!-- END of: finna - Helpers/dynamic-form.phtml -->

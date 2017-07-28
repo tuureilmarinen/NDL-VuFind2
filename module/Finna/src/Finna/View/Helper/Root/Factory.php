@@ -108,6 +108,20 @@ class Factory extends \VuFind\View\Helper\Root\Factory
     }
 
     /**
+     * Construct the Dynamic form helper.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return CheckboxFacetCounts
+     */
+    public static function getDynamicForm(ServiceManager $sm)
+    {
+        $configReader = $sm->getServiceLocator()->get('VuFind\Config');
+        $authManager = $sm->getServiceLocator()->get('VuFind\AuthManager');
+        return new DynamicForm($configReader, $authManager);
+    }
+    
+    /**
      * Construct EDS view helper.
      *
      * @param ServiceManager $sm Service manager.

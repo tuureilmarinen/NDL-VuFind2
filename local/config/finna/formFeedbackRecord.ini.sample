@@ -1,0 +1,17 @@
+[General]
+; Empty since form processing is done in RecordController 
+
+[from]
+type = "input|text"
+label = "email_from"
+required = true
+settings[] = "size=37"
+value = "<user.email>"
+
+[feedback_message]
+label = "feedback_message"
+type = textarea
+settings[] = "rows=3"
+settings[] = "cols=35"
+required = true
+

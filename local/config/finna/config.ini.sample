@@ -1303,12 +1303,6 @@ simpleContainerLinks = true
 ; Set "tab_enabled" to true in order to enable the feedback module.
 [Feedback]
 tab_enabled       = true
-;recipient_email   = "feedback@myuniversity.edu"
-;recipient_name    = "Your Library"
-email_subject     = "Palautetta Finnasta"
-; This is the information for where feedback emails are sent from.
-sender_email      = "noreply@finna.fi"
-sender_name       = "Finna-palaute"
 
 ; Activate Captcha validation on select forms
 ; VuFind will use reCaptcha validation to prevent bots from using certain actions of

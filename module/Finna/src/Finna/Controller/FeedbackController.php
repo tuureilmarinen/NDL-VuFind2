@@ -43,25 +43,33 @@ use Zend\Mail as Mail;
  */
 class FeedbackController extends \VuFind\Controller\FeedbackController
 {
+    use \Finna\Form\DynamicFormTrait;
+
     /**
-     * Receives input from the user and sends an email to the recipient set in
-     * the config.ini
+     * Display Feedback home form.
+     *
+     * @return \Zend\View\Model\ViewModel
+     */
+    public function homeAction()
+    {
+        return $this->forwardTo('Feedback', 'Form');
+    }
+
+    /**
+     * Receives submitted form data and sends an email.
+     * Form configuration is specified in form<form-id>.ini
      *
      * @return void
      */
     public function emailAction()
     {
         $view = $this->createViewModel();
-        $view->useRecaptcha = $this->recaptcha()->active('feedback');
-        $view->category = $this->params()->fromPost(
-            'category', $this->params()->fromQuery('category')
+
+        $formId = $this->params()->fromPost(
+            'form-id', $this->params()->fromQuery('form-id')
         );
-        $view->name = $this->params()->fromPost('name');
-        $view->users_email = $this->params()->fromPost('email');
-        $view->comments = $this->params()->fromPost(
-            'comments', $this->params()->fromQuery('comments')
-        );
-        $view->url = $this->params()->fromPost('url');
+        $view->useRecaptcha = $this->recaptcha()->active($formId);
+        $view->formId = $formId;
         $captcha = $this->params()->fromPost('captcha');
 
         // Support the old captcha mechanism for now
@@ -71,58 +79,141 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
 
         // Process form submission:
         if ($this->formWasSubmitted('submit', $view->useRecaptcha)) {
-            if (empty($view->comments)) {
-                throw new \Exception('Missing data.');
-            }
-            $validator = new \Zend\Validator\EmailAddress();
-            if (!empty($view->users_email)
-                && !$validator->isValid($view->users_email)
-            ) {
-                throw new \Exception('Email address is invalid');
-            }
+            $formConfig = $this->serviceLocator->get('VuFind\Config')
+                ->get("form{$formId}");
 
-            // These settings are set in the feedback section of your config.ini
-            $config = $this->serviceLocator->get('VuFind\Config')
-                ->get('config');
-            $feedback = isset($config->Feedback) ? $config->Feedback : null;
-            $recipient_email = !empty($feedback->recipient_email)
-                ? $feedback->recipient_email : $config->Site->email;
-            $recipient_name = isset($feedback->recipient_name)
-                ? $feedback->recipient_name : 'Your Library';
-            $email_subject = isset($feedback->email_subject)
-                ? $feedback->email_subject : 'VuFind Feedback';
-            $email_subject .= ' (' . $this->translate($view->category) . ')';
-            $sender_email = isset($feedback->sender_email)
-                ? $feedback->sender_email : 'noreply@vufind.org';
-            $sender_name = isset($feedback->sender_name)
-                ? $feedback->sender_name : 'VuFind Feedback';
-            if ($recipient_email == null) {
+            if (!$emailSettings = $this->getFormEmailSettings($formConfig)) {
                 throw new \Exception(
-                    'Feedback Module Error: Recipient Email Unset (see config.ini)'
+                    'Feedback error: '
+                    . " missing form email configuration (form $formId)"
                 );
             }
 
-            $email_message = $this->translate('feedback_category') . ': '
-                . $this->translate($view->category) . "\n";
-            $email_message .= $this->translate('feedback_name') . ': '
-                . ($view->name ? $view->name : '-') . "\n";
-            $email_message .= $this->translate('feedback_email') . ': '
-                . ($view->users_email ? $view->users_email : '-') . "\n";
-            $email_message .= $this->translate('feedback_url') . ': '
-                . ($view->url ? $view->url : '-') . "\n";
-            $email_message .= "\n" . $this->translate('feedback_message') . ":\n";
-            $email_message .= "----------\n\n$view->comments\n\n----------\n";
+            // Check submitted fields
+            foreach ($this->getFormElements($formConfig) as $key => $val) {
+                if (empty($val['required'])) {
+                    continue;
+                }
+                $submitted = $this->params()->fromPost(
+                    $key, $this->params()->fromQuery($key)
+                );
+                if ($submitted === null) {
+                    throw new \Exception(
+                        "Feedback error: missing required field: $key (form $formId)"
+                    );
+                }
+            }
+
+            $config = $this->serviceLocator->get('VuFind\Config')
+                ->get('config');
+            $emailConfig = $formConfig['General']['email'];
+
+            $subject = !empty($emailConfig['subject'])
+                ? $emailConfig['subject'] : 'Your Library';
+            $subject = $this->translate($subject);
+            
+            $siteTitle = $config->Site->title;
+            if (strlen($siteTitle) > 50) {
+                $siteTitle = substr($siteTitle, 0, 50);
+            }
+            $subject .= " ($siteTitle)";
+
+            if (!$recipientElement = $this->getFormRecipientElement($formConfig)) {
+                $recipientEmail = $config->Site->email;
+            }
+            
+            $recipientName = !empty($emailConfig['recipient-name'])
+                ? $emailConfig['recipient-name'] : 'Your Library';
+
+            $senderEmail = !empty($emailConfig['sender-email'])
+                ? $emailConfig['sender-email'] : 'noreply@vufind.org';
+            $senderName = !empty($emailConfig['sender-name'])
+                ? $emailConfig['sender-name'] : 'VuFind Feedback';
+
+            $message = '';
+            foreach ($this->getFormElements($formConfig) as $key => $val) {
+                if ($key == 'General' || !empty($val['disable'])) {
+                    continue;
+                }
+
+                $submitted = $this->params()->fromPost(
+                    $key, $this->params()->fromQuery($key)
+                );
+
+                if ($recipientElement && $key == $recipientElement) {
+                    // Override form recipient address
+                    $optionIds = array_map(
+                        function ($option) {
+                            list($id, $label) = explode('|', $option);
+                            return $id;
+                        }, $val['options']->toArray()
+                    );
+                    $address
+                        = $this->getFormOptionFromHash($submitted, $optionIds);
+                    if ($address) {
+                        $recipientEmail = $address;
+                    }
+                    continue;
+                }
+
+                if (!empty($val['title'])) {
+                    // NOTE: must use double quotes here
+                    $message .= "\r\n";
+                    $message .= $this->translate($val['title']);
+                    $message .= "\r\n";
+                }
+                $message
+                    .= $this->translate(
+                        !empty($val['label']) ? $val['label'] : $key
+                    ) . ': ';
+                $submitted = $this->params()->fromPost(
+                    $key, $this->params()->fromQuery($key)
+                );
+                if ($submitted !== null) {
+                    $message .= $submitted;
+                }
+                // NOTE: must use double quotes here
+                $message .= "\r\n";
+            }
+
+            if ($recipientEmail == null) {
+                throw new \Exception(
+                    'Feedback error: recipient not set in form '
+                    . 'configuration or config.ini'
+                );
+            }
+
+            $validator = new \Zend\Validator\EmailAddress();
+            if (!$validator->isValid($recipientEmail)) {
+                throw new \Exception(
+                    "Feedback error: invalid recipient email: $recipientEmail"
+                );
+            }
+            
 
             // This sets up the email to be sent
             $mail = new Mail\Message();
             $mail->setEncoding('UTF-8');
-            $mail->setBody($email_message);
-            $mail->setFrom($sender_email, $sender_name);
-            if (!empty($view->users_email)) {
-                $mail->setReplyTo($view->users_email, $view->name);
+            $mail->setBody($message);
+            $mail->setFrom($senderEmail, $senderName);
+            if (!empty($emailConfig['reply-to-email'])
+                && !empty($emailConfig['reply-to-name'])
+            ) {
+                $replyEmailField = $emailConfig['reply-to-email'];
+                $replyEmail = $this->params()->fromPost(
+                    $replyEmailField, $this->params()->fromQuery($replyEmailField)
+                );
+
+                $replyNameField = $emailConfig['reply-to-name'];
+                $replyName = $this->params()->fromPost(
+                    $replyNameField, $this->params()->fromQuery($replyNameField)
+                );
+                if ($replyEmail && $replyName) {
+                    $mail->setReplyTo($replyEmail, $replyName);
+                }
             }
-            $mail->addTo($recipient_email, $recipient_name);
-            $mail->setSubject($email_subject);
+            $mail->addTo($recipientEmail, $recipientName);
+            $mail->setSubject($subject);
             $headers = $mail->getHeaders();
             $headers->removeHeader('Content-Type');
             $headers->addHeaderLine('Content-Type', 'text/plain; charset=UTF-8');
@@ -130,11 +221,42 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
             try {
                 $this->serviceLocator->get('VuFind\Mailer')->getTransport()
                     ->send($mail);
+                $params = [];
+                if (!empty($formConfig['General']['response'])) {
+                    $view->response = $formConfig['General']['response'];
+                }
                 $view->setTemplate('feedback/response');
             } catch (\Exception $e) {
                 $this->flashMessenger()->addErrorMessage('feedback_error');
             }
         }
+        return $view;
+    }
+
+    /**
+     * Display dynamic form.
+     *
+     * @return void
+     */
+    public function formAction()
+    {
+        $formId = $this->params()->fromRoute('id', $this->params()->fromQuery('id'));
+        if (!$formId) {
+            $formId = 'FeedbackSite';
+        }
+
+        $view = $this->createViewModel();
+        $view->formId = $formId;
+        $view->useRecaptcha = $this->recaptcha()->active($formId);
+        $view->setTemplate('feedback/form.phtml');
+
+        $configReader = $this->serviceLocator->get('VuFind\Config');
+        if (!$config = $this->getFormConfig($formId, $configReader)) {
+            $this->flashMessenger()->addMessage(
+                "Missing configuration for form '$formId'", 'error'
+            );
+        }
+
         return $view;
     }
 }

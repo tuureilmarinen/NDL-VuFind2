@@ -1,0 +1,46 @@
+;; See formExampleForm.ini for an explanation of the supported configuration options.
+
+[General]
+name = finna_feedback
+title = "Feedback"
+
+email[sender-name] = "Finna-palaute"
+email[sender-email] = "noreply@finna.fi"
+email[subject] = "Palautetta Finnasta"
+
+email[reply-to-email] = email
+email[reply-to-name] = name
+
+
+[category]
+type = select
+active[] = metadata
+;active[] = usability
+label = "feedback_category"
+options[] = "general|feedback_category_general"
+options[] = "metadata|feedback_category_metadata"
+options[] = "usability|feedback_category_usability"
+options[] = "technical|feedback_category_technical"
+
+[comments]
+label = "feedback_message"
+type = textarea
+settings[] = "rows=8"
+settings[] = "cols=50"
+required = true
+
+[url]
+type = "input|url"
+label = "feedback_url"
+settings[] = "placeholder=https://..."
+
+[name]
+required = true
+type = input
+label = "feedback_name"
+value = "<user.name>"
+
+[email]
+type = "input|email"
+label = "feedback_email"
+value = "<user.email>"
