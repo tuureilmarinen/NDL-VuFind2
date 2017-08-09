@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2015-2016.
+ * Copyright (C) The National Library of Finland 2015-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -22,6 +22,7 @@
  * @category VuFind
  * @package  Db_Table
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -35,6 +36,7 @@ use Zend\Config\Config;
  * @category VuFind
  * @package  Db_Table
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -152,6 +154,20 @@ class User extends \VuFind\Db\Table\User
                 $subquery->where->greaterThan('finna_due_date_reminder', 0);
                 $select->where->in('id', $subquery);
                 $select->order('username desc');
+            }
+        );
+    }
+
+    /**
+     * Get users with finna_nickname added.
+     *
+     * @return array
+     */
+    public function getCommentNames()
+    {
+        return $this->select(
+            function (Select $select) {
+                $select->where->IsNotNull(['finna_nickname'])->finna_nickname;
             }
         );
     }

@@ -27,7 +27,6 @@
       $reported = $inappropriateComments && in_array($comment->id, $inappropriateComments);
       $own = $user && $comment->user_id === $user->id;
   ?>
-
   <div class="comment-wrapper comment" data-id="<?=$comment->id?>">
     <div class="name text-right">
       <? if ($comment->finna_rating !== null): ?>
@@ -37,17 +36,8 @@
       <? endif; ?>
       <div class="comment-info">
         <small>
-        <strong>
-        <?=$useri = $this->getTable('User')->getById($comment->user_id);?>
-        <? $usr = $this->escapeHtml(trim($this->userPublicName($comment))); ?>
-        <? if (empty($user->commentname)
-        || $user->commentname === $usr): ?>
-            <?=$usr;?>
-        <? elseif (isset($user->commentname)
-        || $user->commentname !== $usr): ?>
-            <?=$user->commentname; ?>
-        <? endif; ?>
-        </strong>
+          <? $commenter = $this->driver->tryMethod('getUserById', [$comment->user_id]); ?>
+          <strong><?=!empty($commenter['finna_nickname']) ? $commenter['finna_nickname'] : $this->escapeHtml(trim($this->userPublicName($comment))); ?></strong>
           <?=$this->escapeHtml($comment->created)?>
           <? if ($own): ?>
             <a href="#" class="edit"><?=$this->transEsc('Edit')?></a>

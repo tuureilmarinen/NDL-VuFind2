@@ -23,6 +23,7 @@
  * @package  Controller
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -37,6 +38,7 @@ use Zend\Session\SessionManager;
  * @package  Controller
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -517,19 +519,25 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
-            $valid = new \Zend\Validator\InArray();
+            if (!empty($values->finna_nickname)) {
+                $nickname = $this->validateNickname($values->finna_nickname);
+            }
             if (('' === $values->email || $validator->isValid($values->email))
-                || (!empty($values->commentname)
-                && $valid->isValid($values->commentname))
+                && (!empty($nickname['nickname']) && $nickname['valid'])
             ) {
                 $user->email = $values->email;
-                $user->commentname = $values->commentname;
+                $user->finna_nickname = $nickname['nickname'];
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
             } else {
-                $this->flashMessenger()->setNamespace('error')
-                    ->addMessage('profile_update_failed');
+                if (!$nickname['valid']) {
+                    $this->flashMessenger()->setNamespace('error')
+                        ->addMessage('profile_update_failed_nickname');
+                } else {
+                    $this->flashMessenger()->setNamespace('error')
+                        ->addMessage('profile_update_failed');
+                }
             }
         }
 
@@ -1452,5 +1460,36 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         return $userLists;
+    }
+
+    /**
+     * Validate user's nickname.
+     *
+     * @param string $username User nickname
+     *
+     * @return array Validated user input and boolean
+     */
+    protected function validateNickname($username)
+    {
+        $return = [];
+        $names = $this->getTable('User')->getCommentNames();
+        foreach ($names as $name) {
+            $namelist[] = $name->finna_nickname;
+        }
+        $inArray = new \Zend\Validator\inArray(array('haystack' => $namelist));
+        $found = $inArray->isValid($username);
+        if ($found == true) {
+            $return = [
+                'nickname' => '',
+                'valid' => false
+            ];
+        } else {
+            $str = preg_replace('/\s+/', '', $username);
+            $return = [
+                'nickname' => $str,
+                'valid' => true
+            ];
+        }
+        return $return;
     }
 }
