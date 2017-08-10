@@ -308,7 +308,7 @@ class ScheduledAlerts extends AbstractService
                 ->get('VuFind\Search\BackendManager')->get('Solr');
         $viewManager = $this->serviceManager->get('viewmanager');
         $viewModel = $viewManager->getViewModel();
-        $renderer = $viewManager->getRenderer();
+        $renderer = $this->serviceManager->get('ViewRenderer');
         $emailer = $this->serviceManager->get('VuFind\Mailer');
         $translator = $renderer->plugin('translate');
         $urlHelper = $renderer->plugin('url');
@@ -476,7 +476,7 @@ class ScheduledAlerts extends AbstractService
             $unsubscribeUrl .=
                 $urlHelper->__invoke('myresearch-unsubscribe')
                 . "?id={$s->id}&key=$secret";
-
+            $userInstitution = $this->mainConfig->Site->institution;
             $filters = $this->processFilters($params->getFilterList());
             $params = [
                 'records' => $newRecords,
@@ -486,7 +486,8 @@ class ScheduledAlerts extends AbstractService
                     'recordCount' => count($newRecords),
                     'url' => $searchUrl,
                     'unsubscribeUrl' => $unsubscribeUrl,
-                    'filters' => $filters
+                    'filters' => $filters,
+                    'userInstitution' => $userInstitution
                  ]
             ];
 
