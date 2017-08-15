@@ -355,6 +355,7 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
             $partAuthors = [];
             $uniformTitle = '';
             $duration = '';
+            $partTitle = '';
             $subfields = $field->getSubfields();
             foreach ($subfields as $subfield) {
                 $subfieldCode = $subfield->getCode();
@@ -425,7 +426,7 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
             ];
         }
 
-            // Try field 700 if 979 is empty
+        // Try field 700 if 979 is empty
         if (!$componentParts) {
             foreach ($this->getMarcRecord()->getFields('700') as $field) {
                 if (!$field->getSubfield('t')) {
@@ -537,6 +538,51 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
     }
 
     /**
+     * Get an array of host records
+     *
+     * Return an array of arrays with the following keys:
+     *   id
+     *   title
+     *   reference
+     *
+     * @return array
+     */
+    public function getHostRecords()
+    {
+        $result = [];
+        foreach ($this->getMarcRecord()->getFields('773') as $field) {
+            $id = '';
+            $title = '';
+            $reference = '';
+            $subfields = $field->getSubfields();
+            foreach ($subfields as $subfield) {
+                $subfieldCode = $subfield->getCode();
+                switch ($subfieldCode) {
+                case 'w':
+                    $id = $subfield->getData();
+                    break;
+                case 't':
+                    $title = $this->stripTrailingPunctuation(
+                        $subfield->getData(),
+                        '.-'
+                    );
+                    break;
+                case 'g':
+                    $reference = $subfield->getData();
+                    break;
+                }
+            }
+
+            $result[] = [
+                'id' => $id,
+                'title' => $title,
+                'reference' => $reference
+            ];
+        }
+        return $result;
+    }
+
+    /**
      * Get an array of all ISBNs associated with the record (may be empty).
      *
      * @return array
@@ -544,7 +590,7 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
     public function getISBNs()
     {
         $fields = [
-            '020' => ['a'],
+            '020' => ['a', 'q'],
             '773' => ['z'],
         ];
         $isbn = [];
@@ -1549,5 +1595,37 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
             }
         }
         return $results;
+    }
+
+    /**
+     * Get age limit from field 049.
+     *
+     * @return array
+     */
+    public function getAgeLimit()
+    {
+        $results = [];
+        foreach ($this->getMarcRecord()->getFields('049') as $field) {
+            foreach ($field->getSubfields('c') as $note) {
+                $results[] = $this->stripTrailingPunctuation($note->getData());
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Get the map scale from field 255, subfield a.
+     *
+     * @return string
+     */
+    public function getMapScale()
+    {
+        $scale = '';
+        foreach ($this->getMarcRecord()->getFields('255') as $field) {
+            if ($field->getSubfield('a')) {
+                $scale = $field->getSubfield('a')->getData();
+            }
+        }
+        return $this->stripTrailingPunctuation($scale);
     }
 }

@@ -190,6 +190,19 @@ class RecordDataFormatterFactory
             ]
         );
         $spec->setTemplateLine(
+            'Extent', 'getPhysicalDescriptions',
+            'data-escapeHtml.phtml',
+            [
+                'context' => ['class' => 'record-extent']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Age Limit', 'getAgeLimit', 'data-escapeHtml.phtml',
+            [
+                'context' => ['class' => 'recordAgeLimit']
+            ]
+        );
+        $spec->setTemplateLine(
             'Language', 'getLanguages', 'data-transEsc.phtml',
             [
                 'context' => ['class' => 'recordLanguage']
@@ -372,15 +385,60 @@ class RecordDataFormatterFactory
             ]
         );
         $spec->setTemplateLine(
-            'Funding', 'getFunders', 'data-fundingDistribution.phtml',
+            'Funding', 'getFunders', 'data-funding.phtml',
             [
                 'context' => ['class' => 'record-funders']
             ]
         );
         $spec->setTemplateLine(
-            'Distribution', 'getDistributors', 'data-fundingDistribution.phtml',
+            'Distribution', 'getDistributors', 'data-distribution.phtml',
             [
                 'context' => ['class' => 'record-distributors']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Premiere Night', 'getPremiereTime', 'data-escapeHtml.phtml',
+            [
+                'context' => ['class' => 'record-premiere-night']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Premiere Theaters', 'getPremiereTheaters', 'data-escapeHtml.phtml',
+            [
+               'context' =>
+                  ['class' => 'record-premiere-theaters'],
+            ]
+        );
+        $spec->setTemplateLine(
+            'Broadcasting Dates', 'getBroadcastingInfo',
+            'data-broadcasting-dates.phtml',
+            [
+                'context' => ['class' => 'record-broadcasting-info']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Film Festivals', 'getFestivalInfo', 'data-festival-info.phtml',
+            [
+                'context' => ['class' => 'record-festival-info']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Foreign Distribution', 'getForeignDistribution',
+            'data-foreign-distribution.phtml',
+            [
+               'context' => ['class' => 'record-foreign-distribution']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Film Copies', 'getNumberOfCopies', 'data-escapeHtml.phtml',
+            [
+                'context' => ['class' => 'record-film-copies']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Other Screenings', 'getOtherScreenings', 'data-other-screenings.phtml',
+            [
+               'context' => ['class' => 'record-other-screenings']
             ]
         );
         $spec->setTemplateLine(
@@ -603,7 +661,7 @@ class RecordDataFormatterFactory
             ]
         );
         $spec->setTemplateLine(
-            'Lyrics', 'getFirstLyrics', 'data-escapeHtml.phtml',
+            'First Lyrics', 'getFirstLyrics', 'data-escapeHtml.phtml',
             [
                 'context' => ['class' => 'recordFirstLyrics']
             ]
@@ -622,6 +680,28 @@ class RecordDataFormatterFactory
                 'context' => ['class' => 'recordMethodology']
             ]
         );
+        $spec->setTemplateLine(
+            'Inspection Details', 'getInspectionDetails', 'data-inspection.phtml',
+            [
+                'context' => ['class' => 'recordInspection']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Scale', 'getMapScale', 'data-transEsc.phtml',
+            [
+                'context' => ['class' => 'record-map-scale']
+            ]
+        );
+        $spec->setTemplateLine(
+            'Available Online', 'getWebResource', 'data-url.phtml',
+            [
+                'context' => [
+                    'class' => 'record-available-online',
+                    'truncateUrl' => true
+                ]
+            ]
+        );
+
         return $spec->getArray();
     }
 
