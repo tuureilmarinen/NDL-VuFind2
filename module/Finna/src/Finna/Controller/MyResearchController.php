@@ -74,11 +74,21 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      */
     public function catalogloginAction()
     {
-        $result = parent::catalogloginAction();
-
-        if (!($result instanceof \Zend\View\Model\ViewModel)) {
-            return $result;
+        // Connect to the ILS and check if multiple target support is available
+        // Add default driver to result so we can use it on cataloglogin.phtml
+        $targets = null;
+        $defaultTarget = null;
+        $catalog = $this->getILS();
+        if ($catalog->checkCapability('getLoginDrivers')) {
+            $targets = $catalog->getLoginDrivers();
+            $defaultTarget = $catalog->getDefaultLoginDriver();
         }
+        $result = $this->createViewModel(
+            [
+                'targets' => $targets,
+                'defaultdriver' => $defaultTarget
+            ]
+        );
 
         // Try to find the original action and map it to the corresponding menu item
         // since we were probably forwarded here.
@@ -411,6 +421,14 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 && (!$user || $user->id != $list->user_id)
             ) {
                 return $this->redirect()->toRoute('list-page', ['lid' => $list->id]);
+            }
+            if ($list) {
+                $this->rememberCurrentSearchUrl();
+            } else {
+                $memory  = $this->serviceLocator->get('VuFind\Search\Memory');
+                $memory->rememberSearch(
+                    $this->url()->fromRoute('myresearch-favorites')
+                );
             }
         }
 
@@ -847,8 +865,9 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             'id' => 'sort_saved asc',
             'title' => 'sort_title',
             'author' => 'sort_author',
+            'year desc' => 'sort_year',
             'year' => 'sort_year asc',
-            'format' => 'sort_format',
+            'format' => 'sort_format'
         ];
     }
 
@@ -1235,6 +1254,35 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         ];
         $token = new \VuFind\Crypt\HMAC('usersecret');
         return $token->generate(array_keys($data), $data);
+    }
+
+    /**
+     * Append current URL to search memory so that return links on
+     * record pages opened from a list point back to the list page.
+     *
+     * @return void
+     */
+    protected function rememberCurrentSearchUrl()
+    {
+        $memory  = $this->serviceLocator->get('VuFind\Search\Memory');
+        $listUrl = $this->getRequest()->getRequestUri();
+        /*$routeName = $publicView ? 'list-page' : 'userList';
+        $idParamName = $publicView ? 'lid' : 'id';
+        $request = $this->getRequest();
+        $queryParams = [];
+        if ($view = $request->getQuery('view')) {
+            $queryParams['view'] = $view;
+        }
+        if ($page = $request->getQuery('page')) {
+            $queryParams['page'] = $page;
+        }
+        if ($filter = $request->getQuery('filter')) {
+            $queryParams['filter'] = $filter;
+        }
+        $listUrl = $this->url()->fromRoute(
+            $routeName, [$idParamName => $id], ['query' => $queryParams]
+        );*/
+        $memory->rememberSearch($listUrl);
     }
 
     /**
