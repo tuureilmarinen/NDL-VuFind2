@@ -549,7 +549,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
             } else {
-                if (!$nickname['valid']) {
+                if (!$nickname['valid'] && !empty($values->finna_nickname)) {
                     $this->flashMessenger()->setNamespace('error')
                         ->addMessage('profile_update_failed_nickname');
                 } else {
@@ -1532,7 +1532,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 'valid' => false
             ];
         } else {
-            $str = preg_replace('/\s+/', '', $username);
+            $str = preg_replace('/[^A-Öa-ö0-9\-]/', '', $username);
             $return = [
                 'nickname' => $str,
                 'valid' => true
