@@ -537,25 +537,39 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
-            if (!empty($values->finna_nickname)) {
-                $nickname = $this->validateNickname($values->finna_nickname);
-            }
-            if (('' === $values->email || $validator->isValid($values->email))
-                && (!empty($nickname['nickname']) && $nickname['valid'])
-            ) {
-                $user->email = $values->email;
+            $nickname = $this->validateNickname($values->finna_nickname);
+            switch($values) {
+            case $values->finna_nickname !== $user->finna_nickname
+                && $values->email !== $user->email
+                && $validator && $nickname['valid']:
                 $user->finna_nickname = $nickname['nickname'];
+                $user->email = $values->email;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
-            } else {
-                if (!$nickname['valid'] && !empty($values->finna_nickname)) {
-                    $this->flashMessenger()->setNamespace('error')
-                        ->addMessage('profile_update_failed_nickname');
-                } else {
-                    $this->flashMessenger()->setNamespace('error')
-                        ->addMessage('profile_update_failed');
-                }
+                break;
+            case $values->email !== $user->email
+                && $validator->isValid($values->email):
+                $user->email = $values->email;
+                $user->save();
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_email');
+                break;
+            case $values->finna_nickname !== $user->finna_nickname
+                && $nickname['valid']:
+                $user->finna_nickname = $nickname['nickname'];
+                $user->save();
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_nickname');
+                break;
+            case !$nickname['valid'] && $values->email == $user->email:
+                $this->flashMessenger()->setNamespace('error')
+                    ->addMessage('profile_update_failed_nickname');
+                break;
+            case !$validator:
+                $this->flashMessenger()->setNamespace('error')
+                    ->addMessage('profile_update_failed');
+                break;
             }
         }
 

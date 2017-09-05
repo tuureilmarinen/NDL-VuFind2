@@ -22,11 +22,12 @@
             <label for="finna_nickname"><?=$this->transEsc("finna_nickname") ?>:</label>
           </div>
           <div class="my-profile-col">
-            <input id="finna_nickname" type="text" class="form-control" name="finna_nickname" value="<?=$user->finna_nickname?>"/>
+            <? $nickname = !empty($user->finna_nickname) ? $user->finna_nickname : $this->escapeHtml(trim($this->userPublicName($user))); ?>
+            <input id="finna_nickname" type="text" class="form-control" name="finna_nickname" value="<?=$this->escapeHtmlAttr($nickname);?>"/>
           </div>
           <div class="clearfix visible-xs"></div>
           <div class="my-profile-col">
-            <i class="fa fa-info-big"></i>  <?=$this->transEsc("finna_nickname_info") ?>
+            <i class="fa fa-info-big"></i>  <?=$this->transEsc("finna_nickname_info") ?><br/>
           </div>
           <div class="clearfix visible-xs"><br/></div>
           <div>
