@@ -1538,7 +1538,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         foreach ($names as $name) {
             $namelist[] = $name->finna_nickname;
         }
-        $inArray = new \Zend\Validator\inArray(array('haystack' => $namelist));
+        $inArray = new \Zend\Validator\inArray(['haystack' => $namelist]);
         $found = $inArray->isValid($username);
         if ($found == true) {
             $return = [
