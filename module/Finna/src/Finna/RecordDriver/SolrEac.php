@@ -24,7 +24,6 @@
  * @package  RecordDrivers
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
- * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
@@ -37,11 +36,6 @@ namespace Finna\RecordDriver;
  * @package  RecordDrivers
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
- * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
- * @author   Demian Katz <demian.katz@villanova.edu>
- * @author   Eoghan O'Carragain <Eoghan.OCarragan@gmail.com>
- * @author   Luke O'Sullivan <l.osullivan@swansea.ac.uk>
- * @author   Lutz Biedinger <lutz.Biedinger@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
@@ -55,7 +49,8 @@ class SolrEac extends SolrAuth
     public function getAlternativeTitles()
     {
         $titles = [];
-        foreach ($this->getSimpleXML()->xpath('cpfDescription/identity/nameEntryParallel/nameEntry') as $name) {
+        $path = 'cpfDescription/identity/nameEntryParallel/nameEntry';
+        foreach ($this->getSimpleXML()->xpath($path) as $name) {
             $titles[] = $name->part[0];
         }
         return $titles;
@@ -70,7 +65,7 @@ class SolrEac extends SolrAuth
     {
         $record = $this->getSimpleXML();
         if (isset($record->cpfDescription->description->biogHist->p)) {
-            return $record->cpfDescription->description->biogHist->p;
+            return (string)$record->cpfDescription->description->biogHist->p;
         }
         return null;
     }

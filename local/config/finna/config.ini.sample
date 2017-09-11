@@ -1451,4 +1451,6 @@ version = 1
 
 ; Authority info
 [Authority]
-enabled = true
+; Authority support is disabled by default. Uncomment the following line to enable
+; it.
+;enabled = true
