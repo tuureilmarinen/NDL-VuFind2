@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category VuFind
  * @package  RecordDrivers
@@ -560,6 +560,8 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
                 switch ($subfieldCode) {
                 case 'w':
                     $id = $subfield->getData();
+                    // Remove any source in parenthesis to create a working link
+                    $id = preg_replace('/\\(.+\\)/', '', $id);
                     break;
                 case 't':
                     $title = $this->stripTrailingPunctuation(
@@ -590,7 +592,7 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
     public function getISBNs()
     {
         $fields = [
-            '020' => ['a'],
+            '020' => ['a', 'q'],
             '773' => ['z'],
         ];
         $isbn = [];
@@ -1608,6 +1610,41 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
         foreach ($this->getMarcRecord()->getFields('049') as $field) {
             foreach ($field->getSubfields('c') as $note) {
                 $results[] = $this->stripTrailingPunctuation($note->getData());
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Get the map scale from field 255, subfield a.
+     *
+     * @return string
+     */
+    public function getMapScale()
+    {
+        $scale = '';
+        foreach ($this->getMarcRecord()->getFields('255') as $field) {
+            if ($field->getSubfield('a')) {
+                $scale = $field->getSubfield('a')->getData();
+            }
+        }
+        return $this->stripTrailingPunctuation($scale);
+    }
+
+    /**
+     * Get notes from fields 515 & 550, both subfields a.
+     *
+     * @return array
+     */
+    public function getNotes()
+    {
+        $results = [];
+        foreach (['515', '550'] as $fieldCode) {
+            foreach ($this->getMarcRecord()->getFields($fieldCode) as $field) {
+                if ($field->getSubfield('a')) {
+                    $subField = $field->getSubfield('a')->getData();
+                    $results[] = $this->stripTrailingPunctuation($subField);
+                }
             }
         }
         return $results;

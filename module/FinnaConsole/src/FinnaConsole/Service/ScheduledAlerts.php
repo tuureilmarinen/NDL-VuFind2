@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category VuFind
  * @package  Service
@@ -476,7 +476,7 @@ class ScheduledAlerts extends AbstractService
             $unsubscribeUrl .=
                 $urlHelper->__invoke('myresearch-unsubscribe')
                 . "?id={$s->id}&key=$secret";
-
+            $userInstitution = $this->mainConfig->Site->institution;
             $filters = $this->processFilters($params->getFilterList());
             $params = [
                 'records' => $newRecords,
@@ -486,7 +486,8 @@ class ScheduledAlerts extends AbstractService
                     'recordCount' => count($newRecords),
                     'url' => $searchUrl,
                     'unsubscribeUrl' => $unsubscribeUrl,
-                    'filters' => $filters
+                    'filters' => $filters,
+                    'userInstitution' => $userInstitution
                  ]
             ];
 

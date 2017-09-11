@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category VuFind
  * @package  Finna
@@ -163,6 +163,7 @@ $config = [
     'controllers' => [
         'factories' => [
             'ajax' => 'Finna\Controller\Factory::getAjaxController',
+            'barcode' => 'Finna\Controller\Factory::getBarcodeController',
             'browse' => 'Finna\Controller\Factory::getBrowseController',
             'cache' => 'Finna\Controller\Factory::getCacheController',
             'cart' => 'Finna\Controller\Factory::getCartController',
@@ -247,6 +248,7 @@ $config = [
                     'fee' => 'Finna\Db\Row\Factory::getFee',
                     'finnacache' => 'Finna\Db\Row\Factory::getFinnaCache',
                     'privateuser' => 'Finna\Db\Row\Factory::getPrivateUser',
+                    'resource' => 'Finna\Db\Row\Factory::getResource',
                     'search' => 'Finna\Db\Row\Factory::getSearch',
                     'transaction' => 'Finna\Db\Row\Factory::getTransaction',
                     'user' => 'Finna\Db\Row\Factory::getUser',
@@ -296,9 +298,11 @@ $config = [
             ],
             'search_backend' => [
                 'factories' => [
+                    'EDS' => 'Finna\Search\Factory\EdsBackendFactory',
                     'Primo' => 'Finna\Search\Factory\PrimoBackendFactory',
                     'Solr' => 'Finna\Search\Factory\SolrDefaultBackendFactory',
                     'SolrAuth' => 'Finna\Search\Factory\SolrAuthBackendFactory',
+                    'Summon' => 'Finna\Search\Factory\SummonBackendFactory',
                 ],
                 'aliases' => [
                     // Allow Solr core names to be used as aliases for services:
@@ -475,7 +479,8 @@ $staticRoutes = [
     'MyResearch/PurgeCheckoutHistory',
     'OrganisationInfo/Home',
     'PCI/Home', 'PCI/Search', 'PCI/Record',
-    'Search/StreetSearch'
+    'Search/StreetSearch',
+    'Barcode/Show'
 ];
 
 $routeGenerator = new \VuFind\Route\RouteGenerator();
