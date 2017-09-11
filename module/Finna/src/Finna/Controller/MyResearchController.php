@@ -537,39 +537,43 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
+            $email =$validator->isValid($values->email);
             $nickname = $this->validateNickname($values->finna_nickname);
-            switch($values) {
-            case $values->finna_nickname !== $user->finna_nickname
-                && $values->email !== $user->email
-                && $validator && $nickname['valid']:
+            if ($nickname['valid'] && $nickname['nickname'] != $user->finna_nickname
+                && $values->email == $user->email
+            ) {
+                $user->finna_nickname = $nickname['nickname'];
+                $user->save();
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_nickname');
+            } else if ($nickname['valid']
+                && $nickname['nickname'] != $user->finna_nickname && $email
+                && ($values->email !== $user->email || '' === $values->email)
+            ) {
                 $user->finna_nickname = $nickname['nickname'];
                 $user->email = $values->email;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
-                break;
-            case $values->email !== $user->email
-                && $validator->isValid($values->email):
+            } else if ($values->email !== $user->email
+                && $email
+            ) {
                 $user->email = $values->email;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_email');
-                break;
-            case $values->finna_nickname !== $user->finna_nickname
-                && $nickname['valid']:
-                $user->finna_nickname = $nickname['nickname'];
-                $user->save();
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_nickname');
-                break;
-            case !$nickname['valid'] && $values->email == $user->email:
+            } else if (!$nickname['valid'] && $email
+            ) {
                 $this->flashMessenger()->setNamespace('error')
                     ->addMessage('profile_update_failed_nickname');
-                break;
-            case !$validator:
+
+            } else if (!$email && $nickname['nickname'] == $user->finna_nickname
+            ) {
+                $this->flashMessenger()->setNamespace('error')
+                    ->addMessage('profile_update_failed_email');
+            } else {
                 $this->flashMessenger()->setNamespace('error')
                     ->addMessage('profile_update_failed');
-                break;
             }
         }
 
@@ -1529,27 +1533,22 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      *
      * @param string $username User nickname
      *
-     * @return array Validated user input and boolean
+     * @return array Validated user input and info if valid
      */
     protected function validateNickname($username)
     {
         $return = [];
-        $names = $this->getTable('User')->getCommentNames();
-        foreach ($names as $name) {
-            $namelist[] = $name->finna_nickname;
-        }
-        $inArray = new \Zend\Validator\inArray(['haystack' => $namelist]);
-        $found = $inArray->isValid($username);
-        if ($found == true) {
+        $clean = preg_replace('/[^A-Öa-ö0-9\-]/', '', $username);
+        $names = $this->getTable('User')->checkNickname($clean);
+        if ($names) {
             $return = [
-                'nickname' => '',
-                'valid' => false
+                'nickname' => $clean,
+                'valid' => true
             ];
         } else {
-            $str = preg_replace('/[^A-Öa-ö0-9\-]/', '', $username);
             $return = [
-                'nickname' => $str,
-                'valid' => true
+                'nickname' => $clean,
+                'valid' => false
             ];
         }
         return $return;

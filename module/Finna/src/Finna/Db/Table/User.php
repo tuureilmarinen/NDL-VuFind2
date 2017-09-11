@@ -159,16 +159,15 @@ class User extends \VuFind\Db\Table\User
     }
 
     /**
-     * Get users with finna_nickname added.
+     * Check if user input for nickname exists already in database.
      *
-     * @return array
+     * @param string $nickname to compare with user table finna_nickname
+     *
+     * @return boolean
      */
-    public function getCommentNames()
+    public function checkNickname($nickname)
     {
-        return $this->select(
-            function (Select $select) {
-                $select->where->IsNotNull(['finna_nickname'])->finna_nickname;
-            }
-        );
+        $row = $this->select(['finna_nickname' => $nickname])->current();
+        return empty($row) ? true : false;
     }
 }
