@@ -630,7 +630,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
     {
         $this->disableSessionWrites();  // avoid session write timing bug
         $id = $this->params()->fromQuery('id');
-        $source = $this->params()->fromQuery('source');        
+        $source = $this->params()->fromQuery('source');
         $type = $this->params()->fromQuery('type');
 
         if (!$id || !$type) {
@@ -655,7 +655,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
 
         return $this->output($html, self::STATUS_OK);
     }
-    
+
     /**
      * Return record description in JSON format.
      *
