@@ -537,7 +537,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
-            $email =$validator->isValid($values->email);
+            $email = $validator->isValid($values->email);
             $nickname = $this->validateNickname($values->finna_nickname);
             if ($nickname['valid'] && $nickname['nickname'] != $user->finna_nickname
                 && $values->email == $user->email
