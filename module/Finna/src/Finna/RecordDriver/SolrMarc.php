@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category VuFind
  * @package  RecordDrivers
@@ -1516,20 +1516,34 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
     }
 
     /**
-     * Get an composition information from field 382.
+     * Get composition information from field 382.
      *
-     * @return string
+     * @return array
      */
-    public function getMusicComposition()
+    public function getMusicCompositions()
     {
-        $result = '';
+        $results = [];
         foreach ($this->getMarcRecord()->getFields('382') as $field) {
-            foreach ($field->getSubfields('a') as $compose) {
-                $subfields[] = $this->stripTrailingPunctuation($compose->getData());
+            $matches = ['a','b','n','d','p','v'];
+            $allSubfields = $field->getSubfields();
+            if (!empty($allSubfields)) {
+                $subfields = [];
+                foreach ($allSubfields as $currentSubfield) {
+                    if (in_array($currentSubfield->getCode(), $matches)) {
+                        $data = trim($currentSubfield->getData());
+                        if (!empty($data)) {
+                            if ($currentSubfield->getCode() == 'n') {
+                                $subfields[] = "($data)";
+                            } else {
+                                $subfields[] = $data;
+                            }
+                        }
+                    }
+                }
+                $results[] = implode(' ', $subfields);
             }
-            $result = implode(', ', $subfields);
         }
-        return $result;
+        return $results;
     }
 
     /**
@@ -1629,5 +1643,56 @@ class SolrMarc extends \VuFind\RecordDriver\SolrMarc
             }
         }
         return $this->stripTrailingPunctuation($scale);
+    }
+
+    /**
+     * Get notes from fields 515 & 550, both subfields a.
+     *
+     * @return array
+     */
+    public function getNotes()
+    {
+        $results = [];
+        foreach (['515', '550'] as $fieldCode) {
+            foreach ($this->getMarcRecord()->getFields($fieldCode) as $field) {
+                if ($field->getSubfield('a')) {
+                    $subField = $field->getSubfield('a')->getData();
+                    $results[] = $this->stripTrailingPunctuation($subField);
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Get associated place of the record from field 370.
+     *
+     * @return array
+     */
+    public function getAssociatedPlace()
+    {
+        $results = [];
+        foreach ($this->getMarcRecord()->getFields('370') as $field) {
+            foreach ($field->getSubfields('g') as $place) {
+                $results[] = $this->stripTrailingPunctuation($place->getData());
+            }
+        }
+        return $results > 1 ? implode(', ', $results) : $results[0];
+    }
+
+    /**
+     * Get time period of creation from field 388.
+     *
+     * @return array
+     */
+    public function getTimePeriodOfCreation()
+    {
+        $results = [];
+        foreach ($this->getMarcRecord()->getFields('388') as $field) {
+            foreach ($field->getSubfields('a') as $time) {
+                $results[] = $this->stripTrailingPunctuation($time->getData());
+            }
+        }
+        return $results > 1 ? implode(', ', $results) : $results[0];
     }
 }
