@@ -568,7 +568,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 && $user->email == $values->email
             ) {
                 $this->flashMessenger()->setNamespace('info')
-                ->addMessage('profile_update_none');
+                    ->addMessage('profile_update_none');
             } else {
                 $user->finna_nickname = $nickname;
                 $user->email = $values->email;
