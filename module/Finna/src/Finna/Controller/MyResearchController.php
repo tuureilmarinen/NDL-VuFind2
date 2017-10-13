@@ -1551,22 +1551,5 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         } else {
             return;
         }
-        //$return = [];
-        //$clean = preg_replace(
-        //    '/^(?!.*__.*)[a-öA-Ö]([a-öA-Ö0-9_]{0,23})[a-öA-Ö]$/', '', $username
-        //);
-        //$names = $this->getTable('User')->checkNickname($username);
-        //if ($names) {
-        //    $return = [
-        //        'nickname' => $clean,
-        //        'valid' => true
-        //    ];
-        //} else {
-        //    $return = [
-        //        'nickname' => $clean,
-        //        'valid' => false
-        //    ];
-        //}
-        //return $return;
     }
 }
