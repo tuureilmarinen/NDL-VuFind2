@@ -1533,6 +1533,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      * Validate user's nickname.
      *
      * @param string $username User nickname
+     * @param string $userid   User id
      *
      * @return mixed Validated username or false if not valid
      */
