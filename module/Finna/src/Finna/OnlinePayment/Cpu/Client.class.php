@@ -77,12 +77,6 @@ class Cpu_Client
                 );
             }
 
-			if (false === $json_data) {
-				throw new \Exception(
-					'Could not convert request to JSON: ' . var_export($data, true)
-				);
-			}
-
             $options = ['maxredirects' => 1];
             $headers = [
                'Content-Type' => 'application/json; charset=utf-8'
