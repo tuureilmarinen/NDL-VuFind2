@@ -1443,7 +1443,6 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 'title' => $title,
                 'duedate' => $loan->loanDueDate,
                 'renewable' => (string)$loan->loanStatus->isRenewable == 'yes',
-                'barcode' => $loan->id,
                 'message' => $message,
                 'renewalCount' => max(
                     [0,
@@ -1620,7 +1619,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 'position' =>
                    isset($reservation->queueNo) ? $reservation->queueNo : '-',
                 'available' => $reservation->reservationStatus == 'fetchable',
-                'modifiable' => $reservation->reservationStatus == 'active',
+                'is_editable' => $reservation->isEditable == 'yes',
                 'item_id' => '',
                 'requestId' => $reservation->id,
                 'volume' =>
@@ -1634,6 +1633,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                    && $this->requestGroupsEnabled
                    ? "axiell_$reservation->reservationType"
                    : '',
+                'in_transit' => $reservation->reservationStatus == 'inTransit',
                 'title' => $title
             ];
             $holdsList[] = $hold;
@@ -1662,7 +1662,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
      */
     public function getRenewDetails($checkoutDetails)
     {
-        return $checkoutDetails['barcode'];
+        return $checkoutDetails['item_id'];
     }
 
     /**
