@@ -257,7 +257,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         $this->debug("getMyProfile called");
 
         $username = $patron['cat_username'];
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
 
         $userCached = $this->getCachedData($cacheKey);
 
@@ -1158,7 +1158,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
      */
     public function patronLogin($username, $password)
     {
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $function = 'getPatronInformation';
         $functionResult = 'patronInformationResult';
         $conf = [
@@ -1443,7 +1443,6 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 'title' => $title,
                 'duedate' => $loan->loanDueDate,
                 'renewable' => (string)$loan->loanStatus->isRenewable == 'yes',
-                'barcode' => $loan->id,
                 'message' => $message,
                 'renewalCount' => max(
                     [0,
@@ -1620,7 +1619,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 'position' =>
                    isset($reservation->queueNo) ? $reservation->queueNo : '-',
                 'available' => $reservation->reservationStatus == 'fetchable',
-                'modifiable' => $reservation->reservationStatus == 'active',
+                'is_editable' => $reservation->isEditable == 'yes',
                 'item_id' => '',
                 'requestId' => $reservation->id,
                 'volume' =>
@@ -1634,6 +1633,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                    && $this->requestGroupsEnabled
                    ? "axiell_$reservation->reservationType"
                    : '',
+                'in_transit' => $reservation->reservationStatus == 'inTransit',
                 'title' => $title
             ];
             $holdsList[] = $hold;
@@ -1662,7 +1662,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
      */
     public function getRenewDetails($checkoutDetails)
     {
-        return $checkoutDetails['barcode'];
+        return $checkoutDetails['item_id'];
     }
 
     /**
@@ -1795,7 +1795,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         // Clear patron cache
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $this->putCachedData($cacheKey, null);
 
         return [
@@ -1866,7 +1866,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         // Clear patron cache
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $this->putCachedData($cacheKey, null);
 
         return [
@@ -1918,7 +1918,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         // Clear patron cache
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $this->putCachedData($cacheKey, null);
 
         return  [
@@ -2346,6 +2346,18 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     protected function getCacheKey($suffix = null)
     {
         return 'AxiellWebServices' . '-' . md5($this->arenaMember . "|$suffix");
+    }
+
+    /**
+     * Get a cache key for patron information
+     *
+     * @param string $username Unique username
+     *
+     * @return string
+     */
+    protected function getPatronCacheKey($username)
+    {
+        return "patron|$username|" . $this->getTranslatorLocale();
     }
 
     /**
