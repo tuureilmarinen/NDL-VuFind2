@@ -27,8 +27,8 @@
  * @link     http://vufind.org   Main Site
  */
 namespace Finna\Db\Table;
+
 use Zend\Db\Sql\Select;
-use Zend\Config\Config;
 
 /**
  * Table Definition for user

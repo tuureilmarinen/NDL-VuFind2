@@ -59,11 +59,9 @@ class CPU extends BaseHandler
      * @param string             $finesUrl       Return URL to MyResearch/Fines
      * @param string             $ajaxUrl        Base URL for AJAX-actions
      * @param \Finna\Db\Row\User $user           User
-     * @param string             $patronId       Patron's catalog username
-     * (e.g. barcode)
+     * @param array              $patron         Patron information
      * @param string             $driver         Patron MultiBackend ILS source
-     * @param int                $amount         Amount
-     * (excluding transaction fee)
+     * @param int                $amount         Amount (excluding transaction fee)
      * @param int                $transactionFee Transaction fee
      * @param array              $fines          Fines data
      * @param string             $currency       Currency
@@ -72,9 +70,10 @@ class CPU extends BaseHandler
      * @return false on error, otherwise redirects to payment handler.
      */
     public function startPayment(
-        $finesUrl, $ajaxUrl, $user, $patronId, $driver, $amount, $transactionFee,
+        $finesUrl, $ajaxUrl, $user, $patron, $driver, $amount, $transactionFee,
         $fines, $currency, $statusParam
     ) {
+        $patronId = $patron['cat_username'];
         $orderNumber = $this->generateTransactionId($patronId);
 
         $returnUrl
@@ -145,7 +144,9 @@ class CPU extends BaseHandler
                 }
             }
             if (!empty($fine['title'])) {
-                $fineDesc .= ' (' . $fine['title'] . ')';
+                $fineDesc .= ' ('
+                    . substr($fine['title'], 0, 100 - 4 - strlen($fineDesc))
+                . ')';
             }
             $code = isset($productCodeMappings[$fineType])
                 ? $productCodeMappings[$fineType] : $productCode;
@@ -169,7 +170,12 @@ class CPU extends BaseHandler
             return false;
         }
 
-        $response = $module->sendPayment($payment);
+        try {
+            $response = $module->sendPayment($payment);
+        } catch (\Exception $e) {
+            $this->handleCPUError('exception sending payment: ' . $e->getMessage());
+            return false;
+        }
         if (!$response) {
             $this->handleCPUError('error sending payment');
             return false;
@@ -333,7 +339,7 @@ class CPU extends BaseHandler
                'transactionId' => $orderNum,
                'amount' => $data->amount
             ];
-        } else if ($status === self::STATUS_CANCELLED) {
+        } elseif ($status === self::STATUS_CANCELLED) {
             $this->setTransactionCancelled($orderNum);
             return 'online_payment_canceled';
         } else {
@@ -363,7 +369,6 @@ class CPU extends BaseHandler
         $module->setHttpService($this->http);
         $module->setLogger($this->logger);
         return $module;
-
     }
 
     /**

@@ -27,7 +27,9 @@
  * @link     http://vufind.org   Main Site
  */
 namespace Finna;
-use Zend\Console\Console, Zend\Mvc\MvcEvent, Zend\Mvc\Router\Http\RouteMatch;
+
+use Zend\Console\Console;
+use Zend\Mvc\MvcEvent;
 
 /**
  * VuFind Bootstrapper
@@ -120,6 +122,10 @@ class Bootstrapper
                 $response->setContent('Forbidden');
                 $event->stopPropagation(true);
                 return $response;
+            }
+            $delay = defined('VUFIND_CRAWLER_DELAY') ? VUFIND_CRAWLER_DELAY : 1;
+            if ($delay) {
+                sleep($delay);
             }
         };
 

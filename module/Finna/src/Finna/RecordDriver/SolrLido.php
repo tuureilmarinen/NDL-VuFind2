@@ -73,7 +73,9 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
         $searchSettings = null, $dateConverter = null
     ) {
         parent::__construct($mainConfig, $recordConfig, $searchSettings);
+
         $this->dateConverter = $dateConverter;
+        $this->searchSettings = $searchSettings;
     }
 
     /**
@@ -212,8 +214,7 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
             foreach ($resourceSet->resourceRepresentation as $representation) {
                 $attributes = $representation->attributes();
                 $size = '';
-                switch ($attributes->type)
-                {
+                switch ($attributes->type) {
                 case 'image_thumb':
                 case 'thumb':
                     $size = 'small';
@@ -373,7 +374,7 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
                 // Use displayMaterialTech (default)
                 $materials[] = (string)$node->eventMaterialsTech
                     ->displayMaterialsTech;
-            } else if (isset($node->eventMaterialsTech->materialsTech)) {
+            } elseif (isset($node->eventMaterialsTech->materialsTech)) {
                 // display label not defined, build from materialsTech
                 $materials = [];
                 foreach ($node->xpath('eventMaterialsTech/materialsTech')
@@ -386,7 +387,7 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
                             if (isset($attributes->label)) {
                                 // Musketti
                                 $label = $attributes->label;
-                            } else if (isset($materialsTech->extentMaterialsTech)) {
+                            } elseif (isset($materialsTech->extentMaterialsTech)) {
                                 // Siiri
                                 $label = $materialsTech->extentMaterialsTech;
                             }
@@ -447,9 +448,6 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
                     if ($appellationValue !== '') {
                         $role = isset($actor->actorInRole->roleActor->term)
                             ? $actor->actorInRole->roleActor->term : '';
-                        if ($role == 'valokuvaaja' || 'kuvaaja') {
-                            continue;
-                        }
                         $actors[] = [
                             'name' => $appellationValue,
                             'role' => $role
@@ -510,7 +508,7 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
                         $results[] = (string)$classificationNode->term;
                     }
                 }
-            } else if ($term == 'arkeologinen kohde') {
+            } elseif ($term == 'arkeologinen kohde') {
                 foreach ($node->classificationWrap->classification->term
                     as $classificationNode
                 ) {
@@ -599,7 +597,6 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
                 $results[] = (string)$node . ' (' . $label . ')';
             } else {
                 $results[] = (string)$node;
-
             }
         }
         return $results;
@@ -933,51 +930,29 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
             $this->simpleXML = simplexml_load_string($this->fields['fullrecord']);
         }
         return $this->simpleXML;
-
     }
 
     /**
-    * Get the photographer information if availabe
-    *
-    * @return string $result Photographer's name and / or time when picture taken.
-    */
+     * Get the photographer information if availabe
+     *
+     * @return string Photographer's name and / or time when picture taken.
+     */
     public function getPhotoInfo()
     {
-        $photographer = '';
-        $time = '';
+        $time = $photographer = '';
         foreach ($this->getSimpleXML()->xpath(
             'lido/administrativeMetadata/resourceWrap/resourceSet'
         ) as $nodes) {
             $resourceTerm = (string)$nodes->resourceType->term;
-            if ('alokuva' === strtolower($resourceTerm)) {
+            if (strpos($resourceTerm, 'alokuva')) {
                 $photographer = !empty($nodes->resourceDescription)
                  ? (string)$nodes->resourceDescription : '';
                 $time = !empty($nodes->resourceDateTaken->displayDate)
                  ? (string)$nodes->resourceDateTaken->displayDate : '';
-                break;
             }
         }
-        if (empty($result)) {
-            foreach ($this->getSimpleXML()->xpath(
-                '/lidoWrap/lido/descriptiveMetadata/eventWrap/eventSet/event'
-            ) as $event) {
-                foreach ($event->eventActor as $actor) {
-                    $term = strtolower($actor->actorInRole->roleActor->term);
-                    if ('valokuvaaja' === $term || 'kuvaaja' === $term) {
-                        $photographer = (string)$actor->actorInRole->actor
-                            ->nameActorSet->appellationValue;
-                        $time = !empty($event->eventDate->displayDate)
-                            ? (string)$event->eventDate->displayDate : '';
-                        break;
-                    }
-                }
-            }
-        }
-        if ('' !== trim($time) || '' !== trim($photographer)) {
-            return !empty($time) ?
-                $photographer . ' ' . $time : $photographer;
-        }
-        return '';
+        return !empty($time) ?
+        $photographer . ' ' . $time : $photographer;
     }
 
     /**
@@ -997,7 +972,7 @@ class SolrLido extends \VuFind\RecordDriver\SolrDefault
             $checkTitle = str_replace([',', ';'], ' ', (string)$subject) != $title;
             foreach ($subject as $attributes) {
                 $label = $attributes->attributes()->label;
-                if (($label == 'aihe' || $label == null)  && $checkTitle) {
+                if (($label == 'aihe' || $label == null) && $checkTitle) {
                     $results[] = (string)$subject;
                 }
             }

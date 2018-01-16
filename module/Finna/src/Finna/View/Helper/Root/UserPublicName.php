@@ -55,12 +55,11 @@ class UserPublicName extends \Zend\View\Helper\AbstractHelper
                 && $user->finna_nickname == null
             ) {
                 $username = substr($user->email, 0, $pos);
-            } else if ($user->firstname && $user->lastname
-                && $user->finna_nickname == null
+            } elseif ($user->finna_nickname != null
             ) {
-                $username = "$user->firstname $user->lastname";
-            } else if ($user->finna_nickname != null) {
                 $username = $user->finna_nickname;
+            } else {
+                $username = "$user->firstname $user->lastname";
             }
         }
         return $username;

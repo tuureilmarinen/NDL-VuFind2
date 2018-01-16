@@ -26,6 +26,7 @@
  * @link     http://vufind.org/wiki/vufind2:building_a_related_record_module Wiki
  */
 namespace Finna\Related;
+
 use Zend\ServiceManager\ServiceManager;
 
 /**
@@ -41,6 +42,18 @@ use Zend\ServiceManager\ServiceManager;
  */
 class Factory
 {
+    /**
+     * Factory for Nothing module.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return Similar
+     */
+    public static function getNothing(ServiceManager $sm)
+    {
+        return new Nothing();
+    }
+
     /**
      * Factory for SimilarDeferred module.
      *
