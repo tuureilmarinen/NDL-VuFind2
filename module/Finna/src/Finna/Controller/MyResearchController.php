@@ -1534,7 +1534,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             $check = $this->getTable('User')->getByNickname($username, $userid);
             if ($check == true) {
                 return $username;
-            } else if ($check == $username) {
+            } elseif ($check == $username) {
                 return $check;
             } else {
                 return false;
