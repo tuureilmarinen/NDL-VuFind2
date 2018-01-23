@@ -164,7 +164,7 @@ class User extends \VuFind\Db\Table\User
      * @param string $nickname to compare with user table column finna_nickname
      * @param int    $userid   User id to help identify user's own nickname
      *
-     * @return mixed boolean if available nickname, false if taken and string if
+     * @return mixed true if available nickname, false if taken and string if
      * taken and it is user's own current nickname
      */
     public function getByNickname($nickname, $userid)

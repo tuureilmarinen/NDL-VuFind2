@@ -507,32 +507,32 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $this->flashMessenger()->addErrorMessage(
                     'profile_update_invalid_nickname'
                 );
-            } else if ($nickname == $values->finna_nickname && !$email) {
+            } elseif ($nickname == $values->finna_nickname && !$email) {
                 $this->flashMessenger()->addErrorMessage(
                     'profile_update_invalid_email'
                 );
-            } else if ($nickname != false && $values->email == $user->email
+            } elseif (!$nickname && !$email) {
+                $this->flashMessenger()->setNamespace('error')
+                    ->addMessage('profile_update_failed');
+            } elseif ($nickname == $user->finna_nickname
+                && $user->email == $values->email
+            ) {
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_none');
+            } elseif ($nickname != false && $values->email == $user->email
                 && $nickname != $user->finna_nickname
             ) {
                 $user->finna_nickname = $nickname;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_nickname');
-            } else if ($email && $user->email != $values->email
+            } elseif ($email && $user->email != $values->email
                 && $nickname == $user->finna_nickname
             ) {
                 $user->email = $values->email;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_email');
-            } else if (!$nickname && !$email) {
-                $this->flashMessenger()->setNamespace('error')
-                    ->addMessage('profile_update_failed');
-            } else if ($nickname == $user->finna_nickname
-                && $user->email == $values->email
-            ) {
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_none');
             } else {
                 $user->finna_nickname = $nickname;
                 $user->email = $values->email;
