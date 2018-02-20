@@ -26,6 +26,7 @@
  * @link     http://vufind.org/wiki/vufind2:developer_manual Wiki
  */
 namespace Finna\View\Helper\Root;
+
 use VuFind\Search\Results\PluginManager;
 use VuFind\Search\SearchTabsHelper;
 use Zend\View\Helper\Url;
@@ -133,10 +134,13 @@ class SearchTabs extends \VuFind\View\Helper\Root\SearchTabs
                 $dropParams = [
                    'page', 'set', 'sort'
                 ];
-                $dateRangeField = $this->results->get($this->activeSearchClass)
-                    ->getParams()->getDateRangeSearchField();
-                if ($dateRangeField) {
-                    $dropParams[] = "{$dateRangeField}_type";
+                $resultParams = $this->results->get($this->activeSearchClass)
+                    ->getParams();
+                if (is_callable([$resultParams, 'getDateRangeSearchField'])) {
+                    $dateRangeField = $resultParams->getDateRangeSearchField();
+                    if ($dateRangeField) {
+                        $dropParams[] = "{$dateRangeField}_type";
+                    }
                 }
                 $params = array_diff_key($params, array_flip($dropParams));
 
@@ -221,7 +225,7 @@ class SearchTabs extends \VuFind\View\Helper\Root\SearchTabs
         $targetParams->setBasicSearch($query, $handler);
 
         // Clone the active query so that we can remove active filters
-        $currentResults = clone($this->getView()->results);
+        $currentResults = clone $this->getView()->results;
         $currentParams = $currentResults->getParams();
 
         // Remove current filters

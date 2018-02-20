@@ -44,12 +44,12 @@ namespace Finna\View\Helper\Root;
 class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
 {
     /**
-    * Filter unnecessary fields from authority records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from authority records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterAuthorityFields($coreFields)
     {
         $include = [
@@ -65,12 +65,12 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     }
 
     /**
-    * Filter unnecessary fields from Marc records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from Marc records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterMarcFields($coreFields)
     {
         $filter = [
@@ -87,12 +87,12 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     }
 
     /**
-    * Filter unnecessary fields from Lido records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from Lido records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterLidoFields($coreFields)
     {
         $filter = [
@@ -109,12 +109,12 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     }
 
     /**
-    * Filter unnecessary fields from QDC records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from QDC records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterQDCFields($coreFields)
     {
         $filter = [
@@ -131,12 +131,12 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     }
 
     /**
-    * Filter unnecessary fields from EAD records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from EAD records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterEADFields($coreFields)
     {
         $filter = [
@@ -151,12 +151,12 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     }
 
     /**
-    * Filter unnecessary fields from EAD3 records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from EAD3 records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterEAD3Fields($coreFields)
     {
         $filter = [
@@ -171,12 +171,12 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     }
 
     /**
-    * Filter unnecessary fields from Primo records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from Primo records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterPrimoFields($coreFields)
     {
         $filter = [
@@ -191,19 +191,20 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
     }
 
     /**
-    * Filter unnecessary fields from Primo records.
-    *
-    * @param array $coreFields data to filter.
-    *
-    * @return array
-    */
+     * Filter unnecessary fields from Primo records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
     public function filterForwardFields($coreFields)
     {
         $filter = [
             'Publisher','Edition', 'Extent', 'Archive', 'Published in', 'Format',
             'Other Titles', 'Presenters', 'Organisation', 'Published', 'Authors',
             'Access Restrictions', 'Item Description', 'Publisher',
-            'Source Collection'
+            'Source Collection', 'Music', 'Distribution', 'Press Reviews',
+            'Inspection Details', 'Item Description FWD', 'Description'
         ];
         foreach ($filter as $key) {
             unset($coreFields[$key]);

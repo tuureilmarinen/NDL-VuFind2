@@ -186,6 +186,7 @@ $config = [
             'primo' => 'Finna\Controller\Factory::getPrimoController',
             'primorecord' => 'Finna\Controller\Factory::getPrimorecordController',
             'record' => 'Finna\Controller\Factory::getRecordController',
+            'collection' => 'Finna\Controller\Factory::getCollectionController',
             'search' => 'Finna\Controller\Factory::getSearchController',
             'listpage' => 'Finna\Controller\Factory::getListController',
         ],
@@ -211,6 +212,7 @@ $config = [
             'VuFind\ILSHoldLogic' => 'Finna\Service\Factory::getILSHoldLogic',
             'VuFind\AuthManager' => 'Finna\Auth\Factory::getManager',
             'VuFind\RecordLoader' => 'Finna\Service\Factory::getRecordLoader',
+            'VuFind\Role\PermissionManager' => 'Finna\Service\Factory::getPermissionManager',
             'VuFind\SearchSpecsReader' => 'Finna\Service\Factory::getSearchSpecsReader',
             'VuFind\SearchTabsHelper' => 'Finna\Service\Factory::getSearchTabsHelper',
             'VuFind\YamlReader' => 'Finna\Service\Factory::getYamlReader',
@@ -278,6 +280,7 @@ $config = [
                     'demo' => 'Finna\ILS\Driver\Factory::getDemo',
                     'gemini' => 'Finna\ILS\Driver\Factory::getGemini',
                     'koharest' => 'Finna\ILS\Driver\Factory::getKohaRest',
+                    'mikromarc' => 'Finna\ILS\Driver\Factory::getMikromarc',
                     'multibackend' => 'Finna\ILS\Driver\Factory::getMultiBackend',
                     'sierrarest' => 'Finna\ILS\Driver\Factory::getSierraRest',
                     'voyager' => 'Finna\ILS\Driver\Factory::getVoyager',
@@ -356,6 +359,14 @@ $config = [
                 'factories' => [
                     'map' => 'Finna\RecordTab\Factory::getMap',
                     'usercomments' => 'Finna\RecordTab\Factory::getUserComments',
+                    'pressreview' => 'Finna\RecordTab\Factory::getPressReviews',
+                    'music' => 'Finna\RecordTab\Factory::getMusic',
+                    'distribution' => 'Finna\RecordTab\Factory::getDistribution',
+                    'inspectionDetails' =>
+                        'Finna\RecordTab\Factory::getInspectionDetails',
+                    'descriptionFWD' => 'Finna\RecordTab\Factory::getDescriptionFWD',
+                    'itemdescription' =>
+                        'Finna\RecordTab\Factory::getItemDescription',
                 ],
                 'invokables' => [
                     'componentparts' => 'Finna\RecordTab\ComponentParts',
@@ -363,8 +374,20 @@ $config = [
             ],
             'related' => [
                 'factories' => [
+                    'nothing' => 'Finna\Related\Factory::getNothing',
                     'similardeferred' => 'Finna\Related\Factory::getSimilarDeferred',
                 ],
+            ],
+        ],
+        'recorddriver_collection_tabs' => [
+            'Finna\RecordDriver\SolrEad' => [
+                'tabs' => [
+                    'CollectionList' => 'CollectionList',
+                    'HierarchyTree' => 'CollectionHierarchyTree',
+                    'UserComments' => 'UserComments',
+                    'Details' => 'StaffViewArray',
+                ],
+                'defaultTab' => null,
             ],
         ],
         'recorddriver_tabs' => [
@@ -416,6 +439,12 @@ $config = [
                     'UserComments' => 'UserComments',
                     'Reviews' => 'Reviews',
                     'Map' => 'Map',
+                    'PressReview' => 'PressReview',
+                    'Music' => 'Music',
+                    'Distribution' => 'Distribution',
+                    'InspectionDetails' => 'InspectionDetails',
+                    'DescriptionFWD' => 'DescriptionFWD',
+                    'ItemDescription' => 'ItemDescription',
                     'Details' => 'StaffViewArray',
                 ],
                 'defaultTab' => null,
@@ -473,14 +502,14 @@ $dynamicRoutes = [
 
 $staticRoutes = [
     'Browse/Database', 'Browse/Journal',
+    'LibraryCards/Recover', 'LibraryCards/ResetPassword',
     'LocationService/Modal',
     'MetaLib/Home', 'MetaLib/Search', 'MetaLib/Advanced',
-    'MyResearch/CheckoutHistory', 'MyResearch/SaveCustomOrder',
-    'MyResearch/PurgeCheckoutHistory',
+    'MyResearch/SaveCustomOrder', 'MyResearch/PurgeHistoricLoans',
     'OrganisationInfo/Home',
     'PCI/Home', 'PCI/Search', 'PCI/Record',
     'Search/StreetSearch',
-    'Barcode/Show'
+    'Barcode/Show', 'Search/MapFacet'
 ];
 
 $routeGenerator = new \VuFind\Route\RouteGenerator();

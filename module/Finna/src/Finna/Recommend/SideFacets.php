@@ -28,6 +28,7 @@
  * @link     http://vufind.org/wiki/vufind2:recommendation_modules Wiki
  */
 namespace Finna\Recommend;
+
 use VuFind\I18n\Translator\TranslatorAwareInterface;
 use VuFind\I18n\Translator\TranslatorAwareTrait;
 
@@ -50,6 +51,13 @@ class SideFacets extends \VuFind\Recommend\SideFacets
     use SideFacetsTrait;
 
     /**
+     * Geographic facet setting
+     *
+     * @var array
+     */
+    protected $geographicFacets = [];
+
+    /**
      * Store the configuration of the recommendation module.
      *
      * @param string $settings Settings from searches.ini.
@@ -62,8 +70,6 @@ class SideFacets extends \VuFind\Recommend\SideFacets
 
         // Parse the additional settings:
         $settings = explode(':', $settings);
-        $mainSection = empty($settings[0]) ? 'Results' : $settings[0];
-        $checkboxSection = isset($settings[1]) ? $settings[1] : false;
         $iniName = isset($settings[2]) ? $settings[2] : 'facets';
 
         // Load the desired facet information...
@@ -73,5 +79,75 @@ class SideFacets extends \VuFind\Recommend\SideFacets
         if (isset($config->SpecialFacets->newItems)) {
             $this->newItemsFacets = $config->SpecialFacets->newItems->toArray();
         }
+        if (isset($config->SpecialFacets->finna_geographic)) {
+            $this->geographicFacets
+                = $config->SpecialFacets->finna_geographic->toArray();
+        }
+    }
+
+    /**
+     * Called at the end of the Search Params objects' initFromRequest() method.
+     * This method is responsible for setting search parameters needed by the
+     * recommendation module and for reading any existing search parameters that may
+     * be needed.
+     *
+     * @param \VuFind\Search\Base\Params $params  Search parameter object
+     * @param \Zend\StdLib\Parameters    $request Parameter object representing user
+     * request.
+     *
+     * @return void
+     */
+    public function init($params, $request)
+    {
+        // If facets are listed in $params, enable only them
+        $facets = null !== $request ? $request->get('enabledFacets') : [];
+        if (!empty($facets)) {
+            $filterFunc = function ($key) use ($facets) {
+                return in_array($key, $facets);
+            };
+
+            $this->mainFacets = array_filter(
+                $this->mainFacets,
+                $filterFunc,
+                ARRAY_FILTER_USE_KEY
+            );
+            $this->checkboxFacets = array_filter(
+                $this->checkboxFacets,
+                $filterFunc,
+                ARRAY_FILTER_USE_KEY
+            );
+        }
+        return parent::init($params, $request);
+    }
+
+    /**
+     * Remove unlisted facets from main facets
+     *
+     * @param array $facets Facets to keep
+     *
+     * @return void
+     */
+    public function filterMainFacets($facets)
+    {
+        $this->mainFacets = array_filter(
+            $this->mainFacets,
+            function ($value, $key) {
+                return in_array($key, $facets);
+            }
+        );
+    }
+
+    /**
+     * Get an array of geographic facets.
+     *
+     * @return array
+     */
+    public function getGeographicFacets()
+    {
+        return array_map(
+            function ($geo_facet) {
+                return explode(':', $geo_facet)[0];
+            }, $this->geographicFacets
+        );
     }
 }

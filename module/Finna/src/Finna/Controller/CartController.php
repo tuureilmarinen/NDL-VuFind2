@@ -28,8 +28,8 @@
  * @link     https://vufind.org Main Site
  */
 namespace Finna\Controller;
-use VuFind\Exception\Forbidden as ForbiddenException,
-    VuFind\Exception\Mail as MailException;
+
+use VuFind\Exception\Mail as MailException;
 
 /**
  * Book Bag / Bulk Action Controller
@@ -47,7 +47,7 @@ class CartController extends \VuFind\Controller\CartController
      * Email a batch of records.
      *
      * @return mixed
-    */
+     */
     public function emailAction()
     {
         // Retrieve ID list:
@@ -96,6 +96,30 @@ class CartController extends \VuFind\Controller\CartController
                 return $this->redirectToSource('success', 'bulk_email_success');
             } catch (MailException $e) {
                 $this->flashMessenger()->addMessage($e->getMessage(), 'error');
+            }
+        }
+        return $view;
+    }
+
+    /**
+     * Create a new ViewModel to use as an email form.
+     *
+     * @param array  $params         Parameters to pass to ViewModel constructor.
+     * @param string $defaultSubject Default subject line to use.
+     *
+     * @return ViewModel
+     */
+    protected function createEmailViewModel($params = null, $defaultSubject = null)
+    {
+        $view = parent::createEmailViewModel($params, $defaultSubject);
+        if (empty($view->message)) {
+            $listName = $this->params()->fromPost('listName', '');
+            $listDescription = $this->params()->fromPost('listDescription', '');
+
+            if ($listName && $listDescription) {
+                $view->message = "$listName\n\n$listDescription";
+            } else {
+                $view->message = "$listName$listDescription";
             }
         }
         return $view;

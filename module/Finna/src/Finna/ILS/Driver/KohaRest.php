@@ -26,6 +26,7 @@
  * @link     https://vufind.org/wiki/development:plugins:ils_drivers Wiki
  */
 namespace Finna\ILS\Driver;
+
 use VuFind\Exception\ILS as ILSException;
 
 /**
@@ -175,61 +176,64 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
             }
         }
 
-        $messagingPrefs = $this->makeRequest(
+        list($resultCode, $messagingPrefs) = $this->makeRequest(
             ['v1', 'messaging_preferences'],
             ['borrowernumber' => $patron['id']],
             'GET',
-            $patron
+            $patron,
+            true
         );
 
         $messagingSettings = [];
-        foreach ($messagingPrefs as $type => $prefs) {
-            $typeName = isset($this->messagingPrefTypeMap[$type])
-                ? $this->messagingPrefTypeMap[$type] : $type;
-            $settings = [
-                'type' => $typeName
-            ];
-            if (isset($prefs['transport_types'])) {
-                $settings['settings']['transport_types'] = [
-                    'type' => 'multiselect'
+        if (200 === $resultCode) {
+            foreach ($messagingPrefs as $type => $prefs) {
+                $typeName = isset($this->messagingPrefTypeMap[$type])
+                    ? $this->messagingPrefTypeMap[$type] : $type;
+                $settings = [
+                    'type' => $typeName
                 ];
-                foreach ($prefs['transport_types'] as $key => $active) {
-                    $settings['settings']['transport_types']['options'][$key] = [
-                        'active' => $active
+                if (isset($prefs['transport_types'])) {
+                    $settings['settings']['transport_types'] = [
+                        'type' => 'multiselect'
+                    ];
+                    foreach ($prefs['transport_types'] as $key => $active) {
+                        $settings['settings']['transport_types']['options'][$key] = [
+                            'active' => $active
+                        ];
+                    }
+                }
+                if (isset($prefs['digest'])) {
+                    $settings['settings']['digest'] = [
+                        'type' => 'boolean',
+                        'name' => '',
+                        'active' => $prefs['digest']['value'],
+                        'readonly' => !$prefs['digest']['configurable']
                     ];
                 }
-            }
-            if (isset($prefs['digest'])) {
-                $settings['settings']['digest'] = [
-                    'type' => 'boolean',
-                    'name' => '',
-                    'active' => $prefs['digest']['value'],
-                    'readonly' => !$prefs['digest']['configurable']
-                ];
-            }
-            if (isset($prefs['days_in_advance'])
-                && ($prefs['days_in_advance']['configurable']
-                || null !== $prefs['days_in_advance']['value'])
-            ) {
-                $options = [];
-                for ($i = 0; $i <= 30; $i++) {
-                    $options[$i] = [
-                        'name' => $this->translate(
-                            1 === $i ? 'messaging_settings_num_of_days'
-                            : 'messaging_settings_num_of_days_plural',
-                            ['%%days%%' => $i]
-                        ),
-                        'active' => $i == $prefs['days_in_advance']['value']
+                if (isset($prefs['days_in_advance'])
+                    && ($prefs['days_in_advance']['configurable']
+                    || null !== $prefs['days_in_advance']['value'])
+                ) {
+                    $options = [];
+                    for ($i = 0; $i <= 30; $i++) {
+                        $options[$i] = [
+                            'name' => $this->translate(
+                                1 === $i ? 'messaging_settings_num_of_days'
+                                : 'messaging_settings_num_of_days_plural',
+                                ['%%days%%' => $i]
+                            ),
+                            'active' => $i == $prefs['days_in_advance']['value']
+                        ];
+                    }
+                    $settings['settings']['days_in_advance'] = [
+                        'type' => 'select',
+                        'value' => $prefs['days_in_advance']['value'],
+                        'options' => $options,
+                        'readonly' => !$prefs['days_in_advance']['configurable']
                     ];
                 }
-                $settings['settings']['days_in_advance'] = [
-                    'type' => 'select',
-                    'value' => $prefs['days_in_advance']['value'],
-                    'options' => $options,
-                    'readonly' => !$prefs['days_in_advance']['configurable']
-                ];
+                $messagingSettings[$type] = $settings;
             }
-            $messagingSettings[$type] = $settings;
         }
 
         return [
@@ -247,128 +251,10 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
             'hold_identifier' => $result['othernames'],
             'guarantor' => $guarantor,
             'guarantees' => $guarantees,
-            'checkout_history' => $result['privacy'],
+            'loan_history' => $result['privacy'],
             'messagingServices' => $messagingSettings,
             'full_data' => $result
         ];
-    }
-
-    /**
-     * Get Patron Transaction History
-     *
-     * This is responsible for retrieving all historical transactions
-     * (i.e. checked out items)
-     * by a specific patron.
-     *
-     * @param array $patron The patron array from patronLogin
-     * @param array $params Retrieval params that may contain the following keys:
-     *   start  Start offset (0-based)
-     *   limit  Maximum number of records to return
-     *   sort   Sorting order, one of:
-     *          checkout asc
-     *          checkout desc
-     *          return asc
-     *          return desc
-     *          due asc
-     *          due desc
-     *
-     * @throws DateException
-     * @throws ILSException
-     * @return array        Array of the patron's transactions on success.
-     */
-    public function getMyTransactionHistory($patron, $params)
-    {
-        $sort = explode(
-            ' ', !empty($params['sort']) ? $params['sort'] : 'checkout desc', 2
-        );
-        if ($sort[0] == 'checkout') {
-            $sortKey = 'issuedate';
-        } elseif ($sort[0] == 'return') {
-            $sortKey = 'returndate';
-        } else {
-            $sortKey = 'date_due';
-        }
-        $direction = (isset($sort[1]) && 'desc' === $sort[1]) ? 'desc' : 'asc';
-
-        $queryParams = [
-            'borrowernumber' => $patron['id'],
-            'sort' => $sortKey,
-            'order' => $direction
-        ];
-
-        if (!empty($params['start'])) {
-            $queryParams['offset'] = $params['start'];
-        }
-        if (!empty($params['limit'])) {
-            $queryParams['limit'] = $params['limit'];
-        }
-
-        $transactions = $this->makeRequest(
-            ['v1', 'checkouts', 'history'],
-            $queryParams,
-            'GET',
-            $patron
-        );
-
-        $result = [
-            'count' => $transactions['total'],
-            'transactions' => []
-        ];
-
-        foreach ($transactions['records'] as $entry) {
-            try {
-                $item = $this->getItem($entry['itemnumber']);
-            } catch (\Exception $e) {
-                $item = [];
-            }
-            $volume = isset($item['enumchron'])
-                ? $item['enumchron'] : '';
-            $title = '';
-            if (!empty($item['biblionumber'])) {
-                $bib = $this->getBibRecord($item['biblionumber']);
-                if (!empty($bib['title'])) {
-                    $title = $bib['title'];
-                }
-                if (!empty($bib['title_remainder'])) {
-                    $title .= ' ' . $bib['title_remainder'];
-                    $title = trim($title);
-                }
-            }
-
-            $dueStatus = false;
-            $now = time();
-            $dueTimeStamp = strtotime($entry['date_due']);
-            if (is_numeric($dueTimeStamp)) {
-                if ($now > $dueTimeStamp) {
-                    $dueStatus = 'overdue';
-                } else if ($now > $dueTimeStamp - (1 * 24 * 60 * 60)) {
-                    $dueStatus = 'due';
-                }
-            }
-
-            $transaction = [
-                'id' => isset($item['biblionumber']) ? $item['biblionumber'] : '',
-                'checkout_id' => $entry['issue_id'],
-                'item_id' => $entry['itemnumber'],
-                'title' => $title,
-                'volume' => $volume,
-                'checkoutdate' => $this->dateConverter->convertToDisplayDate(
-                    'Y-m-d\TH:i:sP', $entry['issuedate']
-                ),
-                'duedate' => $this->dateConverter->convertToDisplayDate(
-                    'Y-m-d\TH:i:sP', $entry['date_due']
-                ),
-                'dueStatus' => $dueStatus,
-                'returndate' => $this->dateConverter->convertToDisplayDate(
-                    'Y-m-d\TH:i:sP', $entry['returndate']
-                ),
-                'renew' => $entry['renewals']
-            ];
-
-            $result['transactions'][] = $transaction;
-        }
-
-        return $result;
     }
 
     /**
@@ -391,14 +277,14 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
         if (!in_array($code, [200, 202, 204])) {
             return  [
                 'success' => false,
-                'status' => 'Purging the checkout history failed',
+                'status' => 'Purging the loan history failed',
                 'sys_message' => isset($result['error']) ? $result['error'] : $code
             ];
         }
 
         return [
             'success' => true,
-            'status' => 'checkout_history_purged',
+            'status' => 'loan_history_purged',
             'sys_message' => ''
         ];
     }
@@ -568,16 +454,15 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
      */
     public function updateAddress($patron, $details)
     {
-        $addressFields = isset($this->config['updateAddress']['fields'])
+        $addressFields = [];
+        $fieldConfig = isset($this->config['updateAddress']['fields'])
             ? $this->config['updateAddress']['fields'] : [];
-        $addressFields = array_map(
-            function ($item) {
-                $parts = explode(':', $item, 2);
-                return isset($parts[1]) ? $parts[1] : '';
-            },
-            $addressFields
-        );
-        $addressFields = array_flip($addressFields);
+        foreach ($fieldConfig as $field) {
+            $parts = explode(':', $field, 2);
+            if (isset($parts[1])) {
+                $addressFields[$parts[1]] = $parts[0];
+            }
+        }
 
         // Pick the configured fields from the request
         $request = [];
@@ -595,9 +480,22 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
             true
         );
         if (!in_array($code, [200, 202, 204])) {
-            return  [
+            if (409 === $code && !empty($result['conflict'])) {
+                $keys = array_keys($result['conflict']);
+                $key = reset($keys);
+                $fieldName = isset($addressFields[$key])
+                    ? $this->translate($addressFields[$key])
+                    : '???';
+                $status = $this->translate(
+                    'request_change_value_already_in_use',
+                    ['%%field%%' => $fieldName]
+                );
+            } else {
+                $status = 'Changing the contact information failed';
+            }
+            return [
                 'success' => false,
-                'status' => 'Changing the contact information failed',
+                'status' => $status,
                 'sys_message' => isset($result['error']) ? $result['error'] : $code
             ];
         }
@@ -835,6 +733,117 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
     }
 
     /**
+     * Get a password recovery token for a user
+     *
+     * @param array $params Required params such as cat_username and email
+     *
+     * @return array Associative array of the results
+     */
+    public function getPasswordRecoveryToken($params)
+    {
+        $request = [
+            'cardnumber' => $params['cat_username'],
+            'email' => $params['email'],
+            'skip_email' => true
+        ];
+        $operator = [];
+        if (!empty($this->config['PasswordRecovery']['userId'])
+            && !empty($this->config['PasswordRecovery']['userPassword'])
+        ) {
+            $operator = [
+                'cat_username' => $this->config['PasswordRecovery']['userId'],
+                'cat_password' => $this->config['PasswordRecovery']['userPassword']
+            ];
+        }
+
+        list($code, $result) = $this->makeRequest(
+            ['v1', 'patrons', 'password', 'recovery'],
+            json_encode($request),
+            'POST',
+            $operator,
+            true
+        );
+        if (201 != $code) {
+            if (404 != $code) {
+                throw new ILSException("Failed to get a recovery token: $code");
+            }
+            return [
+                'success' => false,
+                'error' => $result['error']
+            ];
+        }
+        return [
+            'success' => true,
+            'token' => $result['uuid']
+        ];
+    }
+
+    /**
+     * Recover user's password with a token from getPasswordRecoveryToken
+     *
+     * @param array $params Required params such as cat_username, token and new
+     * password
+     *
+     * @return array Associative array of the results
+     */
+    public function recoverPassword($params)
+    {
+        $request = [
+            'uuid' => $params['token'],
+            'new_password' => $params['password'],
+            'confirm_new_password' => $params['password']
+        ];
+        $operator = [];
+        if (!empty($this->config['passwordRecovery']['userId'])
+            && !empty($this->config['passwordRecovery']['userPassword'])
+        ) {
+            $operator = [
+                'cat_username' => $this->config['passwordRecovery']['userId'],
+                'cat_password' => $this->config['passwordRecovery']['userPassword']
+            ];
+        }
+
+        list($code, $result) = $this->makeRequest(
+            ['v1', 'patrons', 'password', 'recovery', 'complete'],
+            json_encode($request),
+            'POST',
+            $operator,
+            true
+        );
+        if (200 != $code) {
+            return [
+                'success' => false,
+                'error' => $result['error']
+            ];
+        }
+        return [
+            'success' => true
+        ];
+    }
+
+    /**
+     * Public Function which retrieves renew, hold and cancel settings from the
+     * driver ini file.
+     *
+     * @param string $function The name of the feature to be checked
+     * @param array  $params   Optional feature-specific parameters (array)
+     *
+     * @return array An array with key-value pairs.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getConfig($function, $params = null)
+    {
+        if ('getPasswordRecoveryToken' === $function
+            || 'recoverPassword' === $function
+        ) {
+            return !empty($this->config['PasswordRecovery']['enabled'])
+                ? $this->config['PasswordRecovery'] : false;
+        }
+        return parent::getConfig($function, $params);
+    }
+
+    /**
      * Return summary of holdings items.
      *
      * @param array $holdings Parsed holdings items
@@ -851,6 +860,9 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
             if (!empty($item['availability'])) {
                 $availableTotal++;
             }
+            if (strncmp($item['item_id'], 'HLD_', 4) !== 0) {
+                $itemsTotal++;
+            }
             $locations[$item['location']] = true;
             if ($item['requests_placed'] > $requests) {
                 $requests = $item['requests_placed'];
@@ -861,13 +873,15 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
         // we need to add a few dummy-fields that VuFind expects to be
         // defined for all elements.
 
+        // Use a stupid location name to make sure this doesn't get mixed with
+        // real items that don't have a proper location.
         $result = [
            'available' => $availableTotal,
-           'total' => count($holdings),
+           'total' => $itemsTotal,
            'locations' => count($locations),
            'availability' => null,
            'callnumber' => null,
-           'location' => null
+           'location' => '__HOLDINGSSUMMARYLOCATION__'
         ];
         if (!empty($this->config['Holdings']['display_total_hold_count'])) {
             $result['reservations'] = $requests;
@@ -891,18 +905,325 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
                 isset($item['ccode_description']) ? $item['ccode_description'] : null
             );
         }
-        $result[] = $this->translateLocation($item['location']);
-        return implode(', ', $result);
+        $result[] = $this->translateLocation(
+            $item['location'],
+            !empty($item['location_description'])
+                ? $item['location_description'] : $item['location']
+        );
+        if ((!empty($item['itemcallnumber'])
+            || !empty($item['itemcallnumber_display']))
+            && !empty($this->config['Holdings']['display_full_call_number'])
+        ) {
+            $result[] = !empty($item['itemcallnumber_display'])
+                ? $item['itemcallnumber_display'] : $item['itemcallnumber'];
+        }
+        $str = implode(', ', $result);
+        return $str;
+    }
+
+    /**
+     * Get Item Statuses
+     *
+     * This is responsible for retrieving the status information of a certain
+     * record.
+     *
+     * @param string $id     The record id to retrieve the holdings for
+     * @param array  $patron Patron information, if available
+     *
+     * @return array An associative array with the following keys:
+     * id, availability (boolean), status, location, reserve, callnumber.
+     */
+    protected function getItemStatusesForBiblio($id, $patron = null)
+    {
+        $holdings = null;
+        if (!empty($this->config['Holdings']['use_holding_records'])) {
+            $holdingsResult = $this->makeRequest(
+                ['v1', 'biblios', $id, 'holdings'],
+                [],
+                'GET',
+                $patron
+            );
+            // Turn the holdings into a keyed array
+            if (!empty($holdingsResult['holdings'])) {
+                foreach ($holdingsResult['holdings'] as $holding) {
+                    $holdings[$holding['holdingnumber']] = $holding;
+                }
+            }
+        }
+        $result = $this->makeRequest(
+            ['v1', 'availability', 'biblio', 'search'],
+            ['biblionumber' => $id],
+            'GET',
+            $patron
+        );
+
+        $statuses = [];
+        foreach ($result[0]['item_availabilities'] as $i => $item) {
+            // $holding is a reference!
+            unset($holding);
+            if (!empty($item['holdingnumber'])
+                && isset($holdings[$item['holdingnumber']])
+            ) {
+                $holding = &$holdings[$item['holdingnumber']];
+                if ($holding['suppress']) {
+                    continue;
+                }
+            }
+            $avail = $item['availability'];
+            $available = $avail['available'];
+            $statusCodes = $this->getItemStatusCodes($item);
+            $status = $this->pickStatus($statusCodes);
+            if (isset($avail['unavailabilities']['Item::CheckedOut']['date_due'])) {
+                $duedate = $this->dateConverter->convertToDisplayDate(
+                    'Y-m-d\TH:i:sP',
+                    $avail['unavailabilities']['Item::CheckedOut']['date_due']
+                );
+            } else {
+                $duedate = null;
+            }
+
+            $entry = [
+                'id' => $id,
+                'item_id' => $item['itemnumber'],
+                'location' => $this->getItemLocationName($item),
+                'availability' => $available,
+                'status' => $status,
+                'status_array' => $statusCodes,
+                'reserve' => 'N',
+                'callnumber' => $this->getItemCallNumber($item),
+                'duedate' => $duedate,
+                'number' => $item['enumchron'],
+                'barcode' => $item['barcode'],
+                'sort' => $i,
+                'requests_placed' => max(
+                    [$item['hold_queue_length'], $result[0]['hold_queue_length']]
+                )
+            ];
+            if (!empty($item['itemnotes'])) {
+                $entry['item_notes'] = [$item['itemnotes']];
+            }
+
+            if ($patron && $this->itemHoldAllowed($item)) {
+                $entry['is_holdable'] = true;
+                $entry['level'] = 'copy';
+                $entry['addLink'] = 'check';
+            } else {
+                $entry['is_holdable'] = false;
+            }
+
+            if (isset($holding)) {
+                $entry += $this->getHoldingData($holding);
+                $holding['_hasItems'] = true;
+            }
+
+            $statuses[] = $entry;
+        }
+
+        if (!isset($i)) {
+            $i = 0;
+        }
+
+        // Add holdings that don't have items
+        if (!empty($holdings)) {
+            foreach ($holdings as $holding) {
+                if ($holding['suppress'] || !empty($holding['_hasItems'])) {
+                    continue;
+                }
+                $i++;
+
+                $callnumber = $this->translateLocation($holding['location']);
+                if ($holding['callnumber']) {
+                    $callnumber .= ' ' . $holding['callnumber'];
+                }
+                $callnumber = trim($callnumber);
+
+                $entry = [
+                    'id' => $id,
+                    'item_id' => 'HLD_' . $holding['biblionumber'],
+                    'location' => $this->getBranchName($holding['holdingbranch']),
+                    'requests_placed' => 0,
+                    'status' => '',
+                    'use_unknown_message' => true,
+                    'availability' => false,
+                    'duedate' => '',
+                    'barcode' => '',
+                    'callnumber' => $callnumber,
+                    'sort' => $i
+                ];
+                $entry += $this->getHoldingData($holding, true);
+
+                $statuses[] = $entry;
+            }
+        }
+
+        usort($statuses, [$this, 'statusSortFunction']);
+        return $statuses;
+    }
+
+    /**
+     * Return a location for a Koha branch ID
+     *
+     * @param string $branchId Branch ID
+     *
+     * @return string
+     */
+    protected function getBranchName($branchId)
+    {
+        $name = $this->translate("location_$branchId");
+        if ($name === "location_$branchId") {
+            $branches = $this->getCachedData('branches');
+            if (null === $branches) {
+                $result = $this->makeRequest(
+                    ['v1', 'libraries'], false, 'GET'
+                );
+                $branches = [];
+                foreach ($result as $branch) {
+                    $branches[$branch['branchcode']] = $branch['branchname'];
+                }
+                $this->putCachedData('branches', $branches);
+            }
+            $name = isset($branches[$branchId]) ? $branches[$branchId] : $branchId;
+        }
+        return $name;
+    }
+
+    /**
+     * Get holding data from a holding record
+     *
+     * @param array $holding Holding record from Koha
+     *
+     * @return array
+     */
+    protected function getHoldingData(&$holding)
+    {
+        $marcRecord = isset($holding['_marcRecord'])
+            ? $holding['_marcRecord'] : null;
+        if (!isset($holding['_marcRecord'])) {
+            foreach ($holding['holdings_metadatas'] as $metadata) {
+                if ('marcxml' === $metadata['format']
+                    && 'MARC21' === $metadata['marcflavour']
+                ) {
+                    $marc = new \File_MARCXML(
+                        $metadata['metadata'], \File_MARCXML::SOURCE_STRING
+                    );
+                    $holding['_marcRecord'] = $marc->next();
+                    break;
+                }
+            }
+        }
+        if (empty($holding['_marcRecord'])) {
+            return [];
+        }
+
+        $marcDetails = [
+            'holdings_id' => $holding['holdingnumber']
+        ];
+
+        // Get Notes
+        $data = $this->getMFHDData(
+            $holding['_marcRecord'],
+            isset($this->config['Holdings']['notes'])
+            ? $this->config['Holdings']['notes']
+            : '852z'
+        );
+        if ($data) {
+            $marcDetails['notes'] = $data;
+        }
+
+        // Get Summary (may be multiple lines)
+        $data = $this->getMFHDData(
+            $holding['_marcRecord'],
+            isset($this->config['Holdings']['summary'])
+            ? $this->config['Holdings']['summary']
+            : '866a'
+        );
+        if ($data) {
+            $marcDetails['summary'] = $data;
+        }
+
+        // Get Supplements
+        if (isset($this->config['Holdings']['supplements'])) {
+            $data = $this->getMFHDData(
+                $holding['_marcRecord'],
+                $this->config['Holdings']['supplements']
+            );
+            if ($data) {
+                $marcDetails['supplements'] = $data;
+            }
+        }
+
+        // Get Indexes
+        if (isset($this->config['Holdings']['indexes'])) {
+            $data = $this->getMFHDData(
+                $holding['_marcRecord'],
+                $this->config['Holdings']['indexes']
+            );
+            if ($data) {
+                $marcDetails['indexes'] = $data;
+            }
+        }
+
+        return $marcDetails;
+    }
+
+    /**
+     * Get specified fields from an MFHD MARC Record
+     *
+     * @param object       $record     File_MARC object
+     * @param array|string $fieldSpecs Array or colon-separated list of
+     * field/subfield specifications (3 chars for field code and then subfields,
+     * e.g. 866az)
+     *
+     * @return string|string[] Results as a string if single, array if multiple
+     */
+    protected function getMFHDData($record, $fieldSpecs)
+    {
+        if (!is_array($fieldSpecs)) {
+            $fieldSpecs = explode(':', $fieldSpecs);
+        }
+        $results = '';
+        foreach ($fieldSpecs as $fieldSpec) {
+            $fieldCode = substr($fieldSpec, 0, 3);
+            $subfieldCodes = substr($fieldSpec, 3);
+            if ($fields = $record->getFields($fieldCode)) {
+                foreach ($fields as $field) {
+                    if ($subfields = $field->getSubfields()) {
+                        $line = '';
+                        foreach ($subfields as $code => $subfield) {
+                            if (!strstr($subfieldCodes, $code)) {
+                                continue;
+                            }
+                            if ($line) {
+                                $line .= ' ';
+                            }
+                            $line .= $subfield->getData();
+                        }
+                        if ($line) {
+                            if (!$results) {
+                                $results = $line;
+                            } else {
+                                if (!is_array($results)) {
+                                    $results = [$results];
+                                }
+                                $results[] = $line;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $results;
     }
 
     /**
      * Translate location name
      *
      * @param string $location Location code
+     * @param string $default  Default value if translation is not available
      *
      * @return string
      */
-    protected function translateLocation($location)
+    protected function translateLocation($location, $default = null)
     {
         $prefix = 'location_';
         if (!empty($this->config['Catalog']['id'])) {
@@ -911,7 +1232,7 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
         return $this->translate(
             "$prefix$location",
             null,
-            $location
+            null !== $default ? $default : $location
         );
     }
 

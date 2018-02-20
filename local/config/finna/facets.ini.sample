@@ -76,6 +76,9 @@ newItems[] = first_indexed
 dateVis[] = main_date_str
 dateRangeVis = search_daterange_mv:main_date_str
 
+; Finna geographical facet
+;finna_geographic[] = geographic_facet:location_geo
+
 ; This section is reserved for special boolean facets.  These are displayed
 ; as checkboxes.  If the box is checked, the filter on the left side of the
 ; equal sign is applied.  If the box is not checked, the filter is not applied.
@@ -87,6 +90,7 @@ dateRangeVis = search_daterange_mv:main_date_str
 [CheckboxFacets]
 ;edition:1st* = "First Edition"     ; Contrived hypothetical example
 online_boolean:1 = online_material_facet_html
+;free_online_boolean:1 = free_online_material_facet_html
 
 ; These settings affect the way the [Results] facets are displayed
 ; If using facets at the top of search results you have more room for text.

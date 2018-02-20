@@ -27,8 +27,9 @@
  * @link     http://vufind.org/wiki/vufind2:developer_manual Wiki
  */
 namespace Finna\Service;
-use Zend\Console\Console,
-    Zend\ServiceManager\ServiceManager;
+
+use Zend\Console\Console;
+use Zend\ServiceManager\ServiceManager;
 
 /**
  * Factory for various top-level VuFind services.
@@ -211,6 +212,24 @@ class Factory extends \VuFind\Service\Factory
             $sm->get('VuFind\Config')->get('datasources'),
             $sm->get('VuFind\Translator')
         );
+    }
+
+    /**
+     * Construct the PermissionManager.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return \VuFind\Role\PermissionManager
+     */
+    public static function getPermissionManager(ServiceManager $sm)
+    {
+        $permManager = new \Finna\Role\PermissionManager(
+            $sm->get('VuFind\Config')->get('permissions')->toArray()
+        );
+        $permManager->setAuthorizationService(
+            $sm->get('ZfcRbac\Service\AuthorizationService')
+        );
+        return $permManager;
     }
 
     /**

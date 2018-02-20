@@ -26,6 +26,7 @@
  * @link     https://vufind.org/wiki/development Wiki
  */
 namespace FinnaTheme\View\Helper;
+
 use Finna\Db\Table\FinnaCache;
 use VuFindTheme\ThemeInfo;
 use Zend\Http\Request;
@@ -66,6 +67,18 @@ class HeadScript extends \VuFindTheme\View\Helper\HeadScript
     public function __construct(ThemeInfo $themeInfo, $plconfig, Request $request,
         FinnaCache $finnaCache
     ) {
+        // Disable pipeline on old Android browsers (< 4.0) due to them having
+        // trouble handling all the minified data.
+        $ua = $request->getHeader('User-Agent');
+        $agent = $ua !== false ? $ua->toString() : '';
+        if (strstr($agent, 'Mozilla/5.0') !== false
+            && strstr($agent, 'Android') !== false
+            && preg_match('/WebKit\/(\d+)/', $agent, $matches)
+            && $matches[1] <= 534
+        ) {
+            $plconfig = false;
+        }
+
         parent::__construct($themeInfo, $plconfig);
         $this->request = $request;
         $this->finnaCache = $finnaCache;

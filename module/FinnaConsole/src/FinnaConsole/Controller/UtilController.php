@@ -41,6 +41,16 @@ namespace FinnaConsole\Controller;
 class UtilController extends \VuFindConsole\Controller\UtilController
 {
     /**
+     * Sends reminders for expiring user accounts
+     *
+     * @return \Zend\Console\Response
+     */
+    public function accountExpirationRemindersAction()
+    {
+        return $this->runService('Finna\AccountExpirationReminders');
+    }
+
+    /**
      * Sends due date reminders.
      *
      * @return \Zend\Console\Response
@@ -77,6 +87,27 @@ class UtilController extends \VuFindConsole\Controller\UtilController
             'FinnaCache',
             '%%count%% expired cache entries deleted.',
             'No expired cache entries to delete.'
+        );
+    }
+
+    /**
+     * Command-line tool to clear unwanted entries
+     * from session database table.
+     *
+     * @return \Zend\Console\Response
+     */
+    public function expiresessionsAction()
+    {
+        $request = $this->getRequest();
+        if ($request->getParam('help') || $request->getParam('h')) {
+            return $this->expirationHelp('sessions');
+        }
+
+        return $this->expire(
+            'Session',
+            '%%count%% expired sessions deleted.',
+            'No expired sessions to delete.',
+            0.3
         );
     }
 

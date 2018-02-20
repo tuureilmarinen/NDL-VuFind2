@@ -92,7 +92,7 @@
   <div class="search-left">
   <form id="searchForm" role="search" class="searchForm navbar-form navbar-left  <?=$handlerCount < 2 ? 'input-field-only' :''; ?>" method="get" action="<?=$this->url($basicSearch)?>" name="searchForm" autocomplete="off">
     <label for="searchForm_lookfor" class="sr-only" hidden><?=$this->transEsc("Find")?></label>
-    <input class="searchForm_lookfor form-control search-query<? if($this->searchbox()->autocompleteEnabled($this->searchClassId)):?> autocomplete-finna searcher:<?=$this->escapeHtmlAttr($this->searchClassId) ?><?= !empty($activeTab) ? ' tab:' . $this->escapeHtmlAttr(str_replace(':', '###', $activeTab)) : ''?><?=!empty($browse) || $activeTab == 'Combined' ? ' onlySuggestions:1' : ''?><?= !$browse && in_array($activeTab, ['Combined','Primo','EDS','Summon']) ? ' suggestions:0' : ''?><?= !empty($acHandlers) ? ' handlers:' . implode('|', array_map(function($h) { return $h['handler']; }, $acHandlers)) : ''?><?= !empty($phrase) ? ' phrase:' . $this->escapeHtmlAttr($phrase) : ''?><?= !empty($acFilters) ? ' filters:' . $this->escapeHtmlAttr(implode('||', array_map(function($k, $v) { return $k . '|' . $v; }, array_keys($acFilters), $acFilters))) : ''?><? endif ?>" placeholder="<?=$this->escapeHtmlAttr($placeholder)?>" id="searchForm_lookfor" type="text" name="lookfor" value="<?=$this->escapeHtmlAttr($this->lookfor)?>"/>
+    <input class="searchForm_lookfor form-control search-query<? if($this->searchbox()->autocompleteEnabled($this->searchClassId)):?> autocomplete-finna searcher:<?=$this->escapeHtmlAttr($this->searchClassId) ?><?= !empty($activeTab) ? ' tab:' . $this->escapeHtmlAttr(str_replace(':', '###', $activeTab)) : ''?><?=!empty($browse) || $activeTab == 'Combined' ? ' onlySuggestions:1' : ''?><?= !$browse && in_array($activeTab, ['Combined','Primo','EDS','Summon']) ? ' suggestions:0' : ''?><?= !empty($acHandlers) ? ' handlers:' . implode('|', array_map(function ($h) { return $h['handler']; }, $acHandlers)) : ''?><?= !empty($phrase) ? ' phrase:' . $this->escapeHtmlAttr($phrase) : ''?><?= !empty($acFilters) ? ' filters:' . $this->escapeHtmlAttr(implode('||', array_map(function ($k, $v) { return $k . '|' . $v; }, array_keys($acFilters), $acFilters))) : ''?><? endif ?>" placeholder="<?=$this->escapeHtmlAttr($placeholder)?>" id="searchForm_lookfor" type="text" name="lookfor" value="<?=$this->escapeHtmlAttr($this->lookfor)?>"/>
     <span class="clear-button<?=$this->lookfor ? '' : ' hidden'?>"></span>
     <? if ($handlerCount > 1): ?>
       <span class="hidden sr-only"><?=$this->transEsc("Narrow Search")?></span>
@@ -143,9 +143,9 @@
     ?>
      <? $defaultFilterState = $this->hasDefaultsApplied || $options->getRetainFilterSetting() || !$defaultSortApplied ? ' checked="checked"' : ''; ?>
      <? if (!$browse && (!empty($filterDetails) || !empty($this->savedSearches) || !$defaultSortApplied || (isset($this->searchIndex) && ($this->searchIndex != 'AllFields' && $handlerCount <= 1)))): ?>
-          <div class="checkbox<?=$defaultFilterState?' checked' : ''?>">
+      <div class="checkbox<?=$defaultFilterState ?' checked' : ''?>">
         <label>
-          <input onChange="$('.applied-filter').click();$('.navbar-form .checkbox').toggleClass('checked'); var sort = $(this).closest('form').find('input[name=sort]'); sort.val($('.navbar-form .checkbox').hasClass('checked') ? sort.data('value') : '');" type="checkbox"<?=$defaultFilterState?> class="searchFormKeepFilters"/>
+          <input onChange="$('.navbar-form .checkbox').toggleClass('checked'); var sort = $(this).closest('form').find('input[name=sort]'); sort.val($('.navbar-form .checkbox').hasClass('checked') ? sort.data('value') : '');" type="checkbox"<?=$defaultFilterState?> class="searchFormKeepFilters"/>
           <?=$this->transEsc("basic_search_keep_filters")?>
         </label>
       </div>

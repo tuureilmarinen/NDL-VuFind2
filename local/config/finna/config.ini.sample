@@ -27,7 +27,7 @@ email           = finna-posti@helsinki.fi
 title           = "Finna"
 ; This is the default theme for non-mobile devices (or all devices if mobile_theme
 ; is disabled below)
-theme           = finna
+theme           = finna2
 
 ; Automatic asset minification and concatenation setting. When active, HeadScript
 ; and HeadLink will concatenate and minify all viable files to reduce requests and
@@ -264,12 +264,14 @@ library_cards = true
 
 ; The number of checked out items to display per page; 0 for no limit (may cause
 ; memory problems for users with huge numbers of items). Default = 50.
-; N.B. Values other than 0 are not supported in the finna theme.
-checked_out_page_size = 0
+;checked_out_page_size = 50
 
-; The number of checkedout history items to display per page; 0 for no limit (may
-; cause memory problems for users with huge numbers of items). Default = 50.
-;checkout_history_page_size = 50
+; The number of historic loans to display per page; 0 for no limit (may cause
+; memory problems for users with a large number of historic loans). Default = 50
+;historic_loan_page_size = 50
+
+; Whether to display the item barcode for each loan. Default is false.
+display_checked_out_item_barcode = true
 
 ; This section allows you to determine how the users will authenticate.
 ; You can use an LDAP directory, the local ILS, the VuFind database (Database),
@@ -1252,9 +1254,9 @@ ttl = 60
 ;umask = 022
 ; Permissions for Zend-created cache directories and files, subject to umask
 ; Default dir_permission seems to be 0700.
-;dir_permission = 0700
+dir_permission = 0770
 ; Default file_permission seems to be 0600.
-;file_permission = 0600
+file_permission = 0660
 
 ; This section controls the "Collections" module -- the special view for records
 ; that represent collections, and the mechanism for browsing these records.

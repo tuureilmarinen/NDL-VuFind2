@@ -26,6 +26,7 @@
  * @link     http://vufind.org   Main Site
  */
 namespace Finna\Db\Table;
+
 use VuFind\Db\Row\RowGateway;
 use VuFind\Db\Table\PluginManager;
 use Zend\Db\Adapter\Adapter;
@@ -73,7 +74,7 @@ class Fee extends \VuFind\Db\Table\Gateway
         $fee->transaction_id = $transactionId;
         $fee->title = isset($fine['title']) ? $fine['title'] : '';
         $fee->type = $fine['fine'];
-        $fee->amount = $fine['amount'];
+        $fee->amount = $fine['balance'];
         $fee->currency = $currency;
         if (!$fee->amount) {
             return false;

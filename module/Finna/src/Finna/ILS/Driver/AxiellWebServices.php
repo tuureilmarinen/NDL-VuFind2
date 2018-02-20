@@ -28,15 +28,15 @@
  * @link     https://vufind.org/wiki/development:plugins:ils_drivers Wiki
  */
 namespace Finna\ILS\Driver;
-use SoapClient, SoapFault, SoapHeader, File_MARC, PDO, PDOException, DOMDocument,
-    VuFind\Exception\Date as DateException,
-    VuFind\Exception\ILS as ILSException,
-    VuFind\I18n\Translator\TranslatorAwareInterface as TranslatorAwareInterface,
-    Zend\Validator\EmailAddress as EmailAddressValidator;
-use VuFind\Exception\Date;
-use Zend\Db\Sql\Ddl\Column\Boolean;
+
+use DOMDocument;
+use SoapClient;
 use VuFind\Config\Locator;
-use VuFind\View\Helper\Root\Translate;
+use VuFind\Exception\Date;
+use VuFind\Exception\Date as DateException;
+use VuFind\Exception\ILS as ILSException;
+use VuFind\I18n\Translator\TranslatorAwareInterface as TranslatorAwareInterface;
+use Zend\Db\Sql\Ddl\Column\Boolean;
 
 /**
  * Axiell Web Services ILS Driver
@@ -74,10 +74,10 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     protected $defaultPickUpLocation;
 
     /**
-    * Excluded pickup locations
-    *
-    * @var array
-    */
+     * Excluded pickup locations
+     *
+     * @var array
+     */
     protected $excludePickUpLocations;
 
     /**
@@ -257,7 +257,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         $this->debug("getMyProfile called");
 
         $username = $patron['cat_username'];
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
 
         $userCached = $this->getCachedData($cacheKey);
 
@@ -1158,7 +1158,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
      */
     public function patronLogin($username, $password)
     {
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $function = 'getPatronInformation';
         $functionResult = 'patronInformationResult';
         $conf = [
@@ -1268,8 +1268,6 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             }
         }
 
-        $userCached['messagingServices'] = [];
-
         $validServices = [
            'pickUpNotice'  => [
                'letter', 'email', 'sms', 'none'
@@ -1282,6 +1280,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
            ]
         ];
 
+        $services = [];
         foreach ($validServices as $service => $validMethods) {
             $typeLabel = 'dueDateAlert' === $service
                 ? $this->translate(
@@ -1310,7 +1309,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                     }
                 }
             }
-            $userCached['messagingServices'][$service] = $data;
+            $services[$service] = $data;
         }
 
         if (isset($info->messageServices)) {
@@ -1326,15 +1325,12 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 foreach ($sendMethods as $method) {
                     $methodType = isset($method->sendMethod->value)
                         ? $this->mapCode($method->sendMethod->value) : 'none';
-                    $userCached['messagingServices'][$serviceType]['sendMethods']
-                        [$methodType]['active']
-                            = isset($method->sendMethod->isActive)
+                    $services[$serviceType]['sendMethods'][$methodType]['active']
+                        = isset($method->sendMethod->isActive)
                             && $method->sendMethod->isActive === 'yes';
                 }
 
-                foreach ($userCached['messagingServices'][$serviceType]
-                    ['sendMethods'] as $key => &$data) {
-
+                foreach ($services[$serviceType]['sendMethods'] as $key => &$data) {
                     $methodLabel
                         = $this->translate("messaging_settings_method_$key");
 
@@ -1354,14 +1350,13 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                     $data['method'] = $methodLabel;
                 }
 
-                if (isset($userCached['messagingServices'][$serviceType])) {
-                    $userCached['messagingServices'][$serviceType]['active']
-                        = $active;
-                    $userCached['messagingServices'][$serviceType]['numOfDays']
-                        = $numOfDays;
+                if (isset($services[$serviceType])) {
+                    $services[$serviceType]['active'] = $active;
+                    $services[$serviceType]['numOfDays'] = $numOfDays;
                 }
             }
         }
+        $userCached['messagingServices'] = $services;
 
         $this->putCachedData($cacheKey, $userCached);
 
@@ -1440,7 +1435,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             }
 
             $message = isset($loan->loanStatus->status)
-                ? $this->mapStatus($loan->loanStatus->status) : '';
+                ? $this->mapStatus($loan->loanStatus->status, $function) : '';
 
             $trans = [
                 'id' => $loan->catalogueRecord->id,
@@ -1448,7 +1443,6 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 'title' => $title,
                 'duedate' => $loan->loanDueDate,
                 'renewable' => (string)$loan->loanStatus->isRenewable == 'yes',
-                'barcode' => $loan->id,
                 'message' => $message,
                 'renewalCount' => max(
                     [0,
@@ -1524,12 +1518,20 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         $debts =  $this->objectToArray($result->$functionResult->debts->debt);
 
         foreach ($debts as $debt) {
+            // Have to use debtAmountFormatted, because debtAmount shows negative
+            // values as positive. Try to extract the numeric part from the formatted
+            // amount.
+            if (preg_match('/([\d\.\,-]+)/', $debt->debtAmountFormatted, $matches)) {
+                $amount = str_replace(',', '.', $matches[1]) * 100;
+            } else {
+                $amount = str_replace(',', '.', $debt->debtAmountFormatted) * 100;
+            }
             $fine = [
                 'debt_id' => $debt->id,
-                'amount' => str_replace(',', '.', $debt->debtAmountFormatted) * 100,
+                'amount' => $amount,
                 'checkout' => '',
                 'fine' => $debt->debtType . ' - ' . $debt->debtNote,
-                'balance' => str_replace(',', '.', $debt->debtAmountFormatted) * 100,
+                'balance' => $amount,
                 'createdate' => $debt->debtDate
             ];
             $finesList[] = $fine;
@@ -1625,7 +1627,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 'position' =>
                    isset($reservation->queueNo) ? $reservation->queueNo : '-',
                 'available' => $reservation->reservationStatus == 'fetchable',
-                'modifiable' => $reservation->reservationStatus == 'active',
+                'is_editable' => $reservation->isEditable == 'yes',
                 'item_id' => '',
                 'requestId' => $reservation->id,
                 'volume' =>
@@ -1639,6 +1641,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                    && $this->requestGroupsEnabled
                    ? "axiell_$reservation->reservationType"
                    : '',
+                'in_transit' => $reservation->reservationStatus == 'inTransit',
                 'title' => $title
             ];
             $holdsList[] = $hold;
@@ -1667,7 +1670,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
      */
     public function getRenewDetails($checkoutDetails)
     {
-        return $checkoutDetails['barcode'];
+        return $checkoutDetails['item_id'];
     }
 
     /**
@@ -1725,7 +1728,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             $results['details'][$id] = [
                 'success' => $success,
                 'status' => $success ? 'Loan renewed' : 'Renewal failed',
-                'sysMessage' => $this->mapStatus($status),
+                'sysMessage' => $this->mapStatus($status, $function),
                 'item_id' => $id,
                 'new_date' => $this->formatDate(
                     $loan->loanDueDate
@@ -1800,7 +1803,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         // Clear patron cache
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $this->putCachedData($cacheKey, null);
 
         return [
@@ -1871,7 +1874,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         // Clear patron cache
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $this->putCachedData($cacheKey, null);
 
         return [
@@ -1923,7 +1926,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         // Clear patron cache
-        $cacheKey = "patron|$username";
+        $cacheKey = $this->getPatronCacheKey($username);
         $this->putCachedData($cacheKey, null);
 
         return  [
@@ -2092,7 +2095,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             $this->error("AWS error: '$message'");
             return $status[$message];
         }
-        return $this->mapStatus($message);
+        return $this->mapStatus($message, $function);
     }
 
     /**
@@ -2125,7 +2128,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     {
         $editionA = $a['journalInfo']['edition'];
         $editionB = $b['journalInfo']['edition'];
-        if ($editionA ==  $editionB) {
+        if ($editionA == $editionB) {
             $a['location'] = $a['journalInfo']['location'];
             $b['location'] = $b['journalInfo']['location'];
             return $this->defaultHoldingsSortFunction($a, $b);
@@ -2192,10 +2195,10 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         } else {
             $key = 'branch_id';
             $sortOrder = $this->holdingsBranchOrder;
-                $locationA
-                    = $a['location'] . ' ' . $a['branch'] . ' ' . $a['department'];
-                $locationB
-                    = $b['location'] . ' ' . $b['branch'] . ' ' . $b['department'];
+            $locationA
+                = $a['location'] . ' ' . $a['branch'] . ' ' . $a['department'];
+            $locationB
+                = $b['location'] . ' ' . $b['branch'] . ' ' . $b['department'];
         }
 
         $orderA = isset($sortOrder[$a[$key]]) ? $sortOrder[$a[$key]] : null;
@@ -2278,11 +2281,12 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     /**
      * Map statuses
      *
-     * @param string $status as a string
+     * @param string $status   Status as a string
+     * @param string $function AWS function that returned the status
      *
      * @return string Mapped status
      */
-    protected function mapStatus($status)
+    protected function mapStatus($status, $function)
     {
         $statuses =  [
             'copyHasSpecialCircCat' => 'Copy has special circulation',
@@ -2291,11 +2295,13 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             'isRenewedToday'        => 'Renewed today',
             'isOverdue'             => 'renew_item_overdue',
             'maxNofRenewals'        => 'renew_item_limit',
-            'patronIsDeniedLoan'    => 'fine_limit_patron',
+            'patronIsDeniedLoan'    => 'renew_denied',
             'patronHasDebt'         => 'renew_debt',
             'patronIsInvoiced'      => 'renew_item_patron_is_invoiced',
             'renewalIsDenied'       => 'renew_denied',
-            'ReservationDenied'     => 'hold_error_denied'
+            'ReservationDenied'     => 'hold_error_denied',
+            'BlockedBorrCard'       => 'addReservation' === $function
+                ? 'hold_error_blocked' : 'Borrowing Block Message'
         ];
 
         if (isset($statuses[$status])) {
@@ -2351,6 +2357,18 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     protected function getCacheKey($suffix = null)
     {
         return 'AxiellWebServices' . '-' . md5($this->arenaMember . "|$suffix");
+    }
+
+    /**
+     * Get a cache key for patron information
+     *
+     * @param string $username Unique username
+     *
+     * @return string
+     */
+    protected function getPatronCacheKey($username)
+    {
+        return "patron|$username|" . $this->getTranslatorLocale();
     }
 
     /**

@@ -28,6 +28,7 @@
  * @link     http://vufind.org   Main Site
  */
 namespace Finna\Controller;
+
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\Session\SessionManager;
 
@@ -132,38 +133,48 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $view;
         }
 
-        $view = parent::checkedoutAction();
-        $transactions = count($view->transactions);
-        $renewResult = $view->renewResult;
-        if (isset($renewResult) && is_array($renewResult)) {
-            $renewedCount = 0;
-            $renewErrorCount = 0;
-            foreach ($renewResult as $renew) {
-                if ($renew['success']) {
-                    $renewedCount++;
-                } else {
-                    $renewErrorCount++;
-                }
-            }
-            $flashMsg = $this->flashMessenger();
-            if ($renewedCount > 0) {
-                $msg = $this->translate(
-                    'renew_ok', ['%%count%%' => $renewedCount,
-                    '%%transactionscount%%' => $transactions]
-                );
-                $flashMsg->setNamespace('info')->addMessage($msg);
-            }
-            if ($renewErrorCount > 0) {
-                $msg = $this->translate(
-                    'renew_failed',
-                    ['%%count%%' => $renewErrorCount]
-                );
-                $flashMsg->setNamespace('error')->addMessage($msg);
-            }
+        // Connect to the ILS:
+        $catalog = $this->getILS();
+
+        // Display account blocks, if any:
+        $this->addAccountBlocksToFlashMessenger($catalog, $patron);
+
+        // Get the current renewal status and process renewal form, if necessary:
+        $renewStatus = $catalog->checkFunction('Renewals', compact('patron'));
+        $renewResult = $renewStatus
+            ? $this->renewals()->processRenewals(
+                $this->getRequest()->getPost(), $catalog, $patron
+            )
+            : [];
+
+        // By default, assume we will not need to display a renewal form:
+        $renewForm = false;
+
+        // Get checked out item details:
+        $result = $catalog->getMyTransactions($patron);
+
+        // Get page size:
+        $config = $this->getConfig();
+        $limit = isset($config->Catalog->checked_out_page_size)
+            ? $config->Catalog->checked_out_page_size : 50;
+
+        // Build paginator if needed:
+        if ($limit > 0 && $limit < count($result)) {
+            $adapter = new \Zend\Paginator\Adapter\ArrayAdapter($result);
+            $paginator = new \Zend\Paginator\Paginator($adapter);
+            $paginator->setItemCountPerPage($limit);
+            $paginator->setCurrentPageNumber($this->params()->fromQuery('page', 1));
+            $pageStart = $paginator->getAbsoluteItemNumber(1) - 1;
+            $pageEnd = $paginator->getAbsoluteItemNumber($limit) - 1;
+        } else {
+            $paginator = false;
+            $pageStart = 0;
+            $pageEnd = count($result);
         }
+
         // Handle sorting
         $currentSort = $this->getRequest()->getQuery('sort', 'duedate');
-        $view->sortList = [
+        $sortList = [
             'duedate' => [
                 'desc' => 'Due Date',
                 'url' => '?sort=duedate',
@@ -178,23 +189,9 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
 
         $date = $this->serviceLocator->get('VuFind\DateConverter');
         $sortFunc = function ($a, $b) use ($currentSort, $date) {
-            $aDetails = $a->getExtraDetail('ils_details');
-            $bDetails = $b->getExtraDetail('ils_details');
             if ($currentSort == 'title') {
-                $aTitle = is_a($a, 'VuFind\\RecordDriver\\SolrDefault')
-                     && !is_a($a, 'VuFind\\RecordDriver\\Missing')
-                     ? $a->getSortTitle() : '';
-                if (!$aTitle) {
-                    $aTitle = isset($aDetails['title'])
-                        ? $aDetails['title'] : '';
-                }
-                $bTitle = is_a($b, 'VuFind\\RecordDriver\\SolrDefault')
-                     && !is_a($b, 'VuFind\\RecordDriver\\Missing')
-                     ? $b->getSortTitle() : '';
-                if (!$bTitle) {
-                    $bTitle = isset($bDetails['title'])
-                        ? $bDetails['title'] : '';
-                }
+                $aTitle = isset($a['title']) ? $a['title'] : '';
+                $bTitle = isset($b['title']) ? $b['title'] : '';
                 $result = strcmp($aTitle, $bTitle);
                 if ($result != 0) {
                     return $result;
@@ -202,11 +199,11 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             }
 
             try {
-                $aDate = isset($aDetails['duedate'])
-                    ? $date->convertFromDisplayDate('U', $aDetails['duedate'])
+                $aDate = isset($a['duedate'])
+                    ? $date->convertFromDisplayDate('U', $a['duedate'])
                     : 0;
-                $bDate = isset($bDetails['duedate'])
-                    ? $date->convertFromDisplayDate('U', $bDetails['duedate'])
+                $bDate = isset($b['duedate'])
+                    ? $date->convertFromDisplayDate('U', $b['duedate'])
                     : 0;
             } catch (Exception $e) {
                 return 0;
@@ -215,110 +212,77 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $aDate - $bDate;
         };
 
-        $transactions = $view->transactions;
-        usort($transactions, $sortFunc);
-        $view->transactions = $transactions;
+        usort($result, $sortFunc);
+
+        $transactions = $hiddenTransactions = [];
+        foreach ($result as $i => $current) {
+            // Add renewal details if appropriate:
+            $current = $this->renewals()->addRenewDetails(
+                $catalog, $current, $renewStatus
+            );
+            if ($renewStatus && !isset($current['renew_link'])
+                && $current['renewable']
+            ) {
+                // Enable renewal form if necessary:
+                $renewForm = true;
+            }
+
+            // Build record driver (only for the current visible page):
+            if ($i >= $pageStart && $i <= $pageEnd) {
+                $transactions[] = $this->getDriverForILSRecord($current);
+            } else {
+                $hiddenTransactions[] = $current;
+            }
+        }
+
+        $displayItemBarcode
+            = !empty($config->Catalog->display_checked_out_item_barcode);
+
+        // Display renewal information
+        $renewedCount = 0;
+        $renewErrorCount = 0;
+        foreach ($renewResult as $renew) {
+            if ($renew['success']) {
+                $renewedCount++;
+            } else {
+                $renewErrorCount++;
+            }
+        }
+        if ($renewedCount > 0) {
+            $msg = $this->translate(
+                'renew_ok', ['%%count%%' => $renewedCount,
+                '%%transactionscount%%' => count($result)]
+            );
+            $this->flashMessenger()->addInfoMessage($msg);
+        }
+        if ($renewErrorCount > 0) {
+            $msg = $this->translate(
+                'renew_failed',
+                ['%%count%%' => $renewErrorCount]
+            );
+            $this->flashMessenger()->addErrorMessage($msg);
+        }
+
+        $view = $this->createViewModel(
+            compact(
+                'transactions', 'renewForm', 'renewResult', 'paginator',
+                'hiddenTransactions', 'displayItemBarcode', 'sortList', 'currentSort'
+            )
+        );
+
         $view->blocks = $this->getILS()->getAccountBlocks($patron);
         return $view;
     }
 
     /**
-     * Send list of checkout history to view.
+     * Purge historic loans action.
      *
      * @return mixed
      */
-    public function checkoutHistoryAction()
-    {
-        // Stop now if the user does not have valid catalog credentials available:
-        if (!is_array($patron = $this->catalogLogin())) {
-            return $patron;
-        }
-
-        if ($view = $this->createViewIfUnsupported('getMyTransactionHistory')) {
-            return $view;
-        }
-
-        $view = $this->createViewModel();
-
-        // Connect to the ILS:
-        $catalog = $this->getILS();
-
-        // Display account blocks, if any:
-        $this->addAccountBlocksToFlashMessenger($catalog, $patron);
-
-        // Get page and page size:
-        $page = $this->params()->fromQuery('page', 1);
-        $config = $this->getConfig();
-        $limit = isset($config->Catalog->checkout_history_page_size)
-            ? $config->Catalog->checkout_history_page_size : 50;
-
-        // Handle sorting
-        $currentSort = $this->getRequest()->getQuery('sort', 'checkout desc');
-        $view->sortList = [
-            'checkout desc' => [
-                'desc' => 'sort_checkout_date_desc',
-                'url' => '?sort=checkout%20desc',
-                'selected' => $currentSort == 'checkout desc'
-            ],
-            'checkout asc' => [
-                'desc' => 'sort_checkout_date_asc',
-                'url' => '?sort=checkout%20asc',
-                'selected' => $currentSort == 'checkout asc'
-            ],
-            'return desc' => [
-                'desc' => 'sort_return_date_desc',
-                'url' => '?sort=return%20desc',
-                'selected' => $currentSort == 'return desc'
-            ],
-            'return asc' => [
-                'desc' => 'sort_return_date_asc',
-                'url' => '?sort=return%20asc',
-                'selected' => $currentSort == 'return asc'
-            ],
-            'duedate desc' => [
-                'desc' => 'sort_duedate_desc',
-                'url' => '?sort=duedate%20desc',
-                'selected' => $currentSort == 'duedate desc'
-            ],
-            'duedate asc' => [
-                'desc' => 'sort_duedate_asc',
-                'url' => '?sort=duedate%20asc',
-                'selected' => $currentSort == 'duedate asc'
-            ]
-        ];
-        // Get checkout history details:
-        $params = [
-            'start' => ($page - 1) * $limit,
-            'limit' => $limit,
-            'sort' => $currentSort
-        ];
-        $result = $catalog->getMyTransactionHistory($patron, $params);
-
-        $adapter = new \Zend\Paginator\Adapter\NullFill($result['count']);
-        $paginator = new \Zend\Paginator\Paginator($adapter);
-        $paginator->setItemCountPerPage($limit);
-        $paginator->setCurrentPageNumber($page);
-
-        $transactions = $hiddenTransactions = [];
-        foreach ($result['transactions'] as $current) {
-            $transactions[] = $this->getDriverForILSRecord($current);
-        }
-
-        $view->transactions = $transactions;
-        $view->paginator = $paginator;
-        $view->count = $result['count'];
-        return $view;
-    }
-
-    /**
-     * Purge checkout history action.
-     *
-     * @return mixed
-     */
-    public function purgeCheckoutHistoryAction()
+    public function purgeHistoricLoansAction()
     {
         if ($this->formWasSubmitted('cancel', false)) {
-            return $this->redirect()->toRoute('myresearch-checkouthistory');
+            return $this->redirect()->toRoute('myresearch-historicloans');
         }
 
         // Stop now if the user does not have valid catalog credentials available:
@@ -351,7 +315,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             $this->flashMessenger()->addMessage(
                 $result['status'], $result['success'] ? 'error' : 'info'
             );
-            return $this->redirect()->toRoute('myresearch-checkouthistory');
+            return $this->redirect()->toRoute('myresearch-historicloans');
         }
 
         $view = $this->createViewModel();
@@ -1046,7 +1010,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                     throw new \Exception('Invalid parameters.');
                 }
                 $search->setSchedule(0);
-            } else if ($type == 'reminder') {
+            } elseif ($type == 'reminder') {
                 $user = $this->getTable('User')->select(['id' => $id])->current();
                 if (!$user) {
                     throw new \Exception('Invalid parameters.');
@@ -1324,11 +1288,11 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             }
         }
         // Update checkout history state
-        if (isset($values->checkout_history)
+        if (isset($values->loan_history)
             && $catalog->checkFunction('updateTransactionHistoryState', $patron)
         ) {
             $result = $catalog->updateTransactionHistoryState(
-                $patron, $values->checkout_history
+                $patron, $values->loan_history
             );
             if (!$result['success']) {
                 $this->flashMessenger()->addErrorMessage($result['status']);
@@ -1497,5 +1461,31 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         return $userLists;
+    }
+
+    /**
+     * Get a record driver object corresponding to an array returned by an ILS
+     * driver's getMyHolds / getMyTransactions method.
+     *
+     * @param array $current Record information
+     *
+     * @return \VuFind\RecordDriver\AbstractBase
+     */
+    protected function getDriverForILSRecord($current)
+    {
+        try {
+            return parent::getDriverForILSRecord($current);
+        } catch (\Exception $e) {
+            $id = isset($current['id']) ? $current['id'] : null;
+            $source = isset($current['source'])
+                ? $current['source'] : DEFAULT_SEARCH_BACKEND;
+            $recordFactory = $this->serviceLocator
+                ->get('VuFind\RecordDriverPluginManager');
+            $record = $recordFactory->get('Missing');
+            $record->setRawData(['id' => $id]);
+            $record->setSourceIdentifier($source);
+            $record->setExtraDetail('ils_details', $current);
+            return $record;
+        }
     }
 }

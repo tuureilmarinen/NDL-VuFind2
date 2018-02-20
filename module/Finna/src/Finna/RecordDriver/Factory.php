@@ -26,6 +26,7 @@
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
 namespace Finna\RecordDriver;
+
 use Zend\ServiceManager\ServiceManager;
 
 /**
@@ -75,7 +76,7 @@ class Factory
     /**
      * Factory for SolrDefault record driver.
      *
-      * @param ServiceManager $sm Service manager.
+     * @param ServiceManager $sm Service manager.
      *
      * @return SolrDefault
      */

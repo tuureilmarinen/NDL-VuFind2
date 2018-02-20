@@ -27,6 +27,7 @@
  * @link     https://vufind.org Main Page
  */
 namespace Finna\Search\Solr;
+
 use VuFind\Solr\Utils;
 
 /**
@@ -74,6 +75,13 @@ class Params extends \VuFind\Search\Solr\Params
     // Date range index field (VuFind1)
     const SPATIAL_DATERANGE_FIELD_VF1 = 'search_sdaterange_mv';
     const SPATIAL_DATERANGE_FIELD_TYPE_VF1 = 'search_sdaterange_mvtype';
+
+    /**
+     * Hierarchical facet limit when facets are requested.
+     *
+     * @var int|null
+     */
+    protected $hierarchicalFacetLimit = null;
 
     /**
      * Constructor
@@ -281,6 +289,15 @@ class Params extends \VuFind\Search\Solr\Params
                 $facetSet['field'][] = $facetField;
             }
         }
+        if (!empty($facetSet)
+            && null !== $this->hierarchicalFacetLimit
+            && $this->facetLimit !== $this->hierarchicalFacetLimit
+        ) {
+            $hierarchicalFacets = $this->getOptions()->getHierarchicalFacets();
+            foreach ($hierarchicalFacets as $field) {
+                $facetSet["f.{$field}.facet.limit"] = $this->hierarchicalFacetLimit;
+            }
+        }
         return $facetSet;
     }
 
@@ -454,6 +471,28 @@ class Params extends \VuFind\Search\Solr\Params
     public function clearHiddenFilters()
     {
         $this->hiddenFilters = [];
+    }
+
+    /**
+     * Get current limit for hierarchical facets
+     *
+     * @return int
+     */
+    public function getHierarchicalFacetLimit()
+    {
+        return $this->hierarchicalFacetLimit;
+    }
+
+    /**
+     * Set limit for hierarchical facets
+     *
+     * @param int $limit New limit
+     *
+     * @return void
+     */
+    public function setHierarchicalFacetLimit($limit)
+    {
+        $this->hierarchicalFacetLimit = $limit;
     }
 
     /**

@@ -57,6 +57,22 @@ class SolrEad extends \VuFind\RecordDriver\SolrDefault
     protected $simpleXML;
 
     /**
+     * Constructor
+     *
+     * @param \Zend\Config\Config $mainConfig     VuFind main configuration (omit for
+     * built-in defaults)
+     * @param \Zend\Config\Config $recordConfig   Record-specific configuration file
+     * (omit to use $mainConfig as $recordConfig)
+     * @param \Zend\Config\Config $searchSettings Search-specific configuration file
+     */
+    public function __construct($mainConfig = null, $recordConfig = null,
+        $searchSettings = null
+    ) {
+        parent::__construct($mainConfig, $recordConfig, $searchSettings);
+        $this->searchSettings = $searchSettings;
+    }
+
+    /**
      * Get access restriction notes for the record.
      *
      * @return string[] Notes
@@ -436,9 +452,9 @@ class SolrEad extends \VuFind\RecordDriver\SolrDefault
      *   <ul>routeParams: Parameters for route (optional)</ul>
      *   <ul>queryString: Query params to append after building route (optional)</ul>
      * </li>
-    *
-    * @return array
-    */
+     *
+     * @return array
+     */
     public function getURLs()
     {
         $urls = [];

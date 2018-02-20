@@ -27,8 +27,9 @@
  * @link     http://vufind.org/wiki/vufind2:developer_manual Wiki
  */
 namespace FinnaConsole\Service;
-use Zend\Console\Console,
-    Zend\ServiceManager\ServiceManager;
+
+use Zend\Console\Console;
+use Zend\ServiceManager\ServiceManager;
 
 /**
  * Factory for various top-level VuFind services.
@@ -42,6 +43,25 @@ use Zend\Console\Console,
  */
 class Factory
 {
+    /**
+     * Construct the console service for reminding on expiring user accounts
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return \FinnaConsole\Service\AccountExpirationReminders
+     */
+    public static function getAccountExpirationReminders(ServiceManager $sm)
+    {
+        $table = $sm->get('VuFind\DbTablePluginManager')->get('User');
+        $renderer = $sm->get('ViewRenderer');
+        $configReader = $sm->get('VuFind\Config');
+        $translator = $sm->get('VuFind\Translator');
+
+        return new AccountExpirationReminders(
+            $table, $renderer, $configReader, $translator, $sm
+        );
+    }
+
     /**
      * Construct the console service for sending due date reminders.
      *

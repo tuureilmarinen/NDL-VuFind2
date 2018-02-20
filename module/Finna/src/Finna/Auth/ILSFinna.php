@@ -26,6 +26,7 @@
  * @link     https://vufind.org/wiki/development:plugins:authentication_handlers Wiki
  */
 namespace Finna\Auth;
+
 use VuFind\Exception\Auth as AuthException;
 
 /**
@@ -62,6 +63,22 @@ trait ILSFinna
             return $config['secondary_login_field_label'];
         }
         return '';
+    }
+
+    /**
+     * Check if ILS supports password recovery
+     *
+     * @param string $target Login target (MultiILS)
+     *
+     * @return string
+     */
+    public function ilsSupportsPasswordRecovery($target)
+    {
+        $catalog = $this->getCatalog();
+        $recoveryConfig = $catalog->checkFunction(
+            'recoverPassword', ['cat_username' => "$target.123"]
+        );
+        return $recoveryConfig ? true : false;
     }
 
     /**
