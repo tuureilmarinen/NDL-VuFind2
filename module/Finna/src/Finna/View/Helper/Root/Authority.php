@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2017.
+ * Copyright (C) The National Library of Finland 2017-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -56,7 +56,7 @@ class Authority extends \Zend\View\Helper\AbstractHelper
     }
 
     /**
-     * Returns HTML for a authority link.
+     * Returns HTML for an authority link.
      *
      * @param string $url          Link URL
      * @param string $label        Link label
@@ -72,7 +72,7 @@ class Authority extends \Zend\View\Helper\AbstractHelper
         if (empty($this->config->Authority->enabled)) {
             return null;
         }
-        
+
         return $this->getView()->render(
             'RecordDriver/SolrDefault/link-authority.phtml', [
                'url' => $url, 'label' => $label,

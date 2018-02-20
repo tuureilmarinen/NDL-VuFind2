@@ -92,13 +92,13 @@ class Factory
     }
 
     /**
-     * Factory for SolrEac record driver.
+     * Factory for SolrEacCpf record driver.
      *
      * @param ServiceManager $sm Service manager.
      *
      * @return SolrEac
      */
-    public static function getSolrEac(ServiceManager $sm)
+    public static function getSolrEacCpf(ServiceManager $sm)
     {
         $driver = new SolrEac(
             $sm->getServiceLocator()->get('VuFind\Config')->get('config'),

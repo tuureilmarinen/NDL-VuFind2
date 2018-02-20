@@ -1,11 +1,11 @@
 <?php
 /**
- * Model for EAD3 records in Solr.
+ * Model for EAC-CPF records in Solr.
  *
  * PHP version 5
  *
  * Copyright (C) Villanova University 2010.
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -30,7 +30,7 @@
 namespace Finna\RecordDriver;
 
 /**
- * Model for EAD3 records in Solr.
+ * Model for EAC-CPF records in Solr.
  *
  * @category VuFind
  * @package  RecordDrivers
@@ -39,7 +39,7 @@ namespace Finna\RecordDriver;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
-class SolrEac extends SolrAuth
+class SolrEacCpf extends SolrAuth
 {
     /**
      * Get an array of alternative titles for the record.

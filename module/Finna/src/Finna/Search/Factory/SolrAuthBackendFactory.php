@@ -6,7 +6,7 @@
  * PHP version 5
  *
  * Copyright (C) Villanova University 2013.
- * Copyright (C) The National Library of Finland 2017.
+ * Copyright (C) The National Library of Finland 2017-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,8 +29,9 @@
  * @link     https://vufind.org Main Site
  */
 namespace Finna\Search\Factory;
-use VuFindSearch\Backend\Solr\Response\Json\RecordCollectionFactory;
+
 use VuFindSearch\Backend\Solr\Connector;
+use VuFindSearch\Backend\Solr\Response\Json\RecordCollectionFactory;
 
 /**
  * Factory for the authority SOLR backend.
