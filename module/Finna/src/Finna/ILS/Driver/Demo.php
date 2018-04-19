@@ -198,9 +198,6 @@ class Demo extends \VuFind\ILS\Driver\Demo
                 }
             }
         }
-        if (empty($this->sesion->fines)) {
-            unset($this->session->fines);
-        }
 
         return true;
     }
@@ -221,7 +218,7 @@ class Demo extends \VuFind\ILS\Driver\Demo
     {
         if ($method == 'markFeesAsPaid') {
             $required = [
-                'currency', 'enabled', 'registrationMethod', 'registrationParams'
+                'currency', 'enabled', 'registrationMethod'
             ];
 
             foreach ($required as $req) {
@@ -236,13 +233,6 @@ class Demo extends \VuFind\ILS\Driver\Demo
                 return false;
             }
 
-            $regParams = $this->config['OnlinePayment']['registrationParams'];
-            $required = ['host', 'port', 'userId', 'password', 'locationCode'];
-            foreach ($required as $req) {
-                if (!isset($regParams[$req]) || empty($regParams[$req])) {
-                    return false;
-                }
-            }
             return true;
         }
         return is_callable([$this, $method]);
