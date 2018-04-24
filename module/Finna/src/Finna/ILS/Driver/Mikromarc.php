@@ -1267,14 +1267,14 @@ class Mikromarc extends \VuFind\ILS\Driver\AbstractBase implements
      * Return total amount of fees that may be paid online.
      *
      * @param array $patron Patron
+     * @param array $fines  Patron's fines
      *
      * @throws ILSException
      * @return array Associative array of payment info,
      * false if an ILSException occurred.
      */
-    public function getOnlinePayableAmount($patron)
+    public function getOnlinePayableAmount($patron, $fines)
     {
-        $fines = $this->getMyFines($patron);
         if (!empty($fines)) {
             $nonPayableReason = false;
             $amount = 0;
@@ -1315,15 +1315,17 @@ class Mikromarc extends \VuFind\ILS\Driver\AbstractBase implements
      *
      * This is called after a successful online payment.
      *
-     * @param array  $patron        Patron.
-     * @param int    $amount        Amount to be registered as paid.
-     * @param string $transactionId Transaction ID.
+     * @param array  $patron            Patron
+     * @param int    $amount            Amount to be registered as paid
+     * @param string $transactionId     Transaction ID
+     * @param int    $transactionNumber Internal transaction number
      *
      * @throws ILSException
      * @return boolean success
      */
-    public function markFeesAsPaid($patron, $amount, $transactionId)
-    {
+    public function markFeesAsPaid($patron, $amount, $transactionId,
+        $transactionNumber
+    ) {
         if (!$this->validateOnlinePaymentConfig(true)) {
             throw new ILSException(
                 'Online payment disabled or configuration missing.'
@@ -1518,8 +1520,14 @@ class Mikromarc extends \VuFind\ILS\Driver\AbstractBase implements
                 'duedate' => null,
                 'barcode' => $item['Barcode'],
                 'item_notes' => [isset($items['notes']) ? $item['notes'] : null],
-                'is_holdable' =>  false
             ];
+            if ($patron && $this->itemHoldAllowed($item)) {
+                $entry['is_holdable'] = true;
+                $entry['level'] = 'copy';
+                $entry['addLink'] = true;
+            } else {
+                $entry['is_holdable'] = false;
+            }
 
             $statuses[] = $entry;
         }
@@ -1800,7 +1808,14 @@ class Mikromarc extends \VuFind\ILS\Driver\AbstractBase implements
      */
     protected function itemHoldAllowed($item)
     {
-        return false;
+        $notAllowedForHold = isset($this->config['Holds']['notAllowedForHold'])
+            ? explode(':', $this->config['Holds']['notAllowedForHold'])
+            : [
+                'ClaimedReturnedOrNeverBorrowed', 'Lost',
+                'SuppliedReturnNotRequired', 'MissingOverDue', 'Withdrawn',
+                'Discarded', 'Other'
+            ];
+        return in_array($item['ItemStatus'], $notAllowedForHold) ? false : true;
     }
 
     /**
@@ -1842,7 +1857,9 @@ class Mikromarc extends \VuFind\ILS\Driver\AbstractBase implements
         }
 
         $map = [
-           'DuplicateReservationExists' => 'hold_error_duplicate'
+           'DuplicateReservationExists' => 'hold_error_duplicate',
+           'NoItemsAvailableByTerm' => 'hold_error_denied',
+           'NoItemAvailable' => 'hold_error_denied'
         ];
 
         if (isset($map[$message])) {

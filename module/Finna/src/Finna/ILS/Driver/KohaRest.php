@@ -653,14 +653,14 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
      * Return total amount of fees that may be paid online.
      *
      * @param array $patron Patron
+     * @param array $fines  Patron's fines
      *
      * @throws ILSException
      * @return array Associative array of payment info,
      * false if an ILSException occurred.
      */
-    public function getOnlinePayableAmount($patron)
+    public function getOnlinePayableAmount($patron, $fines)
     {
-        $fines = $this->getMyFines($patron);
         if (!empty($fines)) {
             $amount = 0;
             foreach ($fines as $fine) {
@@ -689,15 +689,17 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
      *
      * This is called after a successful online payment.
      *
-     * @param array  $patron        Patron.
-     * @param int    $amount        Amount to be registered as paid
-     * @param string $transactionId Transaction ID
+     * @param array  $patron            Patron
+     * @param int    $amount            Amount to be registered as paid
+     * @param string $transactionId     Transaction ID
+     * @param int    $transactionNumber Internal transaction number
      *
      * @throws ILSException
      * @return boolean success
      */
-    public function markFeesAsPaid($patron, $amount, $transactionId)
-    {
+    public function markFeesAsPaid($patron, $amount, $transactionId,
+        $transactionNumber
+    ) {
         $request = [
             'amount' => $amount / 100,
             'note' => "Online transaction $transactionId"
@@ -1020,7 +1022,7 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
             // Turn the holdings into a keyed array
             if (!empty($holdingsResult['holdings'])) {
                 foreach ($holdingsResult['holdings'] as $holding) {
-                    $holdings[$holding['holdingnumber']] = $holding;
+                    $holdings[$holding['holding_id']] = $holding;
                 }
             }
         }
@@ -1035,10 +1037,10 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
         foreach ($result[0]['item_availabilities'] as $i => $item) {
             // $holding is a reference!
             unset($holding);
-            if (!empty($item['holdingnumber'])
-                && isset($holdings[$item['holdingnumber']])
+            if (!empty($item['holding_id'])
+                && isset($holdings[$item['holding_id']])
             ) {
-                $holding = &$holdings[$item['holdingnumber']];
+                $holding = &$holdings[$item['holding_id']];
                 if ($holding['suppress']) {
                     continue;
                 }
@@ -1190,7 +1192,7 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
         }
 
         $marcDetails = [
-            'holdings_id' => $holding['holdingnumber']
+            'holdings_id' => $holding['holding_id']
         ];
 
         // Get Notes

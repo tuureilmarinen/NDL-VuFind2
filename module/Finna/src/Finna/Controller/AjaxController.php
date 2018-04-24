@@ -854,6 +854,10 @@ class AjaxController extends \VuFind\Controller\AjaxController
             $feed['linkTarget'] = $config->linkTarget;
         }
 
+        if (isset($config->visualItems)) {
+            $feed['visualItems'] = $config->visualItems;
+        }
+
         $template = $type == 'list' ? 'list' : 'carousel';
         $html = $this->getViewRenderer()->partial(
             "ajax/feed-$template.phtml", $feed
@@ -1004,6 +1008,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
      */
     public function getImagePopupAjax()
     {
+        $config = $this->getServiceLocator()->get('VuFind\Config')->get('config');
         $response = $this->getResponse();
         $headers = $response->getHeaders();
         $headers->addHeaderLine('Content-type', 'text/html');
@@ -1053,6 +1058,9 @@ class AjaxController extends \VuFind\Controller\AjaxController
                 $view->listUser = $user;
             }
         }
+
+        $view->enableImagePopupZoom = isset($config->Content->enableImagePopupZoom)
+            ? $config->Content->enableImagePopupZoom : false;
 
         return $view;
     }
@@ -1115,7 +1123,18 @@ class AjaxController extends \VuFind\Controller\AjaxController
         $cookieName = 'organisationInfoId';
         $cookieManager = $this->serviceLocator->get('VuFind\CookieManager');
         $cookie = $cookieManager->get($cookieName);
-
+        $params['orgType'] = 'library';
+        $museumSource = [
+            'museo', 'museum', 'kansallisgalleria', 'ateneum', 'musee',
+            'nationalgalleri', 'gallery'
+        ];
+        foreach ($museumSource as $source) {
+            $checkName = $this->translate("source_" . strtolower($parent));
+            if (stripos($checkName, $source)) {
+                $params['orgType'] = 'museum';
+                break;
+            }
+        }
         $action = $params['action'];
         $buildings = isset($params['buildings'])
             ? explode(',', $params['buildings']) : null;
@@ -1155,7 +1174,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
 
         $service = $this->serviceLocator->get('Finna\OrganisationInfo');
         try {
-            $response = $service->query($parent, $params, $buildings);
+            $response = $service->query($parent, $params, $buildings, $action);
         } catch (\Exception $e) {
             return $this->handleError(
                 'getOrganisationInfo: '
@@ -1397,7 +1416,7 @@ class AjaxController extends \VuFind\Controller\AjaxController
                     }
 
                     $facetList = $facetHelper->buildFacetArray(
-                        $facet, $facetList, $results->getUrlQuery()
+                        $facet, $facetList, $results->getUrlQuery(), false
                     );
 
                     if (!empty($facetConfig->FacetFilters->$facet)
