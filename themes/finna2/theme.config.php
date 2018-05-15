@@ -3,6 +3,7 @@ return [
     'extends' => 'bootstrap3',
     'helpers' => [
         'factories' => [
+            'auth' => 'Finna\View\Helper\Root\Factory::getAuth',
             'authorizationNote' => 'Finna\View\Helper\Root\Factory::getAuthorizationNote',
             'autocomplete' => 'Finna\View\Helper\Root\Factory::getAutocomplete',
             'browse' => 'Finna\View\Helper\Root\Factory::getBrowse',
@@ -11,6 +12,7 @@ return [
             'checkboxFacetCounts' => 'Finna\View\Helper\Root\Factory::getCheckboxFacetCounts',
             'combined' => 'Finna\View\Helper\Root\Factory::getCombined',
             'content' => 'Finna\View\Helper\Root\Factory::getContent',
+            'cookie' => 'Finna\View\Helper\Root\Factory::getCookie',
             'eds' => 'Finna\View\Helper\Root\Factory::getEDS',
             'feed' => 'Finna\View\Helper\Root\Factory::getFeed',
             'fileSrc' => 'Finna\View\Helper\Root\Factory::getFileSrc',
