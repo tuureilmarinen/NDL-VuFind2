@@ -2,7 +2,7 @@
 /**
  * Record Controller
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015.
  *
@@ -40,7 +40,7 @@ use Zend\Mail as Mail;
  */
 class RecordController extends \VuFind\Controller\RecordController
 {
-    use RecordControllerTrait;
+    use FinnaRecordControllerTrait;
     use CatalogLoginTrait;
 
     /**
@@ -70,8 +70,7 @@ class RecordController extends \VuFind\Controller\RecordController
             $dataSources = $this->serviceLocator->get('VuFind\Config')
                 ->get('datasources');
 
-            $inst = isset($dataSources->$dataSource) ?
-                $dataSources->$dataSource : null;
+            $inst = $dataSources->$dataSource ?? null;
             $recipientEmail = isset($inst->feedbackEmail) ?
                 $inst->feedbackEmail : null;
             if ($recipientEmail == null) {
@@ -269,16 +268,6 @@ class RecordController extends \VuFind\Controller\RecordController
 
         $this->getSearchMemory()->rememberScrollData($view->scrollData);
         return $view;
-    }
-
-    /**
-     * Get the search memory
-     *
-     * @return \Finna\Search\Memory
-     */
-    public function getSearchMemory()
-    {
-        return $this->serviceLocator->get('Finna\Search\Memory');
     }
 
     /**
@@ -493,10 +482,8 @@ class RecordController extends \VuFind\Controller\RecordController
                 'requestGroups' => $requestGroups,
                 'defaultRequestGroup' => $defaultRequestGroup,
                 'requestGroupNeeded' => $requestGroupNeeded,
-                'helpText' => isset($checkHolds['helpText'])
-                    ? $checkHolds['helpText'] : null,
-                'acceptTermsText' => isset($checkHolds['acceptTermsText'])
-                    ? $checkHolds['acceptTermsText'] : null
+                'helpText' => $checkHolds['helpText'] ?? null,
+                'acceptTermsText' => $checkHolds['acceptTermsText'] ?? null
             ]
         );
         $view->setTemplate('record/hold');
@@ -558,7 +545,7 @@ class RecordController extends \VuFind\Controller\RecordController
             ? explode(":", $checkRequests['extraFields']) : [];
 
         // Process form submissions if necessary:
-        if (!is_null($this->params()->fromPost('placeStorageRetrievalRequest'))) {
+        if (null !== $this->params()->fromPost('placeStorageRetrievalRequest')) {
             if (in_array('acceptTerms', $extraFields)
                 && empty($gatheredDetails['acceptTerms'])
             ) {
@@ -624,10 +611,8 @@ class RecordController extends \VuFind\Controller\RecordController
                 'homeLibrary' => $this->getUser()->home_library,
                 'extraFields' => $extraFields,
                 'defaultRequiredDate' => $defaultRequired,
-                'helpText' => isset($checkRequests['helpText'])
-                    ? $checkRequests['helpText'] : null,
-                'acceptTermsText' => isset($checkRequests['acceptTermsText'])
-                    ? $checkRequests['acceptTermsText'] : null
+                'helpText' => $checkRequests['helpText'] ?? null,
+                'acceptTermsText' => $checkRequests['acceptTermsText'] ?? null
             ]
         );
         $view->setTemplate('record/storageretrievalrequest');
@@ -688,7 +673,7 @@ class RecordController extends \VuFind\Controller\RecordController
             ? explode(":", $checkRequests['extraFields']) : [];
 
         // Process form submissions if necessary:
-        if (!is_null($this->params()->fromPost('placeILLRequest'))) {
+        if (null !== $this->params()->fromPost('placeILLRequest')) {
             if (in_array('acceptTerms', $extraFields)
                 && empty($gatheredDetails['acceptTerms'])
             ) {
@@ -757,10 +742,8 @@ class RecordController extends \VuFind\Controller\RecordController
                 'homeLibrary' => $this->getUser()->home_library,
                 'extraFields' => $extraFields,
                 'defaultRequiredDate' => $defaultRequired,
-                'helpText' => isset($checkRequests['helpText'])
-                    ? $checkRequests['helpText'] : null,
-                'acceptTermsText' => isset($checkRequests['acceptTermsText'])
-                    ? $checkRequests['acceptTermsText'] : null
+                'helpText' => $checkRequests['helpText'] ?? null,
+                'acceptTermsText' => $checkRequests['acceptTermsText'] ?? null
             ]
         );
         $view->setTemplate('record/illrequest');

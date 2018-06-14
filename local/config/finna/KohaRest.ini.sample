@@ -115,6 +115,7 @@ pattern = "numeric"
 ;fields[] = Country:country
 ;fields[] = Phone:mobile
 ;fields[] = Email:email
+;fields[] = Hold Identifier:othernames
 ; url is required for the url method. url can be a single address or an array of
 ; language-specific addresses. First example is a single one:
 ;url = http://address.of.change.form
@@ -166,7 +167,7 @@ Item::Waiting = "On Hold"
 ; Whether online payment is enabled. Default is false.
 enabled = true
 ; Transaction fee (in cents) added to each payment
-transactionFee = 50
+;transactionFee = 50
 ; Minimum fee (in cents) allowed to be paid online
 minimumFee = 65
 ; Email address for transactions that could not be registered.
