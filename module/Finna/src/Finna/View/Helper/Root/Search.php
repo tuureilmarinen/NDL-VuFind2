@@ -2,7 +2,7 @@
 /**
  * Helper class for displaying search-related HTML chunks.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015.
  *
@@ -77,7 +77,7 @@ class Search extends \VuFind\View\Helper\Bootstrap3\Search
             return '';
         }
 
-        $html = '<div class="spelling-suggestions">';
+        $html = '<div class="spelling-suggestions hidden-print">';
         $html .= $msg;
         foreach ($spellingSuggestions as $term => $details) {
             $html .= ' ' . $view->escapeHtml($term) . ' &raquo; ';

@@ -2,7 +2,7 @@
 /**
  * Collection Controller
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2017-2018.
  *
@@ -63,15 +63,5 @@ class CollectionController extends \VuFind\Controller\CollectionController
 
         $this->getSearchMemory()->rememberScrollData($view->scrollData);
         return $view;
-    }
-
-    /**
-     * Get the search memory
-     *
-     * @return \Finna\Search\Memory
-     */
-    public function getSearchMemory()
-    {
-        return $this->serviceLocator->get('Finna\Search\Memory');
     }
 }

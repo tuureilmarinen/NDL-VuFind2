@@ -2,7 +2,7 @@
 /**
  * Feed service
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016.
  *
@@ -239,6 +239,8 @@ class Feed implements \Zend\Log\LoggerAwareInterface
         $dateFormat = isset($config->dateFormat) ? $config->dateFormat : 'j.n.';
         $contentDateFormat = isset($config->contentDateFormat)
             ? $config->contentDateFormat : 'j.n.Y';
+        $fullDateFormat = isset($config->fullDateFormat)
+            ? $config->fullDateFormat : 'j.n.Y';
 
         $itemsCnt = isset($config->items) ? $config->items : null;
         $elements = isset($config->content) ? $config->content : [];
@@ -368,17 +370,20 @@ EOT;
                         }
                     } elseif ($setting == 'date') {
                         if (isset($value['date'])) {
-                            $value = new \DateTime(($value['date']));
+                            $date = new \DateTime(($value['date']));
                             if ($dateFormat) {
-                                $value = $value->format($dateFormat);
+                                $value = $date->format($dateFormat);
                             }
+                            $data['dateFull'] = $date->format($fullDateFormat);
                         }
                     } elseif ($setting == 'contentDate') {
                         if (isset($value['date'])) {
-                            $value = new \DateTime(($value['date']));
+                            $date = new \DateTime(($value['date']));
                             if ($contentDateFormat) {
-                                $value = $value->format($contentDateFormat);
+                                $value = $date->format($contentDateFormat);
                             }
+                            $data['contentDateFull']
+                                = $date->format($fullDateFormat);
                         }
                     } elseif ($setting == 'link' && $showFullContentOnSite) {
                         if (!$itemId = $item->getId()) {

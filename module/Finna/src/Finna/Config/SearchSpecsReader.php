@@ -2,7 +2,7 @@
 /**
  * VuFind SearchSpecs Configuration Reader
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2010.
  * Copyright (C) The National Library of Finland 2015.
@@ -29,7 +29,6 @@
  */
 namespace Finna\Config;
 
-use Symfony\Component\Yaml\Yaml;
 use VuFind\Config\Locator;
 
 /**
@@ -78,15 +77,15 @@ class SearchSpecsReader extends \VuFind\Config\SearchSpecsReader
             // Generate data if not found in cache:
             if ($cache === false || !($results = $cache->getItem($cacheKey))) {
                 $results = file_exists($fullpath)
-                    ? Yaml::parse(file_get_contents($fullpath)) : [];
+                    ? $this->parseYaml($fullpath) : [];
                 if (!empty($finna)) {
-                    $localResults = Yaml::parse(file_get_contents($finna));
+                    $localResults = $this->parseYaml($finna);
                     foreach ($localResults as $key => $value) {
                         $results[$key] = $value;
                     }
                 }
                 if (!empty($local)) {
-                    $localResults = Yaml::parse(file_get_contents($local));
+                    $localResults = $this->parseYaml($local);
                     if (!empty($localResults)) {
                         foreach ($localResults as $key => $value) {
                             $results[$key] = $value;

@@ -30,13 +30,18 @@ finna.itemStatus = (function finnaItemStatus() {
       data: {id: [id]}
     })
       .done(function onGetItemStatusesDone(response) {
-        $.each(response.data, function addEachItemStatus(i, result) {
+        $.each(response.data.statuses, function addEachItemStatus(i, result) {
           item.find('.status').empty().append(result.availability_message);
           item.find('.dedup-select').removeAttr('selected').
             find('option[value="' + result.record_number + '"]').attr('selected', '1');
 
           var details = item.find('.locationDetails');
-          if (typeof(result.full_status) != 'undefined'
+          if (typeof(result.error) != 'undefined'
+            && result.error.length > 0
+          ) {
+            item.find('.callnumAndLocation').empty().addClass('text-danger').append(result.error);
+            item.find('.callnumber,.hideIfDetailed,.location').addClass('hidden');
+          } else if (typeof(result.full_status) != 'undefined'
             && result.full_status.length > 0
             && item.find('.callnumAndLocation').length > 0
           ) {
