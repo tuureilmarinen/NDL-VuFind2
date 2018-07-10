@@ -238,6 +238,41 @@ finna.record = (function finnaRecord() {
       });
   }
 
+  function initAuthorityInfo()
+  {
+    $('div.authority').each(function initAuthority() {
+      var $authority = $(this);
+      $authority.find('i.show-info').click(function onClickShowInfo() {
+        var $authorityInfo = $authority.find('.authority-info');
+        if (!$authority.hasClass('loaded')) {
+          $authority.addClass('loaded');
+          $.getJSON(
+            VuFind.path + '/AJAX/JSON',
+            {
+              method: 'getAuthorityInfo',
+              id: $authority.data('authority'),
+              type: $authority.data('type'),
+              source: $authority.data('source')
+            }
+          )
+            .done(function onGetAuthorityInfoDone(response) {
+              $authorityInfo.html(typeof response.data.html !== 'undefined' ? response.data.html : '--');
+            })
+            .fail(function onGetAuthorityInfoFail() {
+              $authorityInfo.text(VuFind.translate('error_occurred'));
+            });
+        }
+        $authority.addClass('open');
+        return false;
+      });
+
+      $authority.find('i.hide-info').click(function onClickHideInfo() {
+        $authority.removeClass('open');
+        return false;
+      });
+    });
+  }
+
   function init() {
     initHideDetails();
     initDescription();
@@ -245,6 +280,7 @@ finna.record = (function finnaRecord() {
     initRecordAccordion();
     applyRecordAccordionHash();
     initAudioAccordion();
+    initAuthorityInfo();
     $(window).on('hashchange', applyRecordAccordionHash);
     loadSimilarRecords();
   }

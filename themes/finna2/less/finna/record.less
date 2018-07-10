@@ -110,6 +110,47 @@
       content: "";
     }
   }
+
+  .authority {
+    .fa {
+      vertical-align: middle;
+    }
+    .authority-info, .fa.hide-info {
+      display: none;
+    }
+
+    .authority-info {
+      border-top: 1px solid gray;
+      border-bottom: 1px solid gray;
+
+      margin: 10px 0;
+      padding: 10px 0 10px 10px;
+
+      table {
+        margin-bottom: 0;
+      }
+    }
+
+    &.open {
+      .fa.show-info {
+        display: none;
+      }
+      .fa.hide-info {
+        display: inline;
+      }
+      .authority-info {
+        display: block;
+      }
+    }
+    .role {
+      color: @gray;
+    }
+  }
+}
+
+a.authority {
+  float: left;
+  clear: left;
 }
 
 .record .record-title {

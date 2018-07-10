@@ -1,0 +1,9 @@
+<?php //Don't add START and END comments ?>
+<div class="authority ajax-content" data-authority="<?=$this->id?>" data-source="<?=$this->recordSource?>" data-type="<?=$this->type?>">
+  <a href="<?=$this->url?>">
+    <?=$this->label?><?php if (!empty($this->role)): ?><span class="role">, <?=mb_strtolower($this->transEsc('CreatorRoles::' . $this->role), 'UTF-8') ?></span><?endif?>
+    <i class="show-info fa fa-arrow-down"><span class="sr-only"><?=$this->transEsc('more_info_toggle')?></span></i>
+    <i class="hide-info fa fa-arrow-up"><span class="sr-only"><?=$this->transEsc('more_info_toggle')?></span></i>
+  </a>
+  <div class="authority-info"><i class="fa fa-spin fa-spinner"></i></div>
+</div>
