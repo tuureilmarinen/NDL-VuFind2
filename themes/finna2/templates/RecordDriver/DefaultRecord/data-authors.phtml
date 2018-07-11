@@ -12,7 +12,7 @@
         );
       }
     ?>
-    <? if (!empty($authorityLink)): ?><?=$authorityLink?><? else: ?><?=($index > 0 ? '<br/>' : '')?><a href="<?=$url?>"><?=$label?></a><?php if (!empty($author['date'])): ?><span class="author-date">, <?=$this->escapeHtml($author['date']) ?></span><?php endif; ?><?php if (!empty($author['role'])): ?><span class="author-role">, <?=$this->escapeHtml($author['role']) ?></span><?php endif; ?><? endif; ?>
+    <?php if (!empty($authorityLink)): ?><?=$authorityLink?><?php else: ?><?=($index > 0 ? '<br/>' : '')?><a href="<?=$url?>"><?=$label?></a><?php if (!empty($author['date'])): ?><span class="author-date">, <?=$this->escapeHtml($author['date']) ?></span><?php endif; ?><?php if (!empty($author['role'])): ?><span class="author-role">, <?=mb_strtolower($this->transEsc('CreatorRoles::' . $author['role']), 'UTF-8') ?></span><?php endif; ?><?php endif; ?>
   <?php endforeach; ?>
 </div>
 <?php endif; ?>
