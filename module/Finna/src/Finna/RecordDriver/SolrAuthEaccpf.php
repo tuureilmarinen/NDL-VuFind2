@@ -85,17 +85,4 @@ class SolrAuthEacCpf extends \VuFind\RecordDriver\SolrAuthDefault
         }
         return null;
     }
-
-    /**
-     * Get the original record as a SimpleXML object
-     *
-     * @return SimpleXMLElement The record as SimpleXML
-     */
-    public function getXmlRecord()
-    {
-        if ($this->simpleXML === null) {
-            $this->simpleXML = simplexml_load_string($this->fields['fullrecord']);
-        }
-        return $this->simpleXML;
-    }
 }
