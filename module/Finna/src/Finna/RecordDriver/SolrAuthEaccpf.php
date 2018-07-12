@@ -39,7 +39,7 @@ namespace Finna\RecordDriver;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
-class SolrEacCpf extends \VuFind\RecordDriver\SolrAuthDefault
+class SolrAuthEacCpf extends \VuFind\RecordDriver\SolrAuthDefault
 {
     use XmlReaderTrait;
 
