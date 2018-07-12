@@ -75,7 +75,7 @@ class SolrEad3 extends SolrEad
         return [
            'name' => $this->getOrigination(),
            'id' => $record->did->origination->name->attributes()->identifier,
-           'type' => 'Origination'
+           'type' => 'corporate-author-id'
         ];
     }
 
@@ -95,7 +95,7 @@ class SolrEad3 extends SolrEad
         foreach ($xml->did->controlaccess->name as $name) {
             $data = [
                'id' => $name->attributes()->identifier,
-               'type' => 'person',
+               'type' => 'author-id',
                'role' => $name->attributes()->relator
             ];
             if (isset($name->part)) {
@@ -147,8 +147,8 @@ class SolrEad3 extends SolrEad
                 continue;
             }
             $result[] = [
-               'id' => $relation->attributes()->href,
-               'type' => 'person',
+               'id' => (string)$relation->attributes()->href,
+               'type' => 'author-id',
                'role' => $role,
                'name' => trim((string)$relation->relationentry)
             ];

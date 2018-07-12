@@ -70,7 +70,7 @@ class Authority extends \Zend\View\Helper\AbstractHelper
     /**
      * Returns HTML for an authority link.
      *
-     * @param string                            $url    Link URL
+     * @param string                            $url    Regular link URL
      * @param string                            $label  Link label
      * @param string                            $id     Authority id
      * @param string                            $type   Authority type
@@ -94,14 +94,16 @@ class Authority extends \Zend\View\Helper\AbstractHelper
         $authSrc = isset($this->datasourceConfig[$recordSource]['authority'][$type])
             ? $this->datasourceConfig[$recordSource]['authority'][$type]
             : $this->datasourceConfig[$recordSource]['authority']['*'];
-        $id = "$authSrc.$id";
+        $authorityId = "$authSrc.$id";
 
         $record = $this->getView()->plugin('record');
-        return $record($driver)->renderTemplate(
-            'link-authority.phtml',
+        $record = $record($driver);
+        $url = $record->getLink($type, $id);
+        return $record->renderTemplate(
+            'authority-link.phtml',
             [
                'url' => $url, 'label' => $label,
-               'id' => $id, 'type' => $type, 'role' => $role,
+               'id' => $authorityId, 'type' => $type, 'role' => $role,
                'recordSource' => $recordSource
             ]
         );
