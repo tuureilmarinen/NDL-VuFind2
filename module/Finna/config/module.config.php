@@ -31,7 +31,7 @@ $config = [
     'router' => [
         'routes' => [
             'cache-file' => [
-                'type'    => 'Zend\Mvc\Router\Http\Segment',
+                'type'    => 'Zend\Router\Http\Segment',
                 'options' => [
                     'route'    => '/cache/[:file]',
                     'constraints' => [
@@ -263,7 +263,6 @@ $config = [
             'VuFind\Search\SearchTabsHelper' => 'Finna\Search\SearchTabsHelperFactory',
 
             'Zend\Session\SessionManager' => 'Finna\Session\ManagerFactory',
-            'Zend\Validator\Csrf' => 'Finna\Service\CsrfValidatorFactory',
         ],
         'aliases' => [
             'VuFind\Auth\Manager' => 'Finna\Auth\Manager',
