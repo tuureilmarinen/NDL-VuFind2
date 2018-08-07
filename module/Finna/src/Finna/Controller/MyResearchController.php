@@ -24,6 +24,7 @@
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -37,6 +38,7 @@ namespace Finna\Controller;
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -272,22 +274,15 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         // Set up CSRF:
-        $sessionManager = $this->serviceLocator->get('Zend\Session\SessionManager');
-        $this->csrf = new \Zend\Validator\Csrf(
-            [
-                'session' => new \Zend\Session\Container(
-                    'csrf', $sessionManager
-                ),
-                'salt' => isset($this->config->Security->HMACkey)
-                    ? $this->config->Security->HMACkey : 'VuFindCsrfSalt',
-            ]
-        );
+        $csrfValidator = $this->serviceLocator->get('VuFind\Validator\Csrf');
 
         if ($this->formWasSubmitted('submit', false)) {
             $csrf = $this->getRequest()->getPost()->get('csrf');
-            if (!$this->csrf->isValid($csrf)) {
+            if (!$csrfValidator->isValid($csrf)) {
                 throw new \Exception('An error has occurred');
             }
+            // After successful token verification, clear list to shrink session:
+            $csrfValidator->trimTokenList(0);
             $catalog = $this->getILS();
             $result = $catalog->purgeTransactionHistory($patron);
             $this->flashMessenger()->addMessage(
@@ -297,7 +292,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         $view = $this->createViewModel();
-        $view->csrf = $this->csrf->getHash(true);
+        $view->csrf = $csrfValidator->getHash(true);
 
         return $view;
     }
@@ -786,11 +781,17 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         if ($schedule !== false && $sid !== false) {
             $search = $this->getTable('Search');
             $baseurl = rtrim($this->getServerUrl('home'), '/');
-            $row = $search->select(
-                ['id' => $sid, 'user_id' => $user->id]
+            $savedRow = $search->select(
+                ['id' => $sid, 'user_id' => $user->id, 'saved' => 1]
             )->current();
-            if ($row) {
-                $row->setSchedule($schedule, $baseurl);
+            if ($savedRow) {
+                $savedRow->setSchedule($schedule, $baseurl);
+            } else {
+                $this->setSavedFlagSecurely($sid, true, $user->id);
+                $historyRow = $search->select(
+                    ['id' => $sid, 'user_id' => $user->id]
+                )->current();
+                $historyRow->setSchedule($schedule, $baseurl);
             }
             return $this->redirect()->toRoute('search-history');
         } else {
