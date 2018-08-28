@@ -252,8 +252,9 @@ finna.imagePopup = (function finnaImagePopup() {
               var url = VuFind.path + '/AJAX/JSON?method=getDescription&id=' + id;
               $.getJSON(url)
                 .done(function onGetDescriptionDone(response) {
-                  if (response.data.length > 0) {
-                    summaryHolder.find('> div p').html(response.data);
+                  var data = response.data.html;
+                  if (data.length > 0) {
+                    summaryHolder.find('> div p').html(data);
                     finna.layout.initTruncate(summaryHolder);
                     summaryHolder.removeClass('loading');
                   }
@@ -339,9 +340,14 @@ finna.imagePopup = (function finnaImagePopup() {
           initThumbnailNavi();
           initRecordImage();
         } else {
-          $(this).closest('a.image-popup-trigger')
-            .addClass('disable')
-            .unbind('click').click(function onClickPopupTrigger() { return false; });
+          $(this).closest('.recordcover-holder').hide();
+          $('.access-rights p').first().hide();
+          $('.image-rights').hide();
+          $('.media-left > .organisation-menu').hide();
+
+          if( $('.access-rights').has('.more-link') ) {
+            $('.access-rights > .more-link').hide();
+          }
         }
       });
     }

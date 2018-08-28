@@ -449,7 +449,7 @@ finna.layout = (function finnaLayout() {
         }
         if (this.naturalWidth && this.naturalWidth === 10 && this.naturalHeight === 10) {
           $(this).parent().addClass('no-image');
-          $('.record.large-image-layout').addClass('no-image-layout').removeClass('large-image-layout');
+          $('.record.large-image-layout').removeClass('large-image-layout');
           $('.large-image-sidebar').addClass('visible-xs');
           $('.record-main').addClass('mainbody left');
           var href = $(this).parent().attr('href');
@@ -501,7 +501,7 @@ finna.layout = (function finnaLayout() {
     $('#login_target').change(function onChangeLoginTarget() {
       var target = $('#login_target').val();
       var field = $('#login_' + (topClass ? topClass + '_' : '') + 'secondary_username');
-      if (labels[target] === '') {
+      if ((typeof labels[target] === 'undefined') || labels[target] === '') {
         field.val('');
         field.closest('.form-group').hide();
       } else {

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2016-2017.
+ * Copyright (C) The National Library of Finland 2016-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -1394,6 +1394,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         $this->sessionCache->patronCookie = $response->getCookie();
         $result = json_decode($response->getBody(), true);
         $this->sessionCache->patronId = $result['borrowernumber'];
+        $this->sessionCache->patronPermissions = $result['permissions'];
         return true;
     }
 
