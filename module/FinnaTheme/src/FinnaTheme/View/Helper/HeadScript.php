@@ -2,7 +2,7 @@
 /**
  * Head script view helper (extended for VuFind's theme system)
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2017.
  *
@@ -42,6 +42,8 @@ use Zend\Http\Request;
  */
 class HeadScript extends \VuFindTheme\View\Helper\HeadScript
 {
+    use FinnaConcatTrait;
+
     /**
      * Request
      *
@@ -50,7 +52,7 @@ class HeadScript extends \VuFindTheme\View\Helper\HeadScript
     protected $request;
 
     /**
-     * FinnaCache table
+     * FinnaCache table. Requirement of FinnaConcatTrait.
      *
      * @var FinnaCache
      */
@@ -96,6 +98,10 @@ class HeadScript extends \VuFindTheme\View\Helper\HeadScript
      */
     public function itemToString($item, $indent, $escapeStart, $escapeEnd)
     {
+        // Remove default type for current html5 compatibility
+        if (!empty($item->type) && 'text/javascript' === $item->type) {
+            $item->type = '';
+        }
         if (!empty($item->attributes['src'])) {
             $ua = $this->request->getHeader('User-Agent');
             $agent = $ua !== false ? $ua->toString() : '';
@@ -106,16 +112,5 @@ class HeadScript extends \VuFindTheme\View\Helper\HeadScript
             }
         }
         return parent::itemToString($item, $indent, $escapeStart, $escapeEnd);
-    }
-
-    /**
-     * Get the minifier that can handle these file types
-     * Required by ConcatTrait
-     *
-     * @return \FinnaTheme\Minify\JS
-     */
-    protected function getMinifier()
-    {
-        return new \FinnaTheme\Minify\JS($this->finnaCache);
     }
 }

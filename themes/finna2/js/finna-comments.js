@@ -110,7 +110,13 @@ finna.comments = (function finnaComments() {
           $(form).find('textarea[name="comment"]').val('');
         })
         .fail(function onCommentSubmitFail(response/*, textStatus*/) {
-          alert(response.responseJSON.data);
+          if (typeof response.responseJSON !== 'undefined') {
+            alert(response.responseJSON.data);
+          } else {
+            alert(VuFind.translate('error_occurred'));
+          }
+          $(form).find('input.cancel').toggleClass('hide', false);
+          $(form).find('input[type="submit"]').attr('disabled', false).button('reset');
         });
       return false;
     });
@@ -121,8 +127,10 @@ finna.comments = (function finnaComments() {
   }
 
   function updateAverageRating(rating, count) {
-    $('.rating-average .rating').rating('rate', rating);
-    $('.rating-average .count>span').text(count);
+    if ($('.rating-average .rating').length) {
+      $('.rating-average .rating').rating('rate', rating);
+      $('.rating-average .count>span').text(count);
+    }
   }
 
   function initEditComment(allowCommenting, allowRating) {

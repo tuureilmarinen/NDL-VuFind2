@@ -2,7 +2,7 @@
 /**
  * EDS Controller
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2017.
  *
@@ -38,7 +38,7 @@ namespace Finna\Controller;
  */
 class EdsController extends \VuFind\Controller\EdsController
 {
-    use SearchControllerTrait;
+    use FinnaSearchControllerTrait;
 
     /**
      * Save a search to the history in the database.
@@ -60,16 +60,6 @@ class EdsController extends \VuFind\Controller\EdsController
     }
 
     /**
-     * Get the search memory
-     *
-     * @return \Finna\Search\Memory
-     */
-    public function getSearchMemory()
-    {
-        return $this->serviceLocator->get('Finna\Search\Memory');
-    }
-
-    /**
      * Handle an advanced search
      *
      * @return mixed
@@ -79,7 +69,7 @@ class EdsController extends \VuFind\Controller\EdsController
         $view = parent::advancedAction();
 
         $config = $this->getConfig();
-        $ticks = [0, 900, 1800, 1910];
+        $ticks = [-1000, 0, 900, 1800, 1900];
         if (!empty($config->Site->advSearchYearScale)) {
             $ticks = array_map(
                 'trim', explode(',', $config->Site->advSearchYearScale)

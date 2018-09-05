@@ -2,7 +2,7 @@
 /**
  * Book Bag / Bulk Action Controller
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2010.
  * Copyright (C) The National Library of Finland 2017.
@@ -51,7 +51,7 @@ class CartController extends \VuFind\Controller\CartController
     public function emailAction()
     {
         // Retrieve ID list:
-        $ids = is_null($this->params()->fromPost('selectAll'))
+        $ids = null === $this->params()->fromPost('selectAll')
             ? $this->params()->fromPost('ids')
             : $this->params()->fromPost('idsAll');
 
@@ -96,6 +96,30 @@ class CartController extends \VuFind\Controller\CartController
                 return $this->redirectToSource('success', 'bulk_email_success');
             } catch (MailException $e) {
                 $this->flashMessenger()->addMessage($e->getMessage(), 'error');
+            }
+        }
+        return $view;
+    }
+
+    /**
+     * Create a new ViewModel to use as an email form.
+     *
+     * @param array  $params         Parameters to pass to ViewModel constructor.
+     * @param string $defaultSubject Default subject line to use.
+     *
+     * @return ViewModel
+     */
+    protected function createEmailViewModel($params = null, $defaultSubject = null)
+    {
+        $view = parent::createEmailViewModel($params, $defaultSubject);
+        if (empty($view->message)) {
+            $listName = $this->params()->fromPost('listName', '');
+            $listDescription = $this->params()->fromPost('listDescription', '');
+
+            if ($listName && $listDescription) {
+                $view->message = "$listName\n\n$listDescription";
+            } else {
+                $view->message = "$listName$listDescription";
             }
         }
         return $view;

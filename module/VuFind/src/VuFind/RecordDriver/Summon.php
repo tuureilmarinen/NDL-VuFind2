@@ -2,7 +2,7 @@
 /**
  * Model for Summon records.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2010.
  *
@@ -36,7 +36,7 @@ namespace VuFind\RecordDriver;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/development:plugins:record_drivers Wiki
  */
-class Summon extends SolrDefault
+class Summon extends DefaultRecord
 {
     /**
      * Fields that may contain subject headings, and their descriptions
@@ -499,11 +499,9 @@ class Summon extends SolrDefault
     public function getURLs()
     {
         if (isset($this->fields['link'])) {
+            $msg = $this->hasFullText() ? 'Get full text' : 'Get more information';
             return [
-                [
-                    'url' => $this->fields['link'],
-                    'desc' => $this->translate('Get full text')
-                ]
+                ['url' => $this->fields['link'], 'desc' => $this->translate($msg)]
             ];
         }
         $retVal = [];
@@ -628,5 +626,25 @@ class Summon extends SolrDefault
             }
         }
         return $str;
+    }
+
+    /**
+     * Does this record have full text access?
+     *
+     * @return bool
+     */
+    public function hasFullText()
+    {
+        return (bool)($this->fields['hasFullText'] ?? false);
+    }
+
+    /**
+     * Is this an open access record?
+     *
+     * @return bool
+     */
+    public function isOpenAccess()
+    {
+        return (bool)($this->fields['IsOpenAccess'] ?? false);
     }
 }

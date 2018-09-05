@@ -2,7 +2,7 @@
 /**
  * Record Controller
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015.
  *
@@ -40,7 +40,7 @@ use Zend\Mail as Mail;
  */
 class RecordController extends \VuFind\Controller\RecordController
 {
-    use RecordControllerTrait;
+    use FinnaRecordControllerTrait;
     use CatalogLoginTrait;
 
     /**
@@ -57,9 +57,9 @@ class RecordController extends \VuFind\Controller\RecordController
             $flashMsg = $this->flashMessenger();
 
             $message = $this->params()->fromPost('feedback_message');
-            $senderEmail = $this->params()->fromPost('from');
+            $replyToEmail = $this->params()->fromPost('from');
             $validator = new \Zend\Validator\EmailAddress();
-            if (!$validator->isValid($senderEmail)) {
+            if (!$validator->isValid($replyToEmail)) {
                 $flashMsg->setNamespace('error')
                     ->addMessage('Email address is invalid');
                 return $view;
@@ -70,8 +70,7 @@ class RecordController extends \VuFind\Controller\RecordController
             $dataSources = $this->serviceLocator->get('VuFind\Config')
                 ->get('datasources');
 
-            $inst = isset($dataSources->$dataSource) ?
-                $dataSources->$dataSource : null;
+            $inst = $dataSources->$dataSource ?? null;
             $recipientEmail = isset($inst->feedbackEmail) ?
                 $inst->feedbackEmail : null;
             if ($recipientEmail == null) {
@@ -81,6 +80,13 @@ class RecordController extends \VuFind\Controller\RecordController
                 );
             }
 
+            $config = $this->getConfig();
+            $feedback = isset($config->Feedback) ? $config->Feedback : null;
+            $senderEmail = isset($feedback->sender_email)
+                ? $feedback->sender_email : 'noreply@vufind.org';
+            $senderName = isset($feedback->sender_name)
+                ? $feedback->sender_name : 'VuFind Feedback';
+
             $emailSubject = $this->translate(
                 'feedback_on_record',
                 ['%%record%%' => $driver->getBreadcrumb()]
@@ -89,7 +95,7 @@ class RecordController extends \VuFind\Controller\RecordController
             $serverUrl .= '://' . $this->getRequest()->getServer('HTTP_HOST');
 
             $emailMessage = "\n" . $this->translate('This email was sent from');
-            $emailMessage .= ": " . $senderEmail . "\n";
+            $emailMessage .= ": " . $replyToEmail . "\n";
             $emailMessage .=
                 "------------------------------------------------------------\n";
             // Use the record plugin to render the template for the correct driver
@@ -107,7 +113,8 @@ class RecordController extends \VuFind\Controller\RecordController
             $mail = new Mail\Message();
             $mail->setEncoding('UTF-8');
             $mail->setBody($emailMessage);
-            $mail->setFrom($senderEmail);
+            $mail->setFrom($senderEmail, $senderName);
+            $mail->setReplyTo($replyToEmail);
             $mail->addTo($recipientEmail);
             try {
                 $mail->setSubject($emailSubject);
@@ -154,7 +161,7 @@ class RecordController extends \VuFind\Controller\RecordController
             throw new \Exception('Normalization preview URL not configured');
         }
 
-        $httpService = $this->serviceLocator->get('\VuFind\Http');
+        $httpService = $this->serviceLocator->get('VuFind\Http');
         $client = $httpService->createClient(
             $config->NormalizationPreview->url,
             \Zend\Http\Request::METHOD_POST
@@ -261,16 +268,6 @@ class RecordController extends \VuFind\Controller\RecordController
 
         $this->getSearchMemory()->rememberScrollData($view->scrollData);
         return $view;
-    }
-
-    /**
-     * Get the search memory
-     *
-     * @return \Finna\Search\Memory
-     */
-    public function getSearchMemory()
-    {
-        return $this->serviceLocator->get('Finna\Search\Memory');
     }
 
     /**
@@ -404,7 +401,7 @@ class RecordController extends \VuFind\Controller\RecordController
                 $gatheredDetails, $extraHoldFields, $requestGroups
             );
             $validPickup = $validGroup && $this->holds()->validatePickUpInput(
-                $gatheredDetails['pickUpLocation'], $extraHoldFields, $pickup
+                $gatheredDetails['pickUpLocation'] ?? '', $extraHoldFields, $pickup
             );
             if (!$validGroup) {
                 $this->flashMessenger()
@@ -485,10 +482,8 @@ class RecordController extends \VuFind\Controller\RecordController
                 'requestGroups' => $requestGroups,
                 'defaultRequestGroup' => $defaultRequestGroup,
                 'requestGroupNeeded' => $requestGroupNeeded,
-                'helpText' => isset($checkHolds['helpText'])
-                    ? $checkHolds['helpText'] : null,
-                'acceptTermsText' => isset($checkHolds['acceptTermsText'])
-                    ? $checkHolds['acceptTermsText'] : null
+                'helpText' => $checkHolds['helpText'] ?? null,
+                'acceptTermsText' => $checkHolds['acceptTermsText'] ?? null
             ]
         );
         $view->setTemplate('record/hold');
@@ -550,7 +545,7 @@ class RecordController extends \VuFind\Controller\RecordController
             ? explode(":", $checkRequests['extraFields']) : [];
 
         // Process form submissions if necessary:
-        if (!is_null($this->params()->fromPost('placeStorageRetrievalRequest'))) {
+        if (null !== $this->params()->fromPost('placeStorageRetrievalRequest')) {
             if (in_array('acceptTerms', $extraFields)
                 && empty($gatheredDetails['acceptTerms'])
             ) {
@@ -616,10 +611,8 @@ class RecordController extends \VuFind\Controller\RecordController
                 'homeLibrary' => $this->getUser()->home_library,
                 'extraFields' => $extraFields,
                 'defaultRequiredDate' => $defaultRequired,
-                'helpText' => isset($checkRequests['helpText'])
-                    ? $checkRequests['helpText'] : null,
-                'acceptTermsText' => isset($checkHolds['acceptTermsText'])
-                    ? $checkHolds['acceptTermsText'] : null
+                'helpText' => $checkRequests['helpText'] ?? null,
+                'acceptTermsText' => $checkRequests['acceptTermsText'] ?? null
             ]
         );
         $view->setTemplate('record/storageretrievalrequest');
@@ -680,7 +673,7 @@ class RecordController extends \VuFind\Controller\RecordController
             ? explode(":", $checkRequests['extraFields']) : [];
 
         // Process form submissions if necessary:
-        if (!is_null($this->params()->fromPost('placeILLRequest'))) {
+        if (null !== $this->params()->fromPost('placeILLRequest')) {
             if (in_array('acceptTerms', $extraFields)
                 && empty($gatheredDetails['acceptTerms'])
             ) {
@@ -749,10 +742,8 @@ class RecordController extends \VuFind\Controller\RecordController
                 'homeLibrary' => $this->getUser()->home_library,
                 'extraFields' => $extraFields,
                 'defaultRequiredDate' => $defaultRequired,
-                'helpText' => isset($checkRequests['helpText'])
-                    ? $checkRequests['helpText'] : null,
-                'acceptTermsText' => isset($checkHolds['acceptTermsText'])
-                    ? $checkHolds['acceptTermsText'] : null
+                'helpText' => $checkRequests['helpText'] ?? null,
+                'acceptTermsText' => $checkRequests['acceptTermsText'] ?? null
             ]
         );
         $view->setTemplate('record/illrequest');

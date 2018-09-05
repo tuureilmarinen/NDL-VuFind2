@@ -24,6 +24,8 @@ renewalLimit = 3
 ; used to manually set the order by entering location IDs as a colon-separated list.
 ;holdingsOrganisationOrder = 1
 ;holdingsBranchOrder = 001:095:100:110:115:120:130:135:160:200:210:230:240:260:270:300
+; Whether to display title hold links in results list
+display_title_hold_in_results = true
 
 [Holds]
 
@@ -155,3 +157,17 @@ dueDateAlert = "none:email"
 [dueDateReminder]
 ; By default due date reminder is disabled in Finna since the ILS does the job
 enabled = false
+
+[onlinePayment]
+; Whether online payment is enabled. Default is false.
+enabled = true
+; Transaction fee (in cents) added to each payment
+;transactionFee = 50
+; Minimum fee (in cents) allowed to be paid online
+minimumFee = 65
+; Email address for transactions that could not be registered.
+;errorEmail = ''
+; Maximum duration (in minutes) for a transaction.
+transactionMaxDuration = 15
+; Currency
+currency = 'EUR'

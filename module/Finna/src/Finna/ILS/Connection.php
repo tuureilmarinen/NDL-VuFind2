@@ -5,7 +5,7 @@
  * This wrapper works with a driver class to pass information from the ILS to
  * VuFind.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -167,6 +167,33 @@ class Connection extends \VuFind\ILS\Connection
         if ($this->checkCapability('getPatronAuthorizationStatus', [$params ?: []])
         ) {
             return ['function' => 'getPatronAuthorizationStatus'];
+        }
+        return false;
+    }
+
+    /**
+     * Check for Staff User Authorization Status
+     *
+     * A support method for checkFunction(). This is responsible for checking
+     * the driver configuration to determine if the system supports getting
+     * staff user authorization status.
+     *
+     * @param array $functionConfig The configuration values
+     * @param array $params         Patron data
+     *
+     * @return mixed On success, an associative array with specific function keys
+     * and values for getting authorization status; on failure, false.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    protected function checkMethodgetPatronStaffAuthorizationStatus(
+        $functionConfig, $params
+    ) {
+        $capability = $this->checkCapability(
+            'getPatronStaffAuthorizationStatus', [$params ?: []]
+        );
+        if ($capability) {
+            return ['function' => 'getPatronStaffAuthorizationStatus'];
         }
         return false;
     }
@@ -460,6 +487,38 @@ class Connection extends \VuFind\ILS\Connection
     {
         if ($this->checkCapability('markFeesAsPaid', [$params ?: []])) {
             return ['function' => 'markFeesAsPaid'];
+        }
+        return false;
+    }
+
+    /**
+     * Check if password recovery is supported.
+     *
+     * @param array $functionConfig Function configuration values
+     * @param array $params         An array of function-specific params (or null)
+     *
+     * @return boolean
+     */
+    protected function checkMethodgetPasswordRecoveryToken($functionConfig, $params)
+    {
+        if ($this->checkCapability('getPasswordRecoveryToken', [$params ?: []])) {
+            return $functionConfig;
+        }
+        return false;
+    }
+
+    /**
+     * Check if password recovery is supported.
+     *
+     * @param array $functionConfig Function configuration values
+     * @param array $params         An array of function-specific params (or null)
+     *
+     * @return boolean
+     */
+    protected function checkMethodrecoverPassword($functionConfig, $params)
+    {
+        if ($this->checkCapability('recoverPassword', [$params ?: []])) {
+            return $functionConfig;
         }
         return false;
     }

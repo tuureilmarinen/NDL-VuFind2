@@ -2,7 +2,7 @@
 /**
  * Barcode Controller
  *
- * PHP Version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2017.
  *
@@ -25,10 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org Main Page
  */
-namespace VuFind\Controller;
+namespace Finna\Controller;
 
 /**
- * Generates qrcodes
+ * Generates barcodes
  *
  * @category VuFind
  * @package  Controller
@@ -36,7 +36,7 @@ namespace VuFind\Controller;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org Main Page
  */
-class BarcodeController extends AbstractBase
+class BarcodeController extends \VuFind\Controller\AbstractBase
 {
     /**
      * Send barcode data for display in the view
@@ -55,7 +55,7 @@ class BarcodeController extends AbstractBase
             [
                 'code' => $code,
                 'type' => $type,
-                'html' => $htmlGenerator->getBarcode($code, $type, 3, 40)
+                'html' => $htmlGenerator->getBarcode($code, $type, 3, 60)
             ]
         );
     }

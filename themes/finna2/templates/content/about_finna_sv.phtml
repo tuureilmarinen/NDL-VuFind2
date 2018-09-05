@@ -1,5 +1,5 @@
 <!-- START of: finna - content/about_finna_sv.phtml -->
-<? $this->headTitle($this->translate('Vad är Finna?')); $this->content()->setHeading($this->translate('Vad är Finna?'));  ?>
+<?php $this->headTitle($this->translate('Vad är Finna?')); $this->content()->setHeading($this->translate('Vad är Finna?'));  ?>
 <div>
     <h2>Finna.fi</h2>
 </div>
@@ -30,8 +30,17 @@
       <h2>Andra Finna-söktjänster</h2>
       <p>Finna är en helhet av söktjänster, med många organisationsspecifika webbsidor utöver den nationella webbplatsen finna.fi. Sökningen på de olika organisationernas vyer begränsar sig i regel till den aktuella organisationens material.
       </p>
-      <p>Finna utvecklas kontinuerligt och kommer stegvis att ersätta de finländska bibliotekens, arkivens och museernas kundgränssnitt. För närvarande är <a href="https://www.finna.fi/Content/organisations?lng=sv">mer än 100 organisationer</a> med i Finna. Följande av dem har en egen Finnavy:
+      <p>Finna utvecklas kontinuerligt och kommer stegvis att ersätta de finländska bibliotekens, arkivens och museernas kundgränssnitt. För närvarande är <a href="https://www.finna.fi/Content/organisations?lng=sv">mer än 300 organisationer</a> med i Finna. Följande av dem har en egen Finnavy:
       </p>
+      <ul class="list-bullets">
+        <li><a href="#publiclib"><?=$this->translate('Public Libraries') ?></a></li>
+        <li><a href="#archives"><?=$this->translate('Archives') ?></a></li>
+        <li><a href="#museums"><?=$this->translate('Museums') ?></a></li>
+        <li><a href="#polylib"><?=$this->translate('Polytechnic Libraries') ?></a></li>
+        <li><a href="#univlib"><?=$this->translate('University Libraries') ?></a></li>
+        <li><a href="#jointlib"><?=$this->translate('Joint libraries') ?></a></li>
+        <li><a href="#speciallib"><?=$this->translate('Special libraries') ?></a></li>
+      </ul>
     </div>
     <?=$this->render('content/about_finna_sites.phtml') ?>
     <div class="page-content">
@@ -46,7 +55,7 @@
   <div class="container">
     <div class="page-content">
       <p>&nbsp;</p>
-      <a name="e-materials"></a>
+      <a id="e-materials"></a>
       <h2>Elektroniska resurser</h2>
       <h4>Internationella, vetenskapliga e-resurser</h4>
       <p>Yrkeshögskole- och universitetsbibliotekens Finnavyer innehåller internationella, vetenskapliga och elektroniska resurser som en utomstående aktör sammanställer och erbjuder biblioteken mot en avgift. Merparten av resurserna får endast användas av högskolans studenter och anställda. Man får tillgång till de elektroniska resurserna genom att logga in på <a href="#organisation-views">sitt biblioteks Finnavy</a> med sitt användarnamn.
@@ -91,10 +100,10 @@
       <p>Finna är en tjänst som utvecklas stegvis allt eftersom nya organisationer ansluter sig. Betaversionen lanserades i december 2012 och den första egentliga versionen i oktober 2013. Om du inte hittar den information du söker i Finna i dag, kommer den kanske att finnas där i framtiden.
       </p>
       <h4>Finnas ansvariga parter</h4>
-      <p>Nationalbiblioteket ansvarar för utvecklingen och administrationen av Finna, men tjänsten utvecklas tillsammans med Finnas samarbetspartner. De <a href="https://www.finna.fi/Content/organisations?lng=sv">arkiv, bibliotek och museer</a> som medverkar i Finna ansvarar för innehållet. Finna är en del av undervisnings- och kulturministeriets projekt <a href="http://www.kdk.fi/sv/information-om-projektet">Det nationella digitala biblioteket (NDL).</a>
+      <p>Nationalbiblioteket ansvarar för utvecklingen och administrationen av Finna, men tjänsten utvecklas tillsammans med Finnas samarbetspartner. De <a href="https://www.finna.fi/Content/organisations?lng=sv">arkiv, bibliotek och museer</a> som medverkar i Finna ansvarar för innehållet. Finna är född som en del av undervisnings- och kulturministeriets projekt Det nationella digitala biblioteket (2008–2017). 
       </p>
       <h4>Finnas program</h4>
-      <p>Finna har skapats med hjälp av VuFind och andra program med öppen källkod, och Finnas källkod får användas fritt. <a href="http://www.kdk.fi/fi/asiakasliittyma/ohjelmiston-kehittaeminen">Läs mer om utvecklingen av programmet.</a>
+      <p>Finna har skapats med hjälp av VuFind och andra program med öppen källkod, och Finnas källkod får användas fritt.
       </p>
       <p>&nbsp;</p>
     </div>

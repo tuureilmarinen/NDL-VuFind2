@@ -2,7 +2,7 @@
 /**
  * Helper class for displaying search-related HTML chunks.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015.
  *
@@ -39,6 +39,28 @@ namespace Finna\View\Helper\Root;
 class Search extends \VuFind\View\Helper\Bootstrap3\Search
 {
     /**
+     * Get number of active filters
+     *
+     * @param array $checkboxFilters Checkbox filters
+     * @param array $filterList      Other filters
+     *
+     * @return int
+     */
+    public function getFilterCount($checkboxFilters, $filterList)
+    {
+        $result = 0;
+        foreach ($checkboxFilters as $filter) {
+            if ($filter['selected']) {
+                ++$result;
+            }
+        }
+        foreach ($filterList as $filter) {
+            $result += count($filter);
+        }
+        return $result;
+    }
+
+    /**
      * Support function to display spelling suggestions.
      *
      * @param string                          $msg     HTML to display at the top of
@@ -55,7 +77,7 @@ class Search extends \VuFind\View\Helper\Bootstrap3\Search
             return '';
         }
 
-        $html = '<div class="spelling-suggestions">';
+        $html = '<div class="spelling-suggestions hidden-print">';
         $html .= $msg;
         foreach ($spellingSuggestions as $term => $details) {
             $html .= ' ' . $view->escapeHtml($term) . ' &raquo; ';

@@ -1,10 +1,10 @@
 .accordion {
   list-style-type: none;
   .accordion-toggle {
-    padding: 10px;
+    padding: 15px 10px;
     margin-bottom: 5px;
     font-size: 1em;
-    font-weight: 600;
+    font-weight: 500;
     background-color: @gray-ultralight;
     border-top: 1px solid @gray-lighter;
     border-right: 1px solid @gray-lighter;
@@ -13,24 +13,31 @@
     @media(min-width: @screen-md) {
       display: none;
     }
+    @media print {
+      border: none;
+      i {
+        display: none;
+      }
+    }
   }
   .accordion-toggle a {
     color: @text-color;
-    display: block;
+    display: flex;
+    align-items: center;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    line-height: @line-height-computed;
+    line-height: @content-headings-line-height;
     width: 100%;
     .title {
-      float: left;
+      flex: 1;
+      font-size: @font-size-h2;
     }
     .icon:after {
       font-family: icomoon;
       font-size: 24px;
       content: "\e91a";
       color: @action-link-color;
-      float: right;
+      flex: 1;
       font-style: normal;
     }
   }
@@ -39,18 +46,19 @@
       display: @accordion-details-display;
     }
   }
-}
-
-.record-accordions.record-tabs {
-  .accordion.active {
+  @media print {
+    &:not(.active) {
+      display: none;
+    }
+  }
+  &.active {
     .accordion-toggle {
       border-left: 4px solid @action-link-color;
       .icon:after {
-        font-family: icomoon;
-        font-size: 24px;
         content: "\e916";
-        float: right;
-        color: @action-link-color;
+      }
+      @media print {
+        border-left: none;
       }
     }
     @media (max-width: @screen-sm-max) {
@@ -69,12 +77,5 @@
     width: 75%;
     padding-right: 15px;
     float: left;
-  }
-  @media(max-width: @screen-sm-max) {
-    .tab-content {
-      display: none;
-      padding: 0;
-      margin: 0;
-    }
   }
 }

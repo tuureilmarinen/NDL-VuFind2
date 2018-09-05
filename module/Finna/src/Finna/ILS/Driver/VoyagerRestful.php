@@ -2,7 +2,7 @@
 /**
  * Voyager ILS Driver
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -48,17 +48,21 @@ class VoyagerRestful extends \VuFind\ILS\Driver\VoyagerRestful
      *
      * @var \VuFind\Config\PluginManager
      */
-    protected $configReader = null;
+    protected $configReader;
 
     /**
-     * Set the config reader
+     * Constructor
      *
-     * @param \VuFind\Config\PluginManager $configReader Configuration reader
-     *
-     * @return void
+     * @param \VuFind\Date\Converter       $dateConverter  Date converter object
+     * @param string                       $holdsMode      Holds mode setting
+     * @param string                       $titleHoldsMode Title holds mode setting
+     * @param \VuFind\Config\PluginManager $configReader   Config reader
      */
-    public function setConfigReader(\VuFind\Config\PluginManager $configReader)
-    {
+    public function __construct(\VuFind\Date\Converter $dateConverter,
+        $holdsMode = 'disabled', $titleHoldsMode = 'disabled',
+        \VuFind\Config\PluginManager $configReader = null
+    ) {
+        parent::__construct($dateConverter, $holdsMode, $titleHoldsMode);
         $this->configReader = $configReader;
     }
 
@@ -361,9 +365,6 @@ class VoyagerRestful extends \VuFind\ILS\Driver\VoyagerRestful
      */
     protected function getPatronDriverConfig($patron)
     {
-        if (null === $this->configReader) {
-            return false;
-        }
         if (isset($patron['cat_username'])
             && ($pos = strpos($patron['cat_username'], '.')) > 0
         ) {
@@ -447,8 +448,7 @@ class VoyagerRestful extends \VuFind\ILS\Driver\VoyagerRestful
             if ($this->checkItemsExist) {
                 $exist = $this->itemsExist(
                     $id,
-                    isset($holdDetails['requestGroupId'])
-                    ? $holdDetails['requestGroupId'] : null
+                    $holdDetails['requestGroupId'] ?? null
                 );
                 if (!$exist) {
                     return false;
@@ -468,8 +468,7 @@ class VoyagerRestful extends \VuFind\ILS\Driver\VoyagerRestful
                 ) {
                     $available = $this->itemsAvailable(
                         $id,
-                        isset($data['requestGroupId'])
-                        ? $data['requestGroupId'] : null
+                        $data['requestGroupId'] ?? null
                     );
                     if ($available) {
                         return false;

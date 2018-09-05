@@ -2,7 +2,7 @@
 /**
  * Console service for processing unregistered online payments.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2017.
  *
@@ -30,6 +30,8 @@ namespace FinnaConsole\Service;
 
 use Finna\Db\Row\User;
 use Finna\Db\Table\Transaction;
+
+use Zend\Stdlib\RequestInterface as Request;
 
 /**
  * Console service for processing unregistered online payments.
@@ -161,11 +163,12 @@ class OnlinePaymentMonitor extends AbstractService
     /**
      * Run service.
      *
-     * @param array $arguments Command line arguments.
+     * @param array   $arguments Command line arguments.
+     * @param Request $request   Full request
      *
      * @return boolean success
      */
-    public function run($arguments)
+    public function run($arguments, Request $request)
     {
         if (count($arguments) < 3) {
             echo $this->usage();
@@ -307,7 +310,7 @@ class OnlinePaymentMonitor extends AbstractService
 
             try {
                 $this->catalog->markFeesAsPaid(
-                    $patron, $t->amount, $t->transaction_id
+                    $patron, $t->amount, $t->transaction_id, $t->id
                 );
                 $result = $this->transactionTable->setTransactionRegistered(
                     $t->transaction_id
@@ -385,8 +388,10 @@ class OnlinePaymentMonitor extends AbstractService
 
         foreach ($report as $driver => $cnt) {
             if ($cnt) {
-                $settings = $this->configReader->get("VoyagerRestful_$driver");
-                if (!$settings || !isset($settings['OnlinePayment']['errorEmail'])) {
+                $settings = $this->catalog->getConfig(
+                    'onlinePayment', ['id' => "$driver.123"]
+                );
+                if (!$settings || !isset($settings['errorEmail'])) {
                     $this->err(
                         "  No error email for expired transactions not defined for "
                         . "driver $driver ($cnt expired transactions)"
@@ -394,7 +399,7 @@ class OnlinePaymentMonitor extends AbstractService
                     continue;
                 }
 
-                $email = $settings['OnlinePayment']['errorEmail'];
+                $email = $settings['errorEmail'];
                 $this->msg(
                     "  [$driver] Inform $cnt expired transactions "
                     . "for driver $driver to $email"
@@ -437,7 +442,7 @@ class OnlinePaymentMonitor extends AbstractService
         $this->expireHours = $arguments[0];
         $this->fromEmail = $arguments[1];
         $this->reportIntervalHours = $arguments[2];
-        $this->minimumPaidAge = isset($arguments[3]) ? $arguments[3] : 120;
+        $this->minimumPaidAge = $arguments[3] ?? 120;
     }
 
     /**

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2016-2017.
+ * Copyright (C) The National Library of Finland 2016-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,7 @@
  */
 namespace VuFind\ILS\Driver;
 
-use VuFind\Exception\Date as DateException;
+use VuFind\Date\DateException;
 use VuFind\Exception\ILS as ILSException;
 
 /**
@@ -50,6 +50,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
     use \VuFind\Log\LoggerAwareTrait {
         logError as error;
     }
+    use \VuFind\ILS\Driver\CacheTrait;
 
     /**
      * Date converter object
@@ -104,7 +105,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         'M' => 'Sundry',
         'N' => 'New Card',
         'ODUE' => 'Overdue',
-        'Res' => 'Hold Fee'
+        'Res' => 'Hold Fee',
+        'HE' => 'Hold Expired'
     ];
 
     /**
@@ -124,6 +126,13 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         'debarred' => 'Borrowing Block Koha Reason Patron_DebarredOverdue',
         'debt' => 'renew_debt'
     ];
+
+    /**
+     * Whether to display home branch instead of holding branch
+     *
+     * @var bool
+     */
+    protected $useHomeBranch = false;
 
     /**
      * Constructor
@@ -177,6 +186,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
                 $this->feeTypeMappings, $this->config['FeeTypeMappings']
             );
         }
+
+        $this->useHomeBranch = !empty($this->config['Holdings']['use_home_branch']);
 
         // Init session cache for session-specific data
         $namespace = md5($this->config['Catalog']['host']);
@@ -342,7 +353,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             true
         );
 
-        if ($code == 401) {
+        if ($code == 401 || $code == 403) {
             return null;
         }
         if ($code != 200) {
@@ -357,7 +368,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             'cat_password' => $password,
             'email' => $result['email'],
             'major' => null,
-            'college' => null
+            'college' => null,
+            'home_library' => $result['branchcode']
         ];
     }
 
@@ -446,20 +458,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         }
         $transactions = [];
         foreach ($result as $entry) {
-            $item = $this->getItem($entry['itemnumber']);
-            $volume = isset($item['enumchron'])
-                ? $item['enumchron'] : '';
-            $title = '';
-            if (!empty($item['biblionumber'])) {
-                $bib = $this->getBibRecord($item['biblionumber']);
-                if (!empty($bib['title'])) {
-                    $title = $bib['title'];
-                }
-                if (!empty($bib['title_remainder'])) {
-                    $title .= ' ' . $bib['title_remainder'];
-                    $title = trim($title);
-                }
-            }
+            list($biblionumber, $title, $volume)
+                = $this->getCheckoutInformation($entry);
 
             $dueStatus = false;
             $now = time();
@@ -481,7 +481,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             }
 
             $transaction = [
-                'id' => isset($item['biblionumber']) ? $item['biblionumber'] : '',
+                'id' => $biblionumber,
                 'checkout_id' => $entry['issue_id'],
                 'item_id' => $entry['itemnumber'],
                 'title' => $title,
@@ -582,7 +582,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         }
         $direction = (isset($sort[1]) && 'desc' === $sort[1]) ? 'desc' : 'asc';
 
-        $pageSize = isset($params['limit']) ? $params['limit'] : 50;
+        $pageSize = $params['limit'] ?? 50;
         $queryParams = [
             'borrowernumber' => $patron['id'],
             'sort' => $sortKey,
@@ -605,24 +605,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         ];
 
         foreach ($transactions['records'] as $entry) {
-            try {
-                $item = $this->getItem($entry['itemnumber']);
-            } catch (\Exception $e) {
-                $item = [];
-            }
-            $volume = isset($item['enumchron'])
-                ? $item['enumchron'] : '';
-            $title = '';
-            if (!empty($item['biblionumber'])) {
-                $bib = $this->getBibRecord($item['biblionumber']);
-                if (!empty($bib['title'])) {
-                    $title = $bib['title'];
-                }
-                if (!empty($bib['title_remainder'])) {
-                    $title .= ' ' . $bib['title_remainder'];
-                    $title = trim($title);
-                }
-            }
+            list($biblionumber, $title, $volume)
+                = $this->getCheckoutInformation($entry);
 
             $dueStatus = false;
             $now = time();
@@ -636,7 +620,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             }
 
             $transaction = [
-                'id' => isset($item['biblionumber']) ? $item['biblionumber'] : '',
+                'id' => $biblionumber,
                 'checkout_id' => $entry['issue_id'],
                 'item_id' => $entry['itemnumber'],
                 'title' => $title,
@@ -684,8 +668,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         }
         $holds = [];
         foreach ($result as $entry) {
-            $bibId = isset($entry['biblionumber']) ? $entry['biblionumber'] : null;
-            $itemId = isset($entry['itemnumber']) ? $entry['itemnumber'] : null;
+            $bibId = $entry['biblionumber'] ?? null;
+            $itemId = $entry['itemnumber'] ?? null;
             $title = '';
             $volume = '';
             $publicationYear = '';
@@ -696,7 +680,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             }
             if (!empty($bibId)) {
                 $bib = $this->getBibRecord($bibId);
-                $title = isset($bib['title']) ? $bib['title'] : '';
+                $title = $bib['title'] ?? '';
                 if (!empty($bib['title_remainder'])) {
                     $title .= ' ' . $bib['title_remainder'];
                     $title = trim($title);
@@ -714,14 +698,17 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
                 'create' => $this->dateConverter->convertToDisplayDate(
                     'Y-m-d', $entry['reservedate']
                 ),
-                'expire' => $this->dateConverter->convertToDisplayDate(
-                    'Y-m-d', $entry['expirationdate']
-                ),
+                'expire' => !empty($entry['expirationdate'])
+                    ? $this->dateConverter->convertToDisplayDate(
+                        'Y-m-d', $entry['expirationdate']
+                    ) : '',
                 'position' => $entry['priority'],
                 'available' => !empty($entry['waitingdate']),
-                'in_transit' => isset($entry['found']) && $entry['found'] == 't',
+                'in_transit' => isset($entry['found'])
+                    && strtolower($entry['found']) == 't',
                 'requestId' => $entry['reserve_id'],
                 'title' => $title,
+                'volume' => $volume,
                 'frozen' => $frozen
             ];
         }
@@ -899,7 +886,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         if ($this->getPatronBlocks($patron)) {
             return false;
         }
-        $level = isset($data['level']) ? $data['level'] : 'copy';
+        $level = $data['level'] ?? 'copy';
         if ('title' == $data['level']) {
             $result = $this->makeRequest(
                 ['v1', 'availability', 'biblio', 'hold'],
@@ -956,8 +943,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             ? $holdDetails['level'] : 'copy';
         $pickUpLocation = !empty($holdDetails['pickUpLocation'])
             ? $holdDetails['pickUpLocation'] : $this->defaultPickUpLocation;
-        $itemId = isset($holdDetails['item_id']) ? $holdDetails['item_id'] : false;
-        $comment = isset($holdDetails['comment']) ? $holdDetails['comment'] : '';
+        $itemId = $holdDetails['item_id'] ?? false;
+        $comment = $holdDetails['comment'] ?? '';
         $bibId = $holdDetails['id'];
 
         // Convert last interest date from Display Format to Koha's required format
@@ -1066,15 +1053,18 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             if (isset($this->feeTypeMappings[$type])) {
                 $type = $this->feeTypeMappings[$type];
             }
-            $fines[] = [
+            $fine = [
                 'amount' => $entry['amount'] * 100,
                 'balance' => $entry['amountoutstanding'] * 100,
                 'fine' => $type,
                 'createdate' => $createDate,
                 'checkout' => '',
-                'id' => $bibId,
                 'title' => $entry['description']
             ];
+            if (null !== $bibId) {
+                $fine['id'] = $bibId;
+            }
+            $fines[] = $fine;
         }
         return $fines;
     }
@@ -1396,7 +1386,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             throw new ILSException('Problem with Koha REST API.');
         }
         if (!$response->isSuccess()) {
-            if ($response->getStatusCode() == 401) {
+            if (in_array((int)$response->getStatusCode(), [401, 403])) {
                 return false;
             }
             $this->error(
@@ -1413,6 +1403,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
         $this->sessionCache->patronCookie = $response->getCookie();
         $result = json_decode($response->getBody(), true);
         $this->sessionCache->patronId = $result['borrowernumber'];
+        $this->sessionCache->patronPermissions = $result['permissions'];
         return true;
     }
 
@@ -1607,8 +1598,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
      */
     protected function itemHoldAllowed($item)
     {
-        $unavail = isset($item['availability']['unavailabilities'])
-            ? $item['availability']['unavailabilities'] : [];
+        $unavail = $item['availability']['unavailabilities'] ?? [];
         if (!isset($unavail['Hold::NotHoldable'])) {
             return true;
         }
@@ -1764,7 +1754,16 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
      */
     protected function holdError($code, $result)
     {
-        $message = isset($result['error']) ? $result['error'] : 'hold_error_fail';
+        $message = $result['error'] ?? 'hold_error_fail';
+        switch ($message) {
+        case 'Reserve cannot be placed. Reason: tooManyReserves':
+        case 'Reserve cannot be placed. Reason: tooManyHoldsForThisRecord':
+            $message = 'hold_error_too_many_holds';
+            break;
+        case 'Reserve cannot be placed. Reason: ageRestricted':
+            $message = 'hold_error_age_restricted';
+            break;
+        }
         return [
             'success' => false,
             'sysMessage' => $message
@@ -1793,8 +1792,8 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
      */
     protected function getItemLocationName($item)
     {
-        $branchId = null !== $item['holdingbranch'] ? $item['holdingbranch']
-            : $item['homebranch'];
+        $branchId = (!$this->useHomeBranch && null !== $item['holdingbranch'])
+            ? $item['holdingbranch'] : $item['homebranch'];
         $name = $this->translate("location_$branchId");
         if ($name === "location_$branchId") {
             $branches = $this->getCachedData('branches');
@@ -1808,7 +1807,7 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
                 }
                 $this->putCachedData('branches', $branches);
             }
-            $name = isset($branches[$branchId]) ? $branches[$branchId] : $branchId;
+            $name = $branches[$branchId] ?? $branchId;
         }
         return $name;
     }
@@ -1860,5 +1859,52 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             }
         }
         return 'hold_error_blocked';
+    }
+
+    /**
+     * Get item and title information for a checkout
+     *
+     * @param array $entry Checkout entry
+     *
+     * @return array biblionumber, title and volume
+     */
+    protected function getCheckoutInformation($entry)
+    {
+        if (isset($entry['biblionumber'])) {
+            // New fields available
+            $biblionumber = $entry['biblionumber'];
+            $title = $entry['title'];
+            if (!empty($empty['title_remainder'])) {
+                $title .= ' ' . $entry['title_remainder'];
+                $title = trim($title);
+            }
+            $volume = $entry['enumchron'];
+        } else {
+            // TODO remove when no longer needed
+            try {
+                $item = $this->getItem($entry['itemnumber']);
+                $volume = $item['enumchron'] ?? '';
+                $title = '';
+                $biblionumber = '';
+                if (!empty($item['biblionumber'])) {
+                    $biblionumber = $item['biblionumber'];
+                    $bib = $this->getBibRecord($biblionumber);
+                    if (!empty($bib['title'])) {
+                        $title = $bib['title'];
+                    }
+                    if (!empty($bib['title_remainder'])) {
+                        $title .= ' ' . $bib['title_remainder'];
+                        $title = trim($title);
+                    }
+                }
+            } catch (ILSException $e) {
+                // Not a fatal error, but we can't display the loan properly
+                $biblionumber = '';
+                $volume = '';
+                $title = '[item ' . $entry['itemnumber']
+                    . ' cannot be displayed]';
+            }
+        }
+        return [$biblionumber, $title, $volume];
     }
 }

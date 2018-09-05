@@ -2,7 +2,7 @@
 /**
  * Cache Controller
  *
- * PHP Version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2017.
  *
@@ -77,6 +77,8 @@ class CacheController extends \VuFind\Controller\AbstractBase
      */
     public function fileAction()
     {
+        $this->disableSessionWrites();
+
         $response = $this->getResponse();
         $headers = $response->getHeaders();
         $filename = $this->params()->fromRoute('file');

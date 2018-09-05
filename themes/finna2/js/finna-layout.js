@@ -1,21 +1,6 @@
-/*global VuFind, checkSaveStatuses, action, finna, L, initFacetTree, setupFacets, videojs, priorityNav, buildFacetNodes */
+/*global VuFind, checkSaveStatuses, action, finna, initFacetTree, setupFacets, videojs, priorityNav, buildFacetNodes */
 finna.layout = (function finnaLayout() {
   var _fixFooterTimeout = null;
-
-  function initMap(map) {
-    // Add zoom control with translated tooltips
-    L.control.zoom({
-      position: 'topleft',
-      zoomInTitle: VuFind.translate('map_zoom_in'),
-      zoomOutTitle: VuFind.translate('map_zoom_out')
-    }).addTo(map);
-
-    // Enable mouseWheel zoom on click
-    map.once('focus', function onFocusMap() {
-      map.scrollWheelZoom.enable();
-    });
-    map.scrollWheelZoom.disable();
-  }
 
   function initResizeListener() {
     var intervalId = false;
@@ -140,22 +125,31 @@ finna.layout = (function finnaLayout() {
       // truncate only if there's more than one line to hide
       if (self.height() > (truncation[index] + rowHeight[index] + 1)) {
         self.css('height', truncation[index] - 1 + 'px');
-        if (self.hasClass('wide')) { // generate different truncate styles according to class
-          self.after('<div class="more-link wide"><i class="fa fa-handle-open"></i></div><div class="less-link wide"> <i class="fa fa-handle-close"></i></div>');
-        } else {
-          self.after('<div class="more-link">' + VuFind.translate('show_more') + ' <i class="fa fa-arrow-down"></i></div><div class="less-link">' + VuFind.translate('show_less') + ' <i class="fa fa-arrow-up"></i></div>');
-        }
+        self.before('<div class="less-link-top">' + VuFind.translate('show_less') + ' <i class="fa fa-arrow-up" aria-hidden="true"></i></div>');
+        self.after('<div class="more-link">' + VuFind.translate('show_more') + ' <i class="fa fa-arrow-down" aria-hidden="true"></i></div><div class="less-link">' + VuFind.translate('show_less') + ' <i class="fa fa-arrow-up" aria-hidden="true"></i></div>');
+        $('.less-link-top').hide();
         $('.less-link').hide();
 
         self.nextAll('.more-link').first().click(function onClickMoreLink(/*event*/) {
           $(this).hide();
           $(this).next('.less-link').show();
           $(this).prev('.truncate-field').css('height', 'auto');
+          if (self.height() > (rowHeight[index] * 30)) {
+            $(this).siblings('.less-link-top').show();
+          }
           notifyTruncateChange(self);
         });
 
+        self.prevAll('.less-link-top').first().click(function onClickLessLink(/*event*/) {
+          $(this).hide();
+          $(this).siblings('.less-link').hide();
+          $(this).siblings('.more-link').show();
+          $(this).nextAll('.truncate-field').first().css('height', truncation[index] - 1 + 'px');
+          notifyTruncateChange(self);
+        });
         self.nextAll('.less-link').first().click(function onClickLessLink(/*event*/) {
           $(this).hide();
+          $(this).siblings('.less-link-top').hide();
           $(this).prev('.more-link').show();
           $(this).prevAll('.truncate-field').first().css('height', truncation[index] - 1 + 'px');
           notifyTruncateChange(self);
@@ -290,14 +284,10 @@ finna.layout = (function finnaLayout() {
         }
       });
     }
+    $('.multiselect-search').attr('placeholder', VuFind.translate('search_placeholder'));
   }
 
   function initMobileNarrowSearch() {
-    var filterAmount = $('.checkboxFilter input[checked]').length + $('.list-group.filters .list-group-item.active').length;
-    if (filterAmount > 0) {
-      $('.mobile-navigation .sidebar-navigation .active-filters  .active-filter-count').text(filterAmount);
-      $('.mobile-navigation .sidebar-navigation .active-filters').removeClass('hidden');
-    }
     $('.mobile-navigation .sidebar-navigation, .sidebar h4').unbind('click').click(function onClickMobileNav(e) {
       if ($(e.target).attr('class') !== 'fa fa-info-big') {
         $('.sidebar').toggleClass('open');
@@ -449,32 +439,6 @@ finna.layout = (function finnaLayout() {
     }
   }
 
-  function initImageCheck() {
-    $('.image-popup-trigger img').each(function setupImagePopup() {
-      $(this).one('load', function onLoadImage() {
-        // Don't hide anything if we have multiple images
-        var navi = $(this).closest('.image-popup-navi');
-        if (navi && navi.length > 1) {
-          return;
-        }
-        if (this.naturalWidth && this.naturalWidth === 10 && this.naturalHeight === 10) {
-          $(this).parent().addClass('no-image');
-          $('.record.large-image-layout').addClass('no-image-layout').removeClass('large-image-layout');
-          $('.large-image-sidebar').addClass('visible-xs');
-          $('.record-main').addClass('mainbody left');
-          var href = $(this).parent().attr('href');
-          $(this).parent().attr({'href': href.split('#')[0], 'title': ''});
-          $(this).parents('.grid').addClass('no-image');
-          $('.rating-stars').addClass('hidden-xs');
-        }
-      }).each(function loadImage() {
-        if (this.complete) {
-          $(this).load();
-        }
-      });
-    });
-  }
-
   function initHierarchicalFacet(treeNode, inSidebar) {
     addJSTreeListener(treeNode);
     initFacetTree(treeNode, inSidebar);
@@ -511,13 +475,24 @@ finna.layout = (function finnaLayout() {
     $('#login_target').change(function onChangeLoginTarget() {
       var target = $('#login_target').val();
       var field = $('#login_' + (topClass ? topClass + '_' : '') + 'secondary_username');
-      if (labels[target] === '') {
+      if ((typeof labels[target] === 'undefined') || labels[target] === '') {
         field.val('');
         field.closest('.form-group').hide();
       } else {
         var group = field.closest('.form-group');
         group.find('label').text(labels[target] + ':');
         group.show();
+      }
+    }).change();
+  }
+
+  function initILSPasswordRecoveryLink(links) {
+    $('#login_target').change(function onChangeLoginTargetLink() {
+      var target = $('#login_target').val();
+      if (links[target]) {
+        $('#login_library_card_recovery').attr('href', links[target]).show();
+      } else {
+        $('#login_library_card_recovery').hide();
       }
     }).change();
   }
@@ -540,7 +515,7 @@ finna.layout = (function finnaLayout() {
     var query = window.location.href.split('?')[1];
     $.getJSON(VuFind.path + '/AJAX/JSON?method=getSideFacets&' + query)
       .done(function onGetSideFacetsDone(response) {
-        $container.replaceWith(response.data);
+        $container.replaceWith(response.data.html);
         finna.dateRangeVis.init();
         initToolTips($('.sidebar'));
         initMobileNarrowSearch();
@@ -579,15 +554,15 @@ finna.layout = (function finnaLayout() {
     $container.find('.facet-load-indicator').removeClass('hidden');
     $.getJSON(VuFind.path + '/AJAX/JSON?' + query, request)
       .done(function onGetSideFacetsDone(response) {
-        $.each(response.data, function initFacet(facet, facetData) {
+        $.each(response.data.facets, function initFacet(facet, facetData) {
           var $facetContainer = $container.find('div[data-facet="' + facet + '"]');
           $facetContainer.data('loaded', 'true');
-          if (typeof facetData === 'number') {
+          if (typeof facetData.checkboxCount !== 'undefined') {
             $facetContainer.find('.avail-count').text(
-              facetData.toString().replace(/\B(?=(\d{3})+\b)/g, VuFind.translate('number_thousands_separator'))
+              facetData.checkboxCount.toString().replace(/\B(?=(\d{3})+\b)/g, VuFind.translate('number_thousands_separator'))
             );
-          } else if (typeof facetData === 'string') {
-            $facetContainer.html(facetData);
+          } else if (typeof facetData.html !== 'undefined') {
+            $facetContainer.html(facetData.html);
           } else {
             // TODO: this block copied from facets.js, refactor
             var treeNode = $facetContainer.find('.jstree-facet');
@@ -605,9 +580,14 @@ finna.layout = (function finnaLayout() {
             var allowExclude = treeNode.data('exclude');
             var excludeTitle = treeNode.data('exclude-title');
 
-            var results = buildFacetNodes(facetData, currentPath, allowExclude, excludeTitle, true);
+            var results = buildFacetNodes(facetData.list, currentPath, allowExclude, excludeTitle, true);
             treeNode.on('loaded.jstree open_node.jstree', function treeNodeOpen(/*e, data*/) {
               treeNode.find('ul.jstree-container-ul > li.jstree-node').addClass('list-group-item');
+              treeNode.find('a.exclude').click(function excludeLinkClick(e) {
+                window.location = this.href;
+                e.preventDefault();
+                return false;
+              });
             });
             treeNode.jstree({
               'core': {
@@ -636,7 +616,7 @@ finna.layout = (function finnaLayout() {
     $container.find('.load-indicator').removeClass('hidden');
     $.getJSON(VuFind.path + '/AJAX/JSON?method=getPiwikPopularSearches')
       .done(function onGetPiwikSearchesDone(response) {
-        $container.html(response.data);
+        $container.html(response.data.html);
       })
       .fail(function onGetPiwikSearchesFail() {
         $container.find('.load-indicator').addClass('hidden');
@@ -689,18 +669,18 @@ finna.layout = (function finnaLayout() {
   function initBuildingFilter() {
     $('#building_filter').keyup(function onKeyUpFilter() {
       var valThis = this.value.toLowerCase();
-      $('#facet_building>ul>li>a>.main').each(function setupBuildingSearch() {
+      $('#facet_building>ul>li>a .text').each(function doBuildingSearch() {
         var text = $(this).text().toLowerCase();
         if (text.indexOf(valThis) !== -1) {
-          $(this).parent().parent().show();
+          $(this).closest('li').show();
         } else {
-          $(this).parent().parent().hide();
+          $(this).closest('li').hide();
         }
       });
     });
   }
 
-  function initLoginRedirect() {
+  function initLightboxLogin() {
     if (!document.addEventListener) {
       return;
     }
@@ -709,6 +689,14 @@ finna.layout = (function finnaLayout() {
         window.location.href = VuFind.path + '/MyResearch/Home';
         e.preventDefault();
       }
+    });
+    $('#modal').on('show.bs.modal', function onShowModal() {
+      if ($('#modal').find('#authcontainer').length > 0) {
+        $('#modal .modal-dialog').addClass('modal-lg modal-lg-dynamic');
+      }
+    });
+    $('#modal').on('hidden.bs.modal', function onHiddenModal() {
+      $('#modal .modal-dialog.modal-lg-dynamic').removeClass('modal-lg');
     });
   }
 
@@ -722,7 +710,8 @@ finna.layout = (function finnaLayout() {
           fitWidth: false,
           itemSelector: '.result.grid',
           columnWidth: '.result.grid',
-          isResizeBound: 'true'
+          isResizeBound: 'true',
+          horizontalOrder: 'true'
         });
       });
     }
@@ -891,27 +880,81 @@ finna.layout = (function finnaLayout() {
   }
 
   function initFiltersToggle () {
-    var filterAmount = $('.filters-bar .filter-value').length;
-    if (filterAmount > 0) {
-      $('.filters-toggle .active-filter-count').text(' (' + filterAmount + ')');
-    }
-
-    $('.filters-toggle').click(function filterToggleClicked(){
-      if ($('.filters-bar').hasClass('hidden')) {
-        $('.filters-bar').removeClass('hidden');
-        $('.filters-toggle .fa-arrow-down').removeClass('fa-arrow-down').addClass('fa-arrow-up');
+    $('.filters-toggle').click(function filterToggleClicked(e){
+      var finnaFilters = $(e.target).closest('.finna-filters');
+      var filtersBar = finnaFilters.find('.filters-bar');
+      if (filtersBar.hasClass('hidden')) {
+        filtersBar.removeClass('hidden');
+        finnaFilters.find('.fa-arrow-down').removeClass('fa-arrow-down').addClass('fa-arrow-up');
       } else {
-        $('.filters-bar').addClass('hidden');
-        $('.filters-toggle .fa-arrow-up').removeClass('fa-arrow-up').addClass('fa-arrow-down');
-
+        filtersBar.addClass('hidden');
+        finnaFilters.find('.fa-arrow-up').removeClass('fa-arrow-up').addClass('fa-arrow-down');
       }
     });
+  }
+
+  function initCookieConsent() {
+    var state = $.cookie('cookieConsent');
+    if ('undefined' === typeof state || !state) {
+      $('a.cookie-consent-dismiss').click(function dismiss() {
+        $.cookie('cookieConsent', 1, {path: VuFind.path, expires: 365});
+        $('.cookie-consent').addClass('hidden');
+      });
+      $('.cookie-consent').removeClass('hidden');
+    }
+  }
+
+  function _activateLoginTab(tabId) {
+    var $top = $('.login-tabs');
+    $top.find('.tab-pane.active').removeClass('active');
+    $top.find('li.' + tabId).tab('show');
+    $top.find('.' + tabId + '-tab').addClass('active');
+    _toggleLoginAccordion(tabId);
+  }
+
+  // The accordion has a delicate relationship with the tabs. Handle with care!
+  function _toggleLoginAccordion(tabId) {
+    var $accordionHeading = $('.login-accordion .accordion-heading a[data-tab="' + tabId + '"]').closest('.accordion-heading');
+    var $loginTabs = $('.login-tabs');
+    var $tabContent = $loginTabs.find('.tab-content');
+    if ($accordionHeading.hasClass('active')) {
+      $accordionHeading.removeClass('active');
+      // Hide tab from accordion
+      $loginTabs.find('.tab-pane.active').removeClass('active');
+      // Deactivate any tab since it can't follow the state of a collapsed accordion
+      $loginTabs.find('.nav-tabs li.active').removeClass('active');
+      // Move tab content out from accordions
+      $tabContent.insertAfter($('.login-accordion .accordion-heading').last());
+    } else {
+      // Move tab content under the correct accordion toggle
+      $tabContent.insertAfter($accordionHeading);
+      $('.login-accordion').find('.accordion-heading.active').removeClass('active');
+      $accordionHeading.addClass('active');
+      $loginTabs.find('.tab-pane.active').removeClass('active');
+      $loginTabs.find('.' + tabId + '-tab').addClass('active');
+    }
+  }
+
+  function initLoginTabs() {
+    // Tabs
+    $('.login-tabs .nav-tabs a').click(function recordTabsClick() {
+      if (!$(this).closest('li').hasClass('active')) {
+        _activateLoginTab(this.className);
+      }
+      return false;
+    });
+
+    // Accordion
+    $('.login-accordion .accordion-toggle').click(function accordionClicked() {
+      _activateLoginTab($(this).find('a').data('tab'));
+    });
+    // Call activation to position the initial content properly
+    _activateLoginTab($('.login-tabs .accordion-heading.initiallyActive a').data('tab'));
   }
 
   var my = {
     getOrganisationPageLink: getOrganisationPageLink,
     isTouchDevice: isTouchDevice,
-    initMap: initMap,
     initTruncate: initTruncate,
     initLocationService: initLocationService,
     initHierarchicalFacet: initHierarchicalFacet,
@@ -919,8 +962,10 @@ finna.layout = (function finnaLayout() {
     initMobileNarrowSearch: initMobileNarrowSearch,
     initOrganisationPageLinks: initOrganisationPageLinks,
     initSecondaryLoginField: initSecondaryLoginField,
+    initILSPasswordRecoveryLink: initILSPasswordRecoveryLink,
     initIframeEmbed: initIframeEmbed,
     initVideoPopup: initVideoPopup,
+    initLoginTabs: initLoginTabs,
     init: function init() {
       initScrollRecord();
       initJumpMenus();
@@ -940,12 +985,11 @@ finna.layout = (function finnaLayout() {
       initCondensedList();
       if (typeof checkSaveStatuses !== 'undefined') { checkSaveStatuses(); }
       initTouchDeviceGallery();
-      initImageCheck();
       initSideFacets();
       initPiwikPopularSearches();
       initAutoScrollTouch();
       initIpadCheck();
-      initLoginRedirect();
+      initLightboxLogin();
       initLoadMasonry();
       initOrganisationInfoWidgets();
       initOrganisationPageLinks();
@@ -954,6 +998,7 @@ finna.layout = (function finnaLayout() {
       initKeyboardNavigation();
       initPriorityNav();
       initFiltersToggle();
+      initCookieConsent();
     }
   };
 

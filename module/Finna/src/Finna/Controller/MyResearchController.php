@@ -2,7 +2,7 @@
 /**
  * MyResearch Controller
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2018.
  *
@@ -24,13 +24,11 @@
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
 namespace Finna\Controller;
-
-use Zend\ServiceManager\ServiceLocatorInterface;
-use Zend\Session\SessionManager;
 
 /**
  * Controller for the user account area.
@@ -40,33 +38,14 @@ use Zend\Session\SessionManager;
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
 class MyResearchController extends \VuFind\Controller\MyResearchController
 {
-    use OnlinePaymentControllerTrait;
+    use FinnaOnlinePaymentControllerTrait;
     use CatalogLoginTrait;
-
-    /**
-     * Session manager
-     *
-     * @var SessionManager
-     */
-    protected $sessionManager;
-
-    /**
-     * Constructor
-     *
-     * @param ServiceLocatorInterface $sm             Service manager
-     * @param SessionManager          $sessionManager Session manager
-     */
-    public function __construct(ServiceLocatorInterface $sm,
-        SessionManager $sessionManager
-    ) {
-        parent::__construct($sm);
-        $this->sessionManager = $sessionManager;
-    }
 
     /**
      * Catalog Login Action
@@ -190,8 +169,8 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         $date = $this->serviceLocator->get('VuFind\DateConverter');
         $sortFunc = function ($a, $b) use ($currentSort, $date) {
             if ($currentSort == 'title') {
-                $aTitle = isset($a['title']) ? $a['title'] : '';
-                $bTitle = isset($b['title']) ? $b['title'] : '';
+                $aTitle = $a['title'] ?? '';
+                $bTitle = $b['title'] ?? '';
                 $result = strcmp($aTitle, $bTitle);
                 if ($result != 0) {
                     return $result;
@@ -295,21 +274,15 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         // Set up CSRF:
-        $this->csrf = new \Zend\Validator\Csrf(
-            [
-                'session' => new \Zend\Session\Container(
-                    'csrf', $this->sessionManager
-                ),
-                'salt' => isset($this->config->Security->HMACkey)
-                    ? $this->config->Security->HMACkey : 'VuFindCsrfSalt',
-            ]
-        );
+        $csrfValidator = $this->serviceLocator->get('VuFind\Validator\Csrf');
 
         if ($this->formWasSubmitted('submit', false)) {
             $csrf = $this->getRequest()->getPost()->get('csrf');
-            if (!$this->csrf->isValid($csrf)) {
+            if (!$csrfValidator->isValid($csrf)) {
                 throw new \Exception('An error has occurred');
             }
+            // After successful token verification, clear list to shrink session:
+            $csrfValidator->trimTokenList(0);
             $catalog = $this->getILS();
             $result = $catalog->purgeTransactionHistory($patron);
             $this->flashMessenger()->addMessage(
@@ -319,50 +292,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         $view = $this->createViewModel();
-        $view->csrf = $this->csrf->getHash(true);
-
-        return $view;
-    }
-
-    /**
-     * Login Action
-     *
-     * @return mixed
-     */
-    public function loginAction()
-    {
-        $config = $this->getConfig();
-
-        if (empty($config->TermsOfService->enabled)
-            || !isset($config->TermsOfService->version)
-        ) {
-            return parent::loginAction();
-        }
-
-        $cookieName = 'finnaTermsOfService';
-
-        $cookieManager = $this->serviceLocator->get('VuFind\CookieManager');
-        $cookie = $cookieManager->get($cookieName);
-        if ($cookie && $cookie === $config->TermsOfService->version) {
-            return parent::loginAction();
-        }
-
-        $fromTermsPage = false;
-        if ($this->formWasSubmitted('submit', false)
-            && $this->params()->fromPost('acceptTerms', false) === '1'
-        ) {
-            $expire = time() + 5 * 365 * 60 * 60 * 24; // 5 years
-            $cookieManager->set(
-                $cookieName, $config->TermsOfService->version, $expire
-            );
-            $this->getRequest()->getPost()->offsetUnset('submit');
-            $fromTermsPage = true;
-            $view = parent::loginAction();
-            $view->fromTermsPage = $fromTermsPage;
-            return $view;
-        }
-        $view = $this->createViewModel();
-        $view->setTemplate('myresearch/terms.phtml');
+        $view->csrf = $csrfValidator->getHash(true);
 
         return $view;
     }
@@ -553,19 +483,6 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             }
             $view = parent::profileAction();
             $profile = $view->profile;
-        }
-
-        $parentTemplate = $view->getTemplate();
-        // If returned view is not profile view, show it below our profile part.
-        if ($parentTemplate != '' && $parentTemplate != 'myresearch/profile') {
-            $childView = $this->createViewModel();
-            $childView->setTemplate('myresearch/profile');
-
-            $compoundView = $this->createViewModel();
-            $compoundView->addChild($childView, 'child');
-            $compoundView->addChild($view, 'parent');
-
-            return $compoundView;
         }
 
         // Check if due date reminder settings should be displayed
@@ -804,38 +721,6 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
     }
 
     /**
-     * Delete account form
-     *
-     * @return mixed
-     */
-    public function deleteAccountAction()
-    {
-        $user = $this->getUser();
-        if ($user == false) {
-            return $this->forceLogin();
-        }
-
-        $view = $this->createViewModel();
-        $view->accountDeleted = false;
-        $view->token = $this->getSecret($this->getUser());
-        if ($this->formWasSubmitted('submit')) {
-            $success = $this->processDeleteAccount();
-            if ($success) {
-                $view->accountDeleted = true;
-                $view->redirectUrl = $this->getAuthManager()->logout(
-                    $this->getServerUrl('home')
-                );
-            }
-        } elseif ($this->formWasSubmitted('reset')) {
-            return $this->redirect()->toRoute(
-                'default', ['controller' => 'MyResearch', 'action' => 'Profile']
-            );
-        }
-        $view->setTemplate('myresearch/delete-account');
-        return $view;
-    }
-
-    /**
      * Return the Favorites sort list options.
      *
      * @return array
@@ -926,11 +811,17 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         if ($schedule !== false && $sid !== false) {
             $search = $this->getTable('Search');
             $baseurl = rtrim($this->getServerUrl('home'), '/');
-            $row = $search->select(
-                ['id' => $sid, 'user_id' => $user->id]
+            $savedRow = $search->select(
+                ['id' => $sid, 'user_id' => $user->id, 'saved' => 1]
             )->current();
-            if ($row) {
-                $row->setSchedule($schedule, $baseurl);
+            if ($savedRow) {
+                $savedRow->setSchedule($schedule, $baseurl);
+            } else {
+                $this->setSavedFlagSecurely($sid, true, $user->id);
+                $historyRow = $search->select(
+                    ['id' => $sid, 'user_id' => $user->id]
+                )->current();
+                $historyRow->setSchedule($schedule, $baseurl);
             }
             return $this->redirect()->toRoute('search-history');
         } else {
@@ -1045,7 +936,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 if (!$user) {
                     throw new \Exception('Invalid parameters.');
                 }
-                $dueDateTable = $this->getTable('due-date-reminder');
+                $dueDateTable = $this->getTable('duedatereminder');
                 $secret = $dueDateTable->getUnsubscribeSecret(
                     $this->serviceLocator->get('VuFind\HMAC'), $user, $user->id
                 );
@@ -1140,7 +1031,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         $table = $this->getTable('UserResource');
 
         $sortOptions = self::getFavoritesSortList();
-        $sort = isset($_GET['sort']) ? $_GET['sort'] : false;
+        $sort = $_GET['sort'] ?? false;
         if (!$sort) {
             reset($sortOptions);
             $sort = key($sortOptions);
@@ -1333,42 +1224,6 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
     }
 
     /**
-     * Delete user account for MyResearch module
-     *
-     * @return boolean
-     */
-    protected function processDeleteAccount()
-    {
-        $user = $this->getUser();
-
-        if (!$user) {
-            $this->flashMessenger()->setNamespace('error')
-                ->addMessage('You must be logged in first');
-            return false;
-        }
-
-        $token = $this->getRequest()->getPost('token', null);
-        if (empty($token)) {
-            $this->flashMessenger()->setNamespace('error')
-                ->addMessage('Missing token');
-            return false;
-        }
-        if ($token !== $this->getSecret($user)) {
-            $this->flashMessenger()->setNamespace('error')
-                ->addMessage('Invalid token');
-            return false;
-        }
-
-        $success = $user->anonymizeAccount();
-
-        if (!$success) {
-            $this->flashMessenger()->setNamespace('error')
-                ->addMessage('delete_account_failure');
-        }
-        return $success;
-    }
-
-    /**
      * Send a change request message (e.g. address change) to the library
      *
      * @param array  $patron    Patron
@@ -1387,11 +1242,11 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         list($library, $username) = explode('.', $patron['cat_username']);
         $library = $this->translate("source_$library", null, $library);
         $name = trim(
-            (isset($patron['firstname']) ? $patron['firstname'] : '')
+            ($patron['firstname'] ?? '')
             . ' '
-            . (isset($patron['lastname']) ? $patron['lastname'] : '')
+            . ($patron['lastname'] ?? '')
         );
-        $email = isset($patron['email']) ? $patron['email'] : '';
+        $email = $patron['email'] ?? '';
         if (!$email) {
             $user = $this->getUser();
             if (!empty($user['email'])) {
@@ -1506,9 +1361,8 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         try {
             return parent::getDriverForILSRecord($current);
         } catch (\Exception $e) {
-            $id = isset($current['id']) ? $current['id'] : null;
-            $source = isset($current['source'])
-                ? $current['source'] : DEFAULT_SEARCH_BACKEND;
+            $id = $current['id'] ?? null;
+            $source = $current['source'] ?? DEFAULT_SEARCH_BACKEND;
             $recordFactory = $this->serviceLocator
                 ->get('VuFind\RecordDriverPluginManager');
             $record = $recordFactory->get('Missing');

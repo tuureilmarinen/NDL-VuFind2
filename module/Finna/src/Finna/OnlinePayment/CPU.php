@@ -2,9 +2,9 @@
 /**
  * CPU payment handler
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2016-2017.
+ * Copyright (C) The National Library of Finland 2016-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -67,7 +67,7 @@ class CPU extends BaseHandler
      * @param string             $currency       Currency
      * @param string             $statusParam    Payment status URL parameter
      *
-     * @return false on error, otherwise redirects to payment handler.
+     * @return string Error message on error, otherwise redirects to payment handler.
      */
     public function startPayment(
         $finesUrl, $ajaxUrl, $user, $patron, $driver, $amount, $transactionFee,
@@ -108,6 +108,22 @@ class CPU extends BaseHandler
         }
         $payment->LastName = empty($lastname) ? 'ei tietoa' : $lastname;
 
+        $locale = $this->translator->getLocale();
+        list($lang) = explode('-', $locale);
+        if (!empty($this->config->supportedLanguages)) {
+            $languageMappings = [];
+            foreach (explode(':', $this->config->supportedLanguages) as $item) {
+                $parts = explode('=', $item, 2);
+                if (count($parts) != 2) {
+                    continue;
+                }
+                $languageMappings[trim($parts[0])] = trim($parts[1]);
+            }
+            if (isset($languageMappings[$lang])) {
+                $payment->Language = $languageMappings[$lang];
+            }
+        }
+
         $payment->Description
             = isset($this->config->paymentDescription)
             ? $this->config->paymentDescription : '';
@@ -117,7 +133,7 @@ class CPU extends BaseHandler
 
         if (!isset($this->config->productCode)) {
             $this->handleCPUError('missing productCode configuration option');
-            return false;
+            return '';
         }
         $productCode = $this->config->productCode;
         $productCodeMappings = [];
@@ -132,7 +148,7 @@ class CPU extends BaseHandler
         }
 
         foreach ($fines as $fine) {
-            $fineType = isset($fine['fine']) ? $fine['fine'] : '';
+            $fineType = $fine['fine'] ?? '';
             $fineDesc = '';
             if (!empty($fineType)) {
                 $fineDesc = $this->translator->translate("fine_status_$fineType");
@@ -146,12 +162,21 @@ class CPU extends BaseHandler
             if (!empty($fine['title'])) {
                 $fineDesc .= ' ('
                     . substr($fine['title'], 0, 100 - 4 - strlen($fineDesc))
-                . ')';
+                    . ')';
             }
-            $code = isset($productCodeMappings[$fineType])
-                ? $productCodeMappings[$fineType] : $productCode;
+            if ($fineDesc) {
+                // Get rid of characters that cannot be converted to ISO-8859-1 since
+                // CPU apparently can't handle them properly.
+                $fineDesc = iconv(
+                    'ISO-8859-1',
+                    'UTF-8',
+                    iconv('UTF-8', 'ISO-8859-1//IGNORE', $fineDesc)
+                );
+            }
+
+            $code = $productCodeMappings[$fineType] ?? $productCode;
             $product = new \Cpu_Client_Product(
-                $code, 1, $fine['amount'], $fineDesc ?: null
+                $code, 1, $fine['balance'], $fineDesc ?: null
             );
             $payment = $payment->addProduct($product);
         }
@@ -165,34 +190,34 @@ class CPU extends BaseHandler
             $payment = $payment->addProduct($product);
         }
 
-        if (!$module = $this->initCpu()) {
-            $this->handleCPUError('error initing CPU online payment');
-            return false;
+        if (!($module = $this->initCpu())) {
+            $this->handleCPUError('error initializing CPU online payment');
+            return '';
         }
 
         try {
             $response = $module->sendPayment($payment);
         } catch (\Exception $e) {
             $this->handleCPUError('exception sending payment: ' . $e->getMessage());
-            return false;
+            return '';
         }
         if (!$response) {
             $this->handleCPUError('error sending payment');
-            return false;
+            return '';
         }
 
         $response = json_decode($response);
 
         if (empty($response->Id) || empty($response->Status)) {
             $this->handleCPUError('error starting payment, no response');
-            return false;
+            return '';
         }
 
         $status = intval($response->Status);
         if (in_array($status, [self::STATUS_ERROR, self::STATUS_INVALID_REQUEST])) {
             // System error or Request failed.
             $this->handleCPUError('error starting transaction', $response);
-            return false;
+            return '';
         }
 
         $params = [
@@ -203,7 +228,7 @@ class CPU extends BaseHandler
             $this->handleCPUError(
                 'error starting transaction, invalid checksum', $response
             );
-            return false;
+            return '';
         }
 
         if ($status === self::STATUS_SUCCESS) {
@@ -212,7 +237,7 @@ class CPU extends BaseHandler
                 'error starting transaction, transaction already processed',
                 $response
             );
-            return false;
+            return '';
         }
 
         if ($status === self::STATUS_ID_EXISTS) {
@@ -221,7 +246,7 @@ class CPU extends BaseHandler
                 'error starting transaction, order exists',
                 $response
             );
-            return false;
+            return '';
         }
 
         if ($status === self::STATUS_CANCELLED) {
@@ -229,7 +254,7 @@ class CPU extends BaseHandler
             $this->handleCPUError(
                 'error starting transaction, order cancelled', $response
             );
-            return false;
+            return '';
         }
 
         if ($status === self::STATUS_PENDING) {
@@ -246,11 +271,11 @@ class CPU extends BaseHandler
                 $fines
             );
             if (!$success) {
-                return false;
+                return '';
             }
             $this->redirectToPayment($response->PaymentAddress);
         }
-        return false;
+        return '';
     }
 
     /**

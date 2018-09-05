@@ -2,7 +2,7 @@
 /**
  * Console service for reminding users x days before account expiration
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2017.
  *
@@ -33,6 +33,7 @@ use DateInterval;
 use DateTime;
 use Zend\Db\Sql\Select;
 use Zend\ServiceManager\ServiceManager;
+use Zend\Stdlib\RequestInterface as Request;
 
 use Zend\View\Resolver\AggregateResolver;
 use Zend\View\Resolver\TemplatePathStack;
@@ -112,6 +113,13 @@ class AccountExpirationReminders extends AbstractService
     protected $currentInstitution = null;
 
     /**
+     * Current site config
+     *
+     * @var object
+     */
+    protected $currentSiteConfig = null;
+
+    /**
      * Datasource configuration
      *
      * @var \Zend\Config\Config
@@ -176,19 +184,17 @@ class AccountExpirationReminders extends AbstractService
     /**
      * Run service.
      *
-     * @param array $arguments Command line arguments.
+     * @param array   $arguments Command line arguments.
+     * @param Request $request   Full request
      *
      * @return boolean success
      */
-    public function run($arguments)
+    public function run($arguments, Request $request)
     {
         if (!$this->collectScriptArguments($arguments)) {
             $this->msg($this->getUsage());
             return false;
         }
-
-        $siteConfig = \VuFind\Config\Locator::getLocalConfigPath("config.ini");
-        $this->currentSiteConfig = parse_ini_file($siteConfig, true);
 
         $users = $this->getUsersToRemind(
             $this->expirationDays, $this->remindDaysBefore, $this->reminderFrequency
@@ -224,14 +230,29 @@ class AccountExpirationReminders extends AbstractService
      */
     protected function getUsersToRemind($days, $remindDaysBefore, $frequency)
     {
-        $expireDate = date('Y-m-d', strtotime(sprintf('-%d days', (int)$days)));
+        if ($remindDaysBefore >= $days) {
+            throw new \Exception(
+                'remind_days_before must be less than expiration_days'
+            );
+        }
+        if ($frequency > $remindDaysBefore) {
+            throw new \Exception(
+                'frequency must be less than or equal to remind_days_before'
+            );
+        }
+
+        $limitDate = date(
+            'Y-m-d',
+            strtotime(sprintf('-%d days', (int)$days - (int)$remindDaysBefore))
+        );
+
+        $initialReminderThreshold = time() + $frequency * 86400;
 
         $users = $this->table->select(
-            function (Select $select) use ($expireDate) {
-                $select->where->notLike('username', 'deleted:%');
-                $select->where->lessThan('finna_last_login', $expireDate);
+            function (Select $select) use ($limitDate) {
+                $select->where->lessThan('last_login', $limitDate);
                 $select->where->notEqualTo(
-                    'finna_last_login',
+                    'last_login',
                     '2000-01-01 00:00:00'
                 );
             }
@@ -251,8 +272,27 @@ class AccountExpirationReminders extends AbstractService
 
             if (!$user->email || trim($user->email) == '') {
                 $this->msg(
-                    "User {$user->username} (id {$user->id})" . ' does not have an'
-                    . 'email address, bypassing expiration reminders'
+                    "User {$user->username} (id {$user->id}) does not have an"
+                    . ' email address, bypassing expiration reminder'
+                );
+                continue;
+            }
+
+            // Avoid sending a reminder if it comes too late (i.e. no reminders have
+            // been sent before and there's less than $frequency days before
+            // expiration)
+            $expirationDatetime = new DateTime($user->last_login);
+            $expirationDatetime->add(new DateInterval('P' . $days . 'D'));
+
+            if (($user->finna_last_expiration_reminder < $user->last_login
+                && $expirationDatetime->getTimestamp() < $initialReminderThreshold)
+                || $expirationDatetime->getTimestamp() < time()
+            ) {
+                $expires = $expirationDatetime->format('Y-m-d');
+                $this->msg(
+                    "User {$user->username} (id {$user->id}) expires already on"
+                    . " $expires without previous reminders, bypassing expiration"
+                    . ' reminder'
                 );
                 continue;
             }
@@ -264,10 +304,6 @@ class AccountExpirationReminders extends AbstractService
                 && $searchTable->getSearches('', $user->id)->count() === 0
                 && $resourceTable->getFavorites($user->id)->count() === 0
             ) {
-                $this->msg(
-                    "User {$user->username} (id {$user->id})"
-                    . ' does not have saved data, bypassing expiration reminders'
-                );
                 continue;
             }
 
@@ -293,6 +329,17 @@ class AccountExpirationReminders extends AbstractService
         } else {
             $userInstitution = 'national';
             $userName = $user->username;
+        }
+
+        $dsConfig = isset($this->datasourceConfig[$userInstitution])
+            ? $this->datasourceConfig[$userInstitution] : [];
+        if (!empty($dsConfig['disableAccountExpirationReminders'])) {
+            $this->msg(
+                "User {$user->username} (id {$user->id}) institution"
+                . " $userInstitution has reminders disabled, bypassing expiration"
+                . ' reminder'
+            );
+            return false;
         }
 
         if (!$this->currentInstitution
@@ -323,7 +370,7 @@ class AccountExpirationReminders extends AbstractService
             $this->currentSiteConfig = parse_ini_file($siteConfig, true);
         }
 
-        $expirationDatetime = new DateTime($user->finna_last_login);
+        $expirationDatetime = new DateTime($user->last_login);
         $expirationDatetime->add(new DateInterval('P' . $expirationDays . 'D'));
 
         $language = isset($this->currentSiteConfig['Site']['language'])
@@ -344,13 +391,30 @@ class AccountExpirationReminders extends AbstractService
             $this->currentInstitution = 'www';
         }
 
-        $serviceAddress = $this->currentInstitution . '.finna.fi';
+        $urlParts = explode('/', $this->currentViewPath);
+        $urlView = array_pop($urlParts);
+        $urlInstitution = array_pop($urlParts);
+        if ('national' === $urlInstitution) {
+            $urlInstitution = 'www';
+        }
+        $serviceAddress = $urlInstitution . '.finna.fi';
+        if ($urlView != $this::DEFAULT_PATH) {
+            $serviceAddress .= "/$urlView";
+        }
+
         $serviceName = !empty($this->currentSiteConfig['Site']['title'])
             ? $this->currentSiteConfig['Site']['title'] : $serviceAddress;
+        $firstName = $user->firstname;
+        if (!$firstName) {
+            $firstName = $user->lastname;
+        }
+        if (!$firstName) {
+            $firstName = $userName;
+        }
         $params = [
-            'loginMethod' => strtolower($user->finna_auth_method),
+            'loginMethod' => strtolower($user->auth_method),
             'username' => $userName,
-            'firstname' => $user->firstname ? $user->firstname : $userName,
+            'firstname' => $firstName,
             'expirationDate' =>  $expirationDatetime->format('d.m.Y'),
             'serviceName' => $serviceName,
             'serviceAddress' => $serviceAddress
@@ -412,10 +476,10 @@ EOT;
     protected function collectScriptArguments($arguments)
     {
         // Current view local configuration directory
-        $this->baseDir = isset($arguments[0]) ? $arguments[0] : false;
+        $this->baseDir = $arguments[0] ?? false;
 
         // Current view local basedir
-        $this->viewBaseDir = isset($arguments[1]) ? $arguments[1] : false;
+        $this->viewBaseDir = $arguments[1] ?? false;
 
         // Inactive user account will expire in expirationDays days
         $this->expirationDays = (isset($arguments[2]) && $arguments[2] >= 180)

@@ -2,7 +2,7 @@
 /**
  * Console service for sending due date reminders.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2013-2017.
  *
@@ -30,6 +30,7 @@
 namespace FinnaConsole\Service;
 
 use Zend\ServiceManager\ServiceManager;
+use Zend\Stdlib\RequestInterface as Request;
 use Zend\View\Resolver\AggregateResolver;
 use Zend\View\Resolver\TemplatePathStack;
 
@@ -215,11 +216,12 @@ class DueDateReminders extends AbstractService
     /**
      * Run service.
      *
-     * @param array $arguments Command line arguments.
+     * @param array   $arguments Command line arguments.
+     * @param Request $request   Full request
      *
      * @return boolean success
      */
-    public function run($arguments)
+    public function run($arguments, Request $request)
     {
         $this->msg('Sending due date reminders');
 
@@ -361,9 +363,8 @@ class DueDateReminders extends AbstractService
                     }
 
                     // Store also title for display in email
-                    $title = isset($loan['title'])
-                        ? $loan['title']
-                        : null;
+                    $title = $loan['title']
+                        ?? null;
 
                     if (isset($loan['id'])) {
                         $record = $this->recordLoader->load(
@@ -465,14 +466,17 @@ class DueDateReminders extends AbstractService
         $urlParts = explode('/', $this->currentViewPath);
         $urlView = array_pop($urlParts);
         $urlInstitution = array_pop($urlParts);
+        if ('national' === $urlInstitution) {
+            $urlInstitution = 'www';
+        }
 
         $baseUrl = 'https://' . $urlInstitution . '.finna.fi';
         if ($urlView != $this::DEFAULT_PATH) {
             $baseUrl .= "/$urlView";
         }
         $serviceName = $urlInstitution . '.finna.fi';
-        $lastLogin = new \DateTime($user->finna_last_login);
-        $loginMethod = strtolower($user->finna_auth_method);
+        $lastLogin = new \DateTime($user->last_login);
+        $loginMethod = strtolower($user->auth_method);
         $dateFormat = isset($this->currentSiteConfig['Site']['displayDateFormat'])
             ? $this->currentSiteConfig['Site']['displayDateFormat']
             : $this->mainConfig->Site->displayDateFormat;
@@ -538,9 +542,9 @@ class DueDateReminders extends AbstractService
     protected function collectScriptArguments($arguments)
     {
         // VuFind base directory
-        $this->baseDir = isset($arguments[0]) ? $arguments[0] : false;
+        $this->baseDir = $arguments[0] ?? false;
         // Base directory for all views.
-        $this->viewBaseDir = isset($arguments[1]) ? $arguments[1] : '..';
+        $this->viewBaseDir = $arguments[1] ?? '..';
     }
 
     /**

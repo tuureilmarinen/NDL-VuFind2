@@ -2,7 +2,7 @@
 /**
  * Record driver data formatting view helper
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2016.
  * Copyright (C) The National Library of Finland 2017.
@@ -164,6 +164,26 @@ class RecordDataFormatter extends \VuFind\View\Helper\Root\RecordDataFormatter
             'Access Restrictions', 'Item Description', 'Publisher',
             'Source Collection', 'Music', 'Distribution', 'Press Reviews',
             'Inspection Details', 'Item Description FWD', 'Description'
+        ];
+        foreach ($filter as $key) {
+            unset($coreFields[$key]);
+        }
+        return $coreFields;
+    }
+
+    /**
+     * Filter unnecessary fields from EAD-collection records.
+     *
+     * @param array $coreFields data to filter.
+     *
+     * @return array
+     */
+    public function filterCollectionFields($coreFields)
+    {
+        $filter = [
+            'Contributors', 'Format', 'Online Access',
+            'Access', 'Item Description FWD', 'Physical Description',
+            'Published in', 'Published', 'Source Collection'
         ];
         foreach ($filter as $key) {
             unset($coreFields[$key]);

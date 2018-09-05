@@ -2,7 +2,7 @@
 /**
  * Additional functionality for ILS/MultiILS authentication.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library 2015.
  *
@@ -63,6 +63,22 @@ trait ILSFinna
             return $config['secondary_login_field_label'];
         }
         return '';
+    }
+
+    /**
+     * Check if ILS supports password recovery
+     *
+     * @param string $target Login target (MultiILS)
+     *
+     * @return string
+     */
+    public function ilsSupportsPasswordRecovery($target)
+    {
+        $catalog = $this->getCatalog();
+        $recoveryConfig = $catalog->checkFunction(
+            'recoverPassword', ['cat_username' => "$target.123"]
+        );
+        return $recoveryConfig ? true : false;
     }
 
     /**
@@ -128,13 +144,18 @@ trait ILSFinna
                     continue;
                 }
             }
-            $user->$field = isset($info[$field]) ? $info[$field] : ' ';
+            $user->$field = $info[$field] ?? ' ';
+        }
+
+        // Set home library if not already set
+        if (!empty($info['home_library']) && empty($user->home_library)) {
+            $user->home_library = $info['home_library'];
         }
 
         // Update the user in the database, then return it to the caller:
         $user->saveCredentials(
-            isset($info['cat_username']) ? $info['cat_username'] : ' ',
-            isset($info['cat_password']) ? $info['cat_password'] : ' '
+            $info['cat_username'] ?? ' ',
+            $info['cat_password'] ?? ' '
         );
 
         return $user;

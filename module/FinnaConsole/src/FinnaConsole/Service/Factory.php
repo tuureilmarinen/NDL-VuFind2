@@ -2,7 +2,7 @@
 /**
  * Factory for various top-level VuFind services.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -73,9 +73,9 @@ class Factory
     {
         $tableManager = $sm->get('VuFind\DbTablePluginManager');
         $userTable = $tableManager->get('user');
-        $dueDateReminderTable = $tableManager->get('due-date-reminder');
+        $dueDateReminderTable = $tableManager->get('duedatereminder');
 
-        $catalog = \Finna\Service\Factory::getILSConnection($sm);
+        $catalog = $sm->get('VuFind\ILS\Connection');
         $configReader = $sm->get('VuFind\Config');
         $renderer = $sm->get('ViewRenderer');
         $loader = $sm->get('VuFind\RecordLoader');
@@ -113,8 +113,26 @@ class Factory
     public static function getExpireUsers(ServiceManager $sm)
     {
         $table = $sm->get('VuFind\DbTablePluginManager')->get('User');
+        $config = $sm->get('VuFind\Config')->get('config');
+        $removeComments = $config->Authentication->delete_comments_with_user ?? true;
+        return new ExpireUsers($table, $removeComments);
+    }
 
-        return new ExpireUsers($table);
+    /**
+     * Construct the console service for importing comments.
+     *
+     * @param ServiceManager $sm Service manager.
+     *
+     * @return \FinnaConsole\Service\ImportComments
+     */
+    public static function getImportComments(ServiceManager $sm)
+    {
+        $tableManager = $sm->get('VuFind\DbTablePluginManager');
+        return new ImportComments(
+            $tableManager->get('Comments'),
+            $tableManager->get('CommentsRecord'),
+            $tableManager->get('Resource')
+        );
     }
 
     /**
@@ -126,13 +144,13 @@ class Factory
      */
     public static function getOnlinePaymentMonitor(ServiceManager $sm)
     {
-        $catalog = \Finna\Service\Factory::getILSConnection($sm);
+        $catalog = $sm->get('VuFind\ILS\Connection');
         $tableManager = $sm->get('VuFind\DbTablePluginManager');
         $transactionTable = $tableManager->get('transaction');
         $userTable = $tableManager->get('user');
         $configReader = $sm->get('VuFind\Config');
         $mailer = $sm->get('VuFind\Mailer');
-        $viewManager = $sm->get('viewmanager');
+        $viewManager = $sm->get('ViewManager');
         $viewRenderer = $sm->get('ViewRenderer');
 
         return new OnlinePaymentMonitor(

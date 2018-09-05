@@ -1,18 +1,18 @@
 <!-- START of: finna - Auth/MultiILS/loginfields.phtml -->
-<div class="login-col">
+<div>
   <div class="form-group">
     <?$currentTarget = $this->request->get('target'); if (!$currentTarget) $currentTarget = $this->auth()->getManager()->getDefaultLoginTarget();?>
-    <? if (count($this->auth()->getManager()->getLoginTargets()) > 1): ?>
+    <?php if (count($this->auth()->getManager()->getLoginTargets()) > 1): ?>
       <label class="control-label" for="login_target"><?=$this->transEsc('login_target')?>:</label>
       <select id="login_target" name="target" class="form-control">
-        <?foreach ($this->auth()->getManager()->getLoginTargets() as $target):?>
-        <option value="<?=$this->escapeHtmlAttr($target)?>"<?=($target == $currentTarget ? ' selected="selected"' : '')?>><?=$this->transEsc("source_$target", null, $target)?></option>
-        <? endforeach ?>
+        <?php foreach ($this->auth()->getManager()->getLoginTargets() as $target):?>
+          <option value="<?=$this->escapeHtmlAttr($target)?>"<?=($target == $currentTarget ? ' selected="selected"' : '')?>><?=$this->transEsc("source_$target", null, $target)?></option>
+        <?php endforeach ?>
       </select>
-    <? else: ?>
+    <?php else: ?>
       <input type="hidden" id="login_target" name="target" value="<?=$this->escapeHtmlAttr($currentTarget)?>">
       <div><strong><?=$this->transEsc("source_$currentTarget", null, $currentTarget)?></strong></div>
-    <? endif; ?>
+    <?php endif; ?>
   </div>
   <div class="form-group">
     <label class="control-label" for="login_<?=$this->escapeHtmlAttr($topClass)?>_secondary_username"></label>
@@ -29,24 +29,17 @@
     <input id="login_<?=$this->escapeHtmlAttr($topClass)?>_password" type="password" name="password" class="form-control"/>
   </div>
 </div>
-<div class="login-col hidden-xs">
-  <div class="login-description">
-    <p class="login-info">
-      <?=$this->translate('login_desc_library_card_html') ?>
-    </p>
-  </div>
-</div>
 
-<?
+<?php
   $labels = [];
   foreach ($this->auth()->getManager()->getLoginTargets() as $target) {
     $label = $this->auth()->getManager()->getSecondaryLoginFieldLabel($target);
-    $labels[] = '"' . addslashes($target) . '": "' . ($label ? addslashes($this->translate($label)) : '') . '"';
+    $labels[$target] = $label ? addslashes($this->translate($label)) : '';
   }
 
-  $labels = implode(', ', $labels);
+  $labels = json_encode($labels);
   $script = <<<EOT
-  finna.layout.initSecondaryLoginField({{$labels}}, '{$topClass}');
+  finna.layout.initSecondaryLoginField($labels, '{$topClass}');
 EOT;
 
   // Inline the script for lightbox compatibility

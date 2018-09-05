@@ -2,7 +2,7 @@
 /**
  * Default Controller
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -22,6 +22,7 @@
  * @category VuFind
  * @package  Controller
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/development:plugins:controllers Wiki
  */
@@ -36,12 +37,13 @@ use VuFindCode\ISBN;
  * @category VuFind
  * @package  Controller
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/development:plugins:controllers Wiki
  */
 class SearchController extends \VuFind\Controller\SearchController
 {
-    use SearchControllerTrait;
+    use FinnaSearchControllerTrait;
     use CatalogLoginTrait;
 
     /**
@@ -54,7 +56,7 @@ class SearchController extends \VuFind\Controller\SearchController
         $view = parent::advancedAction();
 
         $config = $this->getConfig();
-        $ticks = [0, 900, 1800, 1910];
+        $ticks = [-1000, 0, 900, 1800, 1900];
         if (!empty($config->Site->advSearchYearScale)) {
             $ticks = array_map(
                 'trim', explode(',', $config->Site->advSearchYearScale)
@@ -149,6 +151,12 @@ class SearchController extends \VuFind\Controller\SearchController
             }
             $minSO = $minSO->deminify($this->getResultsManager());
             $schedule[$minSO->getSearchId()] = $current->finna_schedule;
+        }
+        // Add unsaved searches
+        foreach ($view->unsaved as $search) {
+            if ($search instanceof \Finna\Search\Solr\Results) {
+                $schedule[$search->getSearchId()] = 0;
+            }
         }
         $view->schedule = $schedule;
         return $view;
@@ -252,16 +260,6 @@ class SearchController extends \VuFind\Controller\SearchController
     }
 
     /**
-     * Get the search memory
-     *
-     * @return \Finna\Search\Memory
-     */
-    public function getSearchMemory()
-    {
-        return $this->serviceLocator->get('Finna\Search\Memory');
-    }
-
-    /**
      * Handler for database and journal browse actions.
      *
      * @param string $type Browse type
@@ -357,7 +355,7 @@ class SearchController extends \VuFind\Controller\SearchController
                 && $request['rft_val_fmt'] == 'info:ofi/fmt:kev:mtx:book'
             ) {
                 // Book format
-                $isbn = isset($request['rft_isbn']) ? $request['rft_isbn'] : '';
+                $isbn = $request['rft_isbn'] ?? '';
                 if (isset($request['rft_btitle'])) {
                     $title = $request['rft_btitle'];
                 } elseif (isset($request['rft_title'])) {
@@ -366,9 +364,8 @@ class SearchController extends \VuFind\Controller\SearchController
             } else {
                 // Journal / Article / something
                 $journal = true;
-                $eissn = isset($request['rft_eissn']) ? $request['rft_eissn'] : '';
-                $atitle = isset($request['rft_atitle'])
-                    ? $request['rft_atitle'] : '';
+                $eissn = $request['rft_eissn'] ?? '';
+                $atitle = $request['rft_atitle'] ?? '';
                 if (isset($request['rft_jtitle'])) {
                     $title = $request['rft_jtitle'];
                 } elseif (isset($request['rft_title'])) {
@@ -383,20 +380,20 @@ class SearchController extends \VuFind\Controller\SearchController
             } elseif (isset($request['rft_auinit'])) {
                 $author .= ' ' . $request['rft_auinit'];
             }
-            $issn = isset($request['rft_issn']) ? $request['rft_issn'] : '';
-            $date = isset($request['rft_date']) ? $request['rft_date'] : '';
-            $volume = isset($request['rft_volume']) ? $request['rft_volume'] : '';
-            $issue = isset($request['rft_issue']) ? $request['rft_issue'] : '';
-            $spage = isset($request['rft_spage']) ? $request['rft_spage'] : '';
+            $issn = $request['rft_issn'] ?? '';
+            $date = $request['rft_date'] ?? '';
+            $volume = $request['rft_volume'] ?? '';
+            $issue = $request['rft_issue'] ?? '';
+            $spage = $request['rft_spage'] ?? '';
         } else {
             // OpenURL 0.1
-            $issn = isset($request['issn']) ? $request['issn'] : '';
-            $date = isset($request['date']) ? $request['date'] : '';
-            $volume = isset($request['volume']) ? $request['volume'] : '';
-            $issue = isset($request['issue']) ? $request['issue'] : '';
-            $spage = isset($request['spage']) ? $request['spage'] : '';
-            $isbn = isset($request['isbn']) ? $request['isbn'] : '';
-            $atitle = isset($request['atitle']) ? $request['atitle'] : '';
+            $issn = $request['issn'] ?? '';
+            $date = $request['date'] ?? '';
+            $volume = $request['volume'] ?? '';
+            $issue = $request['issue'] ?? '';
+            $spage = $request['spage'] ?? '';
+            $isbn = $request['isbn'] ?? '';
+            $atitle = $request['atitle'] ?? '';
             if (isset($request['jtitle'])) {
                 $title = $request['jtitle'];
             } elseif (isset($request['btitle'])) {

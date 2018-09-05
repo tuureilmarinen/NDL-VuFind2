@@ -1,21 +1,62 @@
 <!-- START of: finna - RecordTab/collectionlist.phtml -->
-<?
+<?php
   // Get search results
   $results = $this->tab->getResults();
   $params = $this->tab->getParams();
   $searchDetails = ['results' => $results, 'params' => $params, 'indexStart' => 1, 'isCollection' => $this->driver->isCollection()];
 ?>
-<? if (($recordTotal = $results->getResultTotal()) > 0): // only display these at very top if we have results ?>
-  <? foreach ($results->getRecommendations('top') as $current): ?>
+<div class="mainbody left">
+<?php if (($recordTotal = $results->getResultTotal()) > 0): // only display these at very top if we have results ?>
+  <?php foreach ($results->getRecommendations('top') as $current): ?>
     <?=$this->recommend($current)?>
-  <? endforeach; ?>
-  <div class="search-tools">
-    <div class="hidden-print">
-      <?=$this->render('search/controls/view.phtml', $searchDetails)?>
-      <?=$this->render('search/controls/sort.phtml', $searchDetails)?>
+  <?php endforeach; ?>
+
+  <div class="collection-list-controls">
+    <div class="filter-input">
+      <span class="hidden-xs"><?=$this->transEsc('Search from collection')?></span>
+      <form class="form-inline" role="form" method="get" name="keywordFilterForm" id="keywordFilterForm">
+        <div class="input-group">
+          <input id="keywordFilter_lookfor" type="text" name="lookfor" placeholder="<?=$this->transEsc('Search from collection')?>" value="<?=$params->getDisplayQuery()?>" class="form-control"/>
+            <?php foreach ($params->getFilterList(true) as $field => $filters): ?>
+              <?php foreach ($filters as $filter): ?>
+                <input type="hidden" name="filter[]" value="<?=$this->escapeHtmlAttr($filter['field'])?>:&quot;<?=$this->escapeHtmlAttr($filter['value'])?>&quot;" />
+              <?php endforeach; ?>
+            <?php endforeach; ?>
+            <input type="hidden" name="view" value="<?=$params->getView() ?>" />
+            <input type="hidden" name="sort" value="<?=$params->getSort() ?>" />
+          <span class="input-group-btn"><button class="btn btn-primary" type="submit" name="submit"><span class="sr-only"><?=$this->transEsc('Search')?></span><i class="fa fa-search"></i></button></span>
+        </div>
+      </form>
     </div>
-    <?=$this->paginationControl($results->getPaginator(), 'Sliding', 'search/pagination_simple.phtml', ['results' => $results])?>
+    <?=$this->render('search/controls/view.phtml', $searchDetails)?>
+    <?=$this->render('search/controls/sort.phtml', $searchDetails)?>
   </div>
+
+  <?php
+    $filterList = $params->getFilterList(true);
+    $checkboxFilters = $params->getCheckboxFacets();
+    $options = $this->searchOptions($this->searchClassId);
+    $lastSort = $this->searchMemory()->getLastSort($this->searchClassId);
+    $defaultSortApplied = !isset($params) || $lastSort == $options->getDefaultSortByHandler($params->getSearchHandler());
+    $urlQuery = $results->getUrlQuery();
+
+    $filterCount = $this->search()->getFilterCount($checkboxFilters, $filterList);
+  ?>
+  <?php if (!empty($params->getFilterList(false))): ?>
+    <?=$this->render('search/filters.phtml',
+      [
+        'filterList' => $filterList,
+        'checkboxFilters' => $checkboxFilters,
+        'defaultSortApplied' => $defaultSortApplied,
+        'options' => $options,
+        'params' => $params,
+        'urlQuery' => $results->getUrlQuery(),
+        'isCollectionTab' => true
+      ]
+    ); ?>
+  <?php endif; ?>
+
+  <?=$this->paginationControl($results->getPaginator(), 'Sliding', 'search/pagination_simple.phtml', ['results' => $results])?>
 
   <form class="form-inline" method="post" name="bulkActionForm" action="<?=$this->url('cart-searchresultsbulk')?>">
     <?=$this->context($this)->renderInContext('search/bulk-action-buttons.phtml', $searchDetails + ['idPrefix' => ''])?>
@@ -27,7 +68,26 @@
     <?=$this->paginationControl($results->getPaginator(), 'Sliding', 'search/pagination.phtml', ['results' => $results])?>
     </div>
 
-<? else: ?>
-  <h4><?=$this->transEsc('collection_empty')?></h4><br><br>
-<? endif; ?>
+  <?php else: ?>
+    <h4><?=$this->transEsc('collection_empty')?></h4><br><br>
+  <?php endif; ?>
+</div>
+<div class="sidebar right">
+  <?php foreach ($results->getRecommendations('side') as $current): ?>
+    <?=$this->recommend($current)?>
+  <?php endforeach; ?>
+</div>
+<div class="clearfix"></div>
+<div class="mobile-navigation visible-xs hidden-print">
+  <ul>
+    <li class="sidebar-navigation">
+      <i class="fa fa-arrow-up"></i> <?=$this->transEsc('Filter Collection')?>
+      <?php if (!empty($filterCount)): ?>
+        <span class="active-filters">
+          <?=$this->transEsc('Active filters')?>: <span class='active-filter-count'><?=$filterCount?></span>
+        </span>
+      <?php endif; ?>
+    </li>
+  </ul>
+</div>
 <!-- END of: finna - RecordTab/collectionlist.phtml -->

@@ -3,7 +3,7 @@
 /**
  * Primo Central connector.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -210,6 +210,15 @@ class Connector extends \VuFindSearch\Backend\Primo\Connector
                 $res['documents'][$i]['url'] = $openUrl;
             } else {
                 unset($res['documents'][$i]['url']);
+            }
+
+            // Set any resource url
+            // Get the URL, which has a separate namespace
+            $sear = $doc->children($namespaces['sear']);
+            foreach ((array)$sear->LINKS as $type => $urls) {
+                foreach ((array)$urls as $url) {
+                    $res['documents'][$i]['resource_urls'][$type] = (string)$url;
+                }
             }
 
             // Prefix records id's

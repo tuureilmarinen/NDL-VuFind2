@@ -2,7 +2,7 @@
 /**
  * SFX Link Resolver Driver
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Royal Holloway, University of London
  * Copyright (C) The National Library of Finland 2015-2017.
@@ -41,21 +41,6 @@ namespace Finna\Resolver\Driver;
  */
 class Sfx extends \VuFind\Resolver\Driver\Sfx
 {
-    /**
-     * Constructor
-     *
-     * @param string            $baseUrl    Base URL for link resolver
-     * @param \Zend\Http\Client $httpClient HTTP client
-     * @param Config            $config     Config
-     */
-    public function __construct($baseUrl, \Zend\Http\Client $httpClient, $config)
-    {
-        parent::__construct($baseUrl, $httpClient);
-        $timeout = isset($config->Http->timeout)
-            ? $config->Http->timeout : 30;
-        $this->httpClient->setOptions(['timeout' => $timeout]);
-    }
-
     /**
      * Parse Links
      *

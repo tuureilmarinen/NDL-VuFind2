@@ -2,7 +2,7 @@
 /**
  * Shibboleth authentication module.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2010.
  * Copyright (C) The National Library of Finland 2015-2016.
@@ -60,9 +60,9 @@ class Shibboleth extends \VuFind\Auth\Shibboleth
         $shib = $this->getConfig()->Shibboleth;
         $username = $this->getServerParam($request, $shib->username);
         if (empty($username)) {
-            $this->logError(
-                'Shibboleth login failed for request: no username attribute present'
-                . ' in request: ' . print_r($request->getServer()->toArray(), true)
+            $this->debug(
+                "No username attribute ({$shib->username}) present in request: "
+                . print_r($request->getServer()->toArray(), true)
             );
             throw new AuthException('authentication_error_admin');
         }
@@ -71,10 +71,9 @@ class Shibboleth extends \VuFind\Auth\Shibboleth
         foreach ($this->getRequiredAttributes() as $key => $value) {
             $attrValue = $this->getServerParam($request, $key);
             if (!preg_match('/' . $value . '/', $attrValue)) {
-                $this->logError(
-                    "Shibboleth login failed for request: attribute '$key' contents"
-                    . " '$attrValue' did not match regexp /$value/ in request: "
-                    . print_r($request->getServer()->toArray(), true)
+                $this->debug(
+                    "Attribute '$key' does not match required value '$value' in"
+                    . ' request: ' . print_r($request->getServer()->toArray(), true)
                 );
                 throw new AuthException('authentication_error_invalid_attributes');
             }

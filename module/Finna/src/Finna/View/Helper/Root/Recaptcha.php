@@ -2,7 +2,7 @@
 /**
  * Recaptcha view helper
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2010.
  * Copyright (C) The National Library of Finland 2017.
@@ -51,22 +51,7 @@ class Recaptcha extends \VuFind\View\Helper\Root\Recaptcha
      */
     public function html($useRecaptcha = true, $wrapHtml = true)
     {
-        if (!isset($useRecaptcha) || !$useRecaptcha) {
-            return false;
-        }
-        $result = parent::html($useRecaptcha, $wrapHtml);
-        $inlineScript = $this->getView()->plugin('inlinescript');
-        $lang = $this->getView()->layout()->userLang;
-        $recaptchaUrl = 'https://www.google.com/recaptcha/api.js'
-            . "?onload=recaptchaOnLoad&render=explicit&hl=$lang";
-        $result .= <<<EOT
-<script type="text/javascript">
-if (typeof window.recaptchaLoaded === 'undefined') {
-    window.recaptchaLoaded = 1;
-    $.getScript("$recaptchaUrl");
-}
-</script>
-EOT;
-        return $result;
+        // We can't support reCaptcha but have an alternative mechanism
+        return false;
     }
 }

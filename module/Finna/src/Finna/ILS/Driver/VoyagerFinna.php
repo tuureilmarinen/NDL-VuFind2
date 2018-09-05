@@ -2,7 +2,7 @@
 /**
  * Voyager/VoyagerRestful Common Trait
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2017.
  *
@@ -69,7 +69,7 @@ trait VoyagerFinna
 
             // Concat wrapped rows (MARC data more than 300 bytes gets split
             // into multiple rows)
-            $rowId = isset($row['ITEM_ID']) ? $row['ITEM_ID'] : $row['MFHD_ID'];
+            $rowId = $row['ITEM_ID'] ?? $row['MFHD_ID'];
             if (isset($data[$rowId][$number])) {
                 // We don't want to concatenate the same MARC information to
                 // itself over and over due to a record with multiple status
@@ -330,8 +330,7 @@ trait VoyagerFinna
     {
         $data = parent::processHoldingRow($sqlRow);
 
-        $data['collection'] = isset($sqlRow['LOCATION_CODE'])
-            ? $sqlRow['LOCATION_CODE'] : '';
+        $data['collection'] = $sqlRow['LOCATION_CODE'] ?? '';
 
         // Get purchase order information for holdings that don't have items
         if ($data['status'] == 'No information available'
@@ -585,14 +584,14 @@ trait VoyagerFinna
      * Return total amount of fees that may be paid online.
      *
      * @param array $patron Patron
+     * @param array $fines  Patron's fines
      *
      * @throws ILSException
      * @return array Associative array of payment info,
      * false if an ILSException occurred.
      */
-    public function getOnlinePayableAmount($patron)
+    public function getOnlinePayableAmount($patron, $fines)
     {
-        $fines = $this->getMyFines($patron);
         if (!empty($fines)) {
             $nonPayableReason = false;
             $amount = 0;
@@ -628,15 +627,17 @@ trait VoyagerFinna
      *
      * This is called after a successful online payment.
      *
-     * @param array  $patron        Patron.
-     * @param int    $amount        Amount to be registered as paid.
-     * @param string $transactionId Transaction ID.
+     * @param array  $patron            Patron
+     * @param int    $amount            Amount to be registered as paid
+     * @param string $transactionId     Transaction ID
+     * @param int    $transactionNumber Internal transaction number
      *
      * @throws ILSException
      * @return boolean success
      */
-    public function markFeesAsPaid($patron, $amount, $transactionId)
-    {
+    public function markFeesAsPaid($patron, $amount, $transactionId,
+        $transactionNumber
+    ) {
         $params
             = isset($this->config['OnlinePayment']['registrationParams'])
             ? $this->config['OnlinePayment']['registrationParams'] : []
@@ -818,7 +819,7 @@ trait VoyagerFinna
                 }
 
                 $success = false;
-                if (!is_null($row['LOGIN'])) {
+                if (null !== $row['LOGIN']) {
                     // User has a primary login so it needs to match
                     $primary = mb_strtolower(utf8_encode($row['LOGIN']), 'UTF-8');
                     $success = $primary == $compareLogin
@@ -925,8 +926,7 @@ trait VoyagerFinna
         $accruedType = 'Accrued Fine';
 
         $config = $this->config['OnlinePayment'];
-        $nonPayable = isset($config['nonPayable'])
-            ? $config['nonPayable'] : []
+        $nonPayable = $config['nonPayable'] ?? []
         ;
         $nonPayable[] = $accruedType;
         foreach ($fines as &$fine) {

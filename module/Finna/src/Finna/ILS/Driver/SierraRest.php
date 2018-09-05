@@ -2,7 +2,7 @@
 /**
  * III Sierra REST API driver
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2017.
  *
@@ -61,6 +61,76 @@ class SierraRest extends \VuFind\ILS\Driver\SierraRest
             $data[] = $summary;
         }
         return $data;
+    }
+
+    /**
+     * Get Pick Up Locations
+     *
+     * This is responsible for gettting a list of valid library locations for
+     * holds / recall retrieval
+     *
+     * @param array $patron      Patron information returned by the patronLogin
+     * method.
+     * @param array $holdDetails Optional array, only passed in when getting a list
+     * in the context of placing a hold; contains most of the same values passed to
+     * placeHold, minus the patron data.  May be used to limit the pickup options
+     * or may be ignored.  The driver must not add new options to the return array
+     * based on this data or other areas of VuFind may behave incorrectly.
+     *
+     * @throws ILSException
+     * @return array        An array of associative arrays with locationID and
+     * locationDisplay keys
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getPickUpLocations($patron = false, $holdDetails = null)
+    {
+        if (!empty($this->config['pickUpLocations'])) {
+            $locations = [];
+            foreach ($this->config['pickUpLocations'] as $id => $location) {
+                $locations[] = [
+                    'locationID' => $id,
+                    'locationDisplay' => $this->translateLocation(
+                        ['code' => $id, 'name' => $location]
+                    )
+                ];
+            }
+            return $locations;
+        }
+
+        $result = $this->makeRequest(
+            ['v4', 'branches', 'pickupLocations'],
+            [
+                'limit' => 10000,
+                'offset' => 0,
+                'fields' => 'code,name',
+                'language' => $this->getTranslatorLocale()
+            ],
+            'GET',
+            $patron
+        );
+        if (!empty($result['code'])) {
+            // An error was returned
+            $this->error(
+                "Request for pickup locations returned error code: {$result['code']}"
+                . ", HTTP status: {$result['httpStatus']}, name: {$result['name']}"
+            );
+            throw new ILSException('Problem with Sierra REST API.');
+        }
+        if (empty($result)) {
+            return [];
+        }
+
+        $locations = [];
+        foreach ($result as $entry) {
+            $locations[] = [
+                'locationID' => $entry['code'],
+                'locationDisplay' => $entry['name']
+            ];
+        }
+
+        usort($locations, [$this, 'pickupLocationSortFunction']);
+        return $locations;
     }
 
     /**
@@ -147,10 +217,12 @@ class SierraRest extends \VuFind\ILS\Driver\SierraRest
             $patron
         );
 
-        if (isset($result['code']) && $result['code'] != 0) {
+        if (!empty($result['code'])) {
             return [
                 'success' => false,
-                'status' => $this->formatErrorMessage($result['description'])
+                'status' => $this->formatErrorMessage(
+                    $result['description'] ?? $result['name']
+                )
             ];
         }
         return ['success' => true];
@@ -183,10 +255,12 @@ class SierraRest extends \VuFind\ILS\Driver\SierraRest
             $patron
         );
 
-        if (isset($result['code']) && $result['code'] != 0) {
+        if (!empty($result['code'])) {
             return [
                 'success' => false,
-                'status' => $this->formatErrorMessage($result['description'])
+                'status' => $this->formatErrorMessage(
+                    $result['description'] ?? $result['name']
+                )
             ];
         }
         return ['success' => true];

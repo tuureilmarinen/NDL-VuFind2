@@ -2,10 +2,10 @@
 /**
  * Record image loader
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2007.
- * Copyright (C) The National Library of Finland 2015-2017.
+ * Copyright (C) The National Library of Finland 2015-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -24,6 +24,7 @@
  * @package  Cover_Generator
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/configuration:external_content Wiki
  */
@@ -38,6 +39,7 @@ use VuFindCode\ISBN;
  * @package  Cover_Generator
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/configuration:external_content Wiki
  */
@@ -91,6 +93,25 @@ class Loader extends \VuFind\Cover\Loader
      * @var boolean
      */
     protected $size = 'medium';
+
+    /**
+     * Datasource spesific cover image configuration
+     *
+     * @var string
+     */
+    protected $datasourceCoverConfig = null;
+
+    /**
+     * Set datasource spesific cover image configuration.
+     *
+     * @param string $providers Comma separated list of cover image providers
+     *
+     * @return void
+     */
+    public function setDatasourceConfig($providers)
+    {
+        $this->datasourceCoverConfig = $providers;
+    }
 
     /**
      * Set image parameters.
@@ -153,15 +174,16 @@ class Loader extends \VuFind\Cover\Loader
      *
      * @param \Vufind\RecordDriver\SolrDefault $driver Record
      * @param int                              $index  Image index
+     * @param string                           $size   Requested size
      *
      * @return void
      */
     public function loadRecordImage(
-        \VuFind\RecordDriver\SolrDefault $driver, $index = 0
+        \VuFind\RecordDriver\SolrDefault $driver, $index, $size
     ) {
         $this->index = $index;
 
-        $params = $driver->getRecordImage($this->size, $index);
+        $params = $driver->getRecordImage($size, $index);
 
         if (isset($params['url'])) {
             $this->id = $driver->getUniqueID();
@@ -237,9 +259,11 @@ class Loader extends \VuFind\Cover\Loader
         if (empty($ids)) {
             return false;
         }
-
-        $providers = isset($this->config->Content->coverimages)
+        $datasourceProviders = isset($this->datasourceCoverConfig)
+            ? explode(',', $this->datasourceCoverConfig) : [];
+        $commonProviders = isset($this->config->Content->coverimages)
             ? explode(',', $this->config->Content->coverimages) : [];
+        $providers = array_merge($datasourceProviders, $commonProviders);
 
         // Try to find provider-specific cache file
         foreach ($providers as $provider) {
@@ -325,7 +349,7 @@ class Loader extends \VuFind\Cover\Loader
         );
 
         // Attempt to pull down the image:
-        $result = $this->client->setUri($url)->send();
+        $result = $this->httpService->createClient($url)->send();
         if (!$result->isSuccess()) {
             $this->debug("Failed to retrieve image from $url");
             return false;

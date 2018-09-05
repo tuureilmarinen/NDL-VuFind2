@@ -2,7 +2,7 @@
 /**
  * Interface console services.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016.
  *
@@ -27,6 +27,8 @@
  */
 namespace FinnaConsole\Service;
 
+use Zend\Stdlib\RequestInterface as Request;
+
 /**
  * Interface console services.
  *
@@ -41,9 +43,10 @@ interface ConsoleServiceInterface
     /**
      * Run service.
      *
-     * @param array $arguments Command line arguments.
+     * @param array   $arguments Command line arguments
+     * @param Request $request   Full request
      *
      * @return void|boolean success
      */
-    public function run($arguments);
+    public function run($arguments, Request $request);
 }

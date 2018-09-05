@@ -1,13 +1,12 @@
 <!-- START of: finna - RecordTab/map.phtml -->
-<?
-  $this->inlineScript(\Zend\View\Helper\HeadScript::FILE, 'vendor/leaflet.js');
+<?php
   $this->inlineScript(\Zend\View\Helper\HeadScript::FILE, 'vendor/leaflet-omnivore.min.js');
   echo $this->inlineScript();
 ?>
 
 <div class="map-canvas"></div>
 
-<script type="text/javascript">
+<script>
 $(document).ready(function() {
   var tileLayer = L.tileLayer('//map-api.finna.fi/v1/rendered/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -55,7 +54,7 @@ $(document).ready(function() {
     zoom: 5,
     zoomControl: false
   });
-  finna.layout.initMap(map);
+  finna.map.initMapZooming(map);
   var onLoad = function() {
     fitZoom = map.getBoundsZoom(drawnItems.getBounds());
     map.setZoom(fitZoom <= 9 ? fitZoom - 1 : 9);

@@ -1,11 +1,11 @@
 <!-- START of: finna - content/about_finna_fi.phtml -->
-<? $this->headTitle($this->translate('Mikä Finna on?')); $this->content()->setHeading($this->translate('Mikä Finna on?'));  ?>
+<?php $this->headTitle($this->translate('Mikä Finna on?')); $this->content()->setHeading($this->translate('Mikä Finna on?'));  ?>
 <div>
   <h2>Finna.fi</h2>
 </div>
 <div>
   <div class="finna-info-left">
-    <a href="https://www.finna.fi"><img src="<?=$this->imageLink('finnafi.jpg')?>" alt="<?=$this->escapeHtmlAttr($this->translate('screenshot_alt_text', ['%%siteurl%%' => 'finna.fi'])); ?>" /></a>
+    <a href="https://www.finna.fi"><img class="finna-screenshot" src="<?=$this->imageLink('finnafi.jpg')?>" alt="<?=$this->escapeHtmlAttr($this->translate('screenshot_alt_text', ['%%siteurl%%' => 'finna.fi'])); ?>" /></a>
     <p>&nbsp;</p>
   </div>
   <div class="finna-info-right">
@@ -30,8 +30,17 @@
       <h2>Muut Finna-hakupalvelut</h2>
       <p>Finna on hakupalvelujen kokonaisuus, johon kuuluu monia sivustoja valtakunnallisen finna.fi:n lisäksi. Organisaatiokohtaiset sivustot ovat rajattuja pääasiassa yhden organisaation aineistoihin.
       </p>
-      <p>Finna kehittyy jatkuvasti ja korvaa vaiheittain suomalaisten kirjastojen, arkistojen ja museoiden asiakkaille suunnattuja verkkopalveluita. Tällä hetkellä Finnassa on mukana <a href="https://www.finna.fi/Content/organisations">yli 100 organisaatiota</a>, joista seuraavat ovat avanneet oman Finna-hakupalvelunsa:
+      <p>Finna kehittyy jatkuvasti ja korvaa vaiheittain suomalaisten kirjastojen, arkistojen ja museoiden asiakkaille suunnattuja verkkopalveluita. Tällä hetkellä Finnassa on mukana <a href="https://www.finna.fi/Content/organisations">yli 300 organisaatiota</a>, joista seuraavat ovat avanneet oman Finna-hakupalvelunsa:
       </p>
+      <ul class="list-bullets">
+        <li><a href="#publiclib"><?=$this->translate('Public Libraries') ?></a></li>
+        <li><a href="#archives"><?=$this->translate('Archives') ?></a></li>
+        <li><a href="#museums"><?=$this->translate('Museums') ?></a></li>
+        <li><a href="#polylib"><?=$this->translate('Polytechnic Libraries') ?></a></li>
+        <li><a href="#univlib"><?=$this->translate('University Libraries') ?></a></li>
+        <li><a href="#jointlib"><?=$this->translate('Joint libraries') ?></a></li>
+        <li><a href="#speciallib"><?=$this->translate('Special libraries') ?></a></li>
+      </ul>
     </div>
     <?=$this->render('content/about_finna_sites.phtml') ?>
     <div class="page-content">
@@ -45,7 +54,7 @@
   <div class="container">
     <div class="page-content">
       <p>&nbsp;</p>
-      <a name="e-materials"></a>
+      <a id="e-materials"></a>
       <h2>Sähköiset aineistot</h2>
       <h4>Kansainväliset tieteelliset e-aineistot</h4>
       <p>AMK- ja yliopistokirjastojen Finna-sivustot sisältävät kansainvälisiä, tieteellisiä, sähköisiä aineistoja, jotka ulkopuolinen toimija koostaa ja tarjoaa, ja jotka ovat maksullisia kirjastoille. Valtaosa näistä on rajattu korkeakoulun opiskelijoiden ja henkilökunnan käyttöön. Sähköiset aineistot saa käyttöönsä kirjautumalla <a href="#organisation-views">oman kirjaston Finna-hakupalveluun</a> kyseisen korkeakoulun tunnuksilla.
@@ -90,10 +99,10 @@
       <p>Finna on palvelu, jota kehitetään vaiheittain sitä mukaa, kun uusia organisaatioita liittyy mukaan. Finnan beta-versio avattiin joulukuussa 2012 ja ensimmäinen versio lokakuussa 2013. Vaikka et siis ehkä vielä löydä hakemaasi tietoa Finnasta, se saattaa tulla sinne tulevaisuudessa.
       </p>
       <h4>Finnan vastuutahot</h4>
-      <p>Kansalliskirjasto vastaa Finnan kehittämisestä ja ylläpidosta, mutta palvelua kehitetään yhdessä Finnan yhteistyökumppanien kanssa. Finnan sisällöistä vastaavat palveluun osallistuvat <a href="https://www.finna.fi/Content/organisations">arkistot, kirjastot ja museot.</a> Finna on osa opetus- ja kulttuuriministeriön <a href="http://www.kdk.fi/fi/tietoa-hankkeesta">Kansallinen digitaalinen kirjasto</a> -hanketta.
+      <p>Kansalliskirjasto vastaa Finnan kehittämisestä ja ylläpidosta, mutta palvelua kehitetään yhdessä Finnan yhteistyökumppanien kanssa. Finnan sisällöistä vastaavat palveluun osallistuvat <a href="https://www.finna.fi/Content/organisations">arkistot, kirjastot ja museot.</a> Finna on syntynyt osana opetus- ja kulttuuriministeriön Kansallinen digitaalinen kirjasto -hanketta (2008–2017).
       </p>
       <h4>Finnan ohjelmisto</h4>
-      <p>Finna on toteutettu VuFind- ja muilla avoimen lähdekoodin ohjelmistoilla, ja sen lähdekoodi on kaikkien halukkaiden hyödynnettävissä. <a href="http://www.kdk.fi/fi/asiakasliittyma/ohjelmiston-kehittaeminen">Lue lisätietoa ohjelmiston kehittämisestä.</a>
+      <p>Finna on toteutettu VuFind- ja muilla avoimen lähdekoodin ohjelmistoilla, ja sen lähdekoodi on kaikkien halukkaiden hyödynnettävissä.
       </p>
       <p>&nbsp;</p>
     </div>

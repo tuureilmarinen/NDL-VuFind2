@@ -1,4 +1,18 @@
 .record {
+  // .media and .media-body code added to fix IE11 display: table-cell issues
+  .media {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    @media(max-width: @screen-sm) {
+      display: block;
+    }
+  }
+
+  .media-body {
+    width: auto;
+  }
+
   .media-left,
   .media-right {
     width: 25%;
@@ -15,7 +29,7 @@
     .media-right { padding-left: 20px; }
   }
 
-  & .nav>li a {
+  & .nav>li:not(.share-buttons) a {
     color: @action-link-color;
     font-size: 1em;
     font-weight: 600;
@@ -27,11 +41,17 @@
     & i {
       color: tint(@action-link-color, 22%);
       padding-left: 3px;
-      padding-right: 3px;    
+      padding-right: 3px;
     }
   }
 
-  .local-available-online-record {
+  .recordURLs {
+    margin: 0px 0px 10px;
+    padding-bottom: 10px;
+    & .online-source {
+      font-size: 0.9em;
+      color: @gray-light;
+    }
     a {
       font-size: 15px;
     }
@@ -43,6 +63,11 @@
       font-size: 20px;
       margin-right: 10px;
       float: left;
+    }
+    @media print {
+      a[href]::after {
+        content: " (" attr(href) ")";
+      }
     }
   }
   .video-link-container {
@@ -75,6 +100,16 @@
       width: 100%;
     }
   }
+
+  @media print {
+    .organisation-menu {
+      display: none;
+    }
+
+    a[href]::after {
+      content: "";
+    }
+  }
 }
 
 .record .record-title {
@@ -86,26 +121,15 @@
   }
 }
 
-.no-image-layout {
-  .record-image-container {
-    display: none;
-  }
-  .image-details-container {
-    display: none;
-  }
-  .media-left,
-  .media-right {
-    .organisation-menu {
-      display: none;
-    }
-  }
+.record-image-container {
+  margin-bottom: 20px;
 }
 
 .large-image-layout.record {
   .media-left,
   .media-right {
     @media (min-width: @screen-sm) {
-      width: 50%;
+      width: 25%;
     }
     .record-image-container {
       text-align: center;
@@ -189,9 +213,28 @@
   font-size: 1.05em;
   margin: 0 0 3px;
 }
+// record-authors is no longer used, but is retained here for locally customized templates
 .record-authors, .record-title-alt-script {
   .date-and-year();
+  margin-top: 6px;
 }
+.record-core-metadata {
+  .date-and-year();
+  margin-top: 6px;
+  .recordContainerReference {
+    padding-bottom: 1em;
+    padding-top: 1em;
+    a {
+      font-size: 1.2em;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+  }
+  .recordPublished {
+    font-weight: 700;
+  }
+}
+
 .record-details {
   & th {
     width: 30%;
@@ -359,7 +402,7 @@
   & a:hover {
     text-decoration: none;
   }
-  & > li:not(.addthis-share-buttons):not(.whatsapp) {
+  & > li:not(.share-buttons):not(.whatsapp) {
     margin: 10px;
     float: left;
     // Links rendered as pills
@@ -377,6 +420,52 @@
     min-width: 150px;
   }
 }
-.nav-pills .addthis-share-buttons a {
+.nav-pills .share-buttons a {
   display: inline-block;
+}
+.share-buttons {
+    margin-right: 5px;
+}
+.share-buttons-toolbox {
+    display: inline-block;
+}
+
+// Request forms
+.ill-request-terms {
+  background-color: @state-info-bg;
+  padding: 2em;
+  padding-left: 2.5em;
+  margin-bottom: 1em;
+}
+
+// Comment form
+.comment-form {
+  .fa.fa-info3 {
+    font-size: 1.5em;
+    float: left;
+    color: @brand-primary;
+  }
+  .comment-description {
+    margin-top: 1em;
+    margin-left: 2em;
+  }
+  @media (min-width: @screen-md) {
+    .fa.fa-info3 {
+      margin-top: 2.7em;
+      margin-left: 1em;
+    }
+    .comment-col {
+        width: 50%;
+        float: left;
+    }
+    .comment-description {
+      margin-top: 4em;
+      margin-left: 4em;
+    }
+  }
+}
+
+// Cart buttons
+.cart-add, .cart-remove {
+  cursor: pointer;
 }

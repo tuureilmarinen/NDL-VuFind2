@@ -2,7 +2,7 @@
 /**
  * CLI Controller Module
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2017.
  *
@@ -91,13 +91,44 @@ class UtilController extends \VuFindConsole\Controller\UtilController
     }
 
     /**
-     * Anonymizes all the expired user accounts.
+     * Command-line tool to clear unwanted entries
+     * from session database table.
+     *
+     * @return \Zend\Console\Response
+     */
+    public function expiresessionsAction()
+    {
+        $request = $this->getRequest();
+        if ($request->getParam('help') || $request->getParam('h')) {
+            return $this->expirationHelp('sessions');
+        }
+
+        return $this->expire(
+            'Session',
+            '%%count%% expired sessions deleted.',
+            'No expired sessions to delete.',
+            0.3
+        );
+    }
+
+    /**
+     * Delete expired user accounts.
      *
      * @return \Zend\Console\Response
      */
     public function expireUsersAction()
     {
         return $this->runService('Finna\ExpireUsers');
+    }
+
+    /**
+     * Import comments
+     *
+     * @return \Zend\Console\Response
+     */
+    public function importCommentsAction()
+    {
+        return $this->runService('Finna\ImportComments');
     }
 
     /**
@@ -168,7 +199,7 @@ class UtilController extends \VuFindConsole\Controller\UtilController
         $sl->setShared('VuFind\Mailer', false);
         $service = $sl->get($service);
         $service->initLogging();
-        return $service->run($arguments)
+        return $service->run($arguments, $this->getRequest())
             ? $this->getSuccessResponse()
             : $this->getFailureResponse();
     }

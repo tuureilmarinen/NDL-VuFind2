@@ -2,7 +2,7 @@
 /**
  * Location Service Controller.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016.
  *
@@ -36,7 +36,7 @@ namespace Finna\Controller;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
-class LocationServiceController extends \Finna\Controller\AjaxController
+class LocationServiceController extends \VuFind\Controller\AbstractBase
 {
     /**
      * Return HTML that loads the Location Service map to an iframe.
@@ -62,7 +62,7 @@ class LocationServiceController extends \Finna\Controller\AjaxController
         $title = $request['title'];
 
         $locationService
-            = $this->serviceLocator->get('Finna\LocationService');
+            = $this->serviceLocator->get('Finna\LocationService\LocationService');
         $language
             = $this->serviceLocator->get('VuFind\Translator')->getLocale();
 

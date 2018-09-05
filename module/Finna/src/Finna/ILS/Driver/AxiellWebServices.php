@@ -2,7 +2,7 @@
 /**
  * Axiell Web Services ILS Driver
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -32,8 +32,7 @@ namespace Finna\ILS\Driver;
 use DOMDocument;
 use SoapClient;
 use VuFind\Config\Locator;
-use VuFind\Exception\Date;
-use VuFind\Exception\Date as DateException;
+use VuFind\Date\DateException;
 use VuFind\Exception\ILS as ILSException;
 use VuFind\I18n\Translator\TranslatorAwareInterface as TranslatorAwareInterface;
 use Zend\Db\Sql\Ddl\Column\Boolean;
@@ -58,6 +57,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     use \VuFind\Log\LoggerAwareTrait {
         logError as error;
     }
+    use \VuFind\ILS\Driver\CacheTrait;
 
     /**
      * Date formatting object
@@ -965,10 +965,8 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
 
                         // Group journals by issue number
                         if ($journalInfo) {
-                            $year = isset($journalInfo['year'])
-                                ? $journalInfo['year'] : '';
-                            $edition = isset($journalInfo['edition'])
-                                ? $journalInfo['edition'] : '';
+                            $year = $journalInfo['year'] ?? '';
+                            $edition = $journalInfo['edition'] ?? '';
                             if ($year !== '' && $edition !== '') {
                                 if (strncmp($year, $edition, strlen($year)) == 0) {
                                     $group = $edition;
@@ -1006,7 +1004,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                            'onRefDesk' => 'On Reference Desk',
                            'overdueLoan' => 'overdueLoan',
                            'ordered' => 'Ordered',
-                           'returnedToday' => 'returnedToday',
+                           'returnedToday' => 'Returned today',
                            'inTransfer' => 'In Transit'
                         ];
 
@@ -1435,7 +1433,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             }
 
             $message = isset($loan->loanStatus->status)
-                ? $this->mapStatus($loan->loanStatus->status) : '';
+                ? $this->mapStatus($loan->loanStatus->status, $function) : '';
 
             $trans = [
                 'id' => $loan->catalogueRecord->id,
@@ -1510,13 +1508,12 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             }
             return [];
         }
+        if (!isset($result->$functionResult->debts->debt)) {
+            return [];
+        }
 
         $finesList = [];
-        if (!isset($result->$functionResult->debts->debt)) {
-            return $finesList;
-        }
-        $debts =  $this->objectToArray($result->$functionResult->debts->debt);
-
+        $debts = $this->objectToArray($result->$functionResult->debts->debt);
         foreach ($debts as $debt) {
             // Have to use debtAmountFormatted, because debtAmount shows negative
             // values as positive. Try to extract the numeric part from the formatted
@@ -1532,8 +1529,12 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 'checkout' => '',
                 'fine' => $debt->debtType . ' - ' . $debt->debtNote,
                 'balance' => $amount,
-                'createdate' => $debt->debtDate
+                'createdate' => $debt->debtDate,
+                'payableOnline' => true
             ];
+            if (!empty($debt->organisation)) {
+                $debt->organisation = $debt->organisation;
+            }
             $finesList[] = $fine;
         }
 
@@ -1551,6 +1552,107 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
         }
 
         return $finesList;
+    }
+
+    /**
+     * Return total amount of fees that may be paid online.
+     *
+     * @param array $patron Patron
+     * @param array $fines  Patron's fines
+     *
+     * @throws ILSException
+     * @return array Associative array of payment info,
+     * false if an ILSException occurred.
+     */
+    public function getOnlinePayableAmount($patron, $fines)
+    {
+        if (!empty($fines)) {
+            $amount = 0;
+            foreach ($fines as $fine) {
+                if ($fine['payableOnline']) {
+                    $amount += $fine['balance'];
+                }
+            }
+            $config = $this->getConfig('onlinePayment');
+            $nonPayableReason = false;
+            if (isset($config['minimumFee']) && $amount < $config['minimumFee']) {
+                $nonPayableReason = 'online_payment_minimum_fee';
+            }
+            $res = ['payable' => empty($nonPayableReason), 'amount' => $amount];
+            if ($nonPayableReason) {
+                $res['reason'] = $nonPayableReason;
+            }
+            return $res;
+        }
+        return [
+            'payable' => false,
+            'amount' => 0,
+            'reason' => 'online_payment_minimum_fee'
+        ];
+    }
+
+    /**
+     * Mark fees as paid.
+     *
+     * This is called after a successful online payment.
+     *
+     * @param array  $patron            Patron
+     * @param int    $amount            Amount to be registered as paid
+     * @param string $transactionId     Transaction ID
+     * @param int    $transactionNumber Internal transaction number
+     *
+     * @throws ILSException
+     * @return boolean success
+     */
+    public function markFeesAsPaid($patron, $amount, $transactionId,
+        $transactionNumber
+    ) {
+        $function = 'AddPayment';
+        $functionResult = 'addPaymentResponse';
+        $functionParam = 'addPaymentRequest';
+
+        $debtIds = [];
+        $fines = $this->getMyFines($patron);
+        foreach ($fines as $fine) {
+            if ($fine['payableOnline']) {
+                $debtIds[] = $fine['debt_id'];
+            }
+        }
+        $request = [
+            'arenaMember'       => $this->arenaMember,
+            'orderId'           => (string)$transactionNumber,
+            'transactionNumber' => (string)$transactionId,
+            'paymentAmount'     => $amount,
+            // Comma-separated list of IDs since the API has it single-valued
+            'debts'             => ['id' => implode(',', $debtIds)]
+        ];
+
+        $result = $this->doSOAPRequest(
+            $this->payments_wsdl, $function, $functionResult,
+            $patron['cat_username'],
+            [$functionParam => $request]
+        );
+
+        $statusAWS = $result->$functionResult->status;
+
+        if ($statusAWS->type != 'ok') {
+            $message = $this->handleError($function, $statusAWS->message, $username);
+            if ($message == 'ils_connection_failed') {
+                throw new ILSException('ils_offline_status');
+            }
+            // Dump full response since $statusAWS->message seems to be empty
+            $error = "Failed to mark payment of $amount paid for patron"
+                . " {$patron['id']}: " . print_r($result->$functionResult, true);
+
+            $this->error($error);
+            throw new ILSException($error);
+        }
+
+        // Clear patron cache
+        $cacheKey = $this->getPatronCacheKey($username);
+        $this->putCachedData($cacheKey, null);
+
+        return true;
     }
 
     /**
@@ -1718,7 +1820,9 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             }
         }
 
-        $loans = $this->objectToArray($result->$functionResult->loans->loan);
+        $loans = isset($result->$functionResult->loans->loan)
+            ? $this->objectToArray($result->$functionResult->loans->loan)
+            : [];
 
         foreach ($loans as $loan) {
             $id = $loan->id;
@@ -1728,7 +1832,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             $results['details'][$id] = [
                 'success' => $success,
                 'status' => $success ? 'Loan renewed' : 'Renewal failed',
-                'sysMessage' => $this->mapStatus($status),
+                'sysMessage' => $this->mapStatus($status, $function),
                 'item_id' => $id,
                 'new_date' => $this->formatDate(
                     $loan->loanDueDate
@@ -1766,8 +1870,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             'user'         => $username,
             'password'     => $password,
             'areaCode'     => '',
-            'country'      => isset($user['phoneCountry'])
-                ? $user['phoneCountry'] : 'FI',
+            'country'      => $user['phoneCountry'] ?? 'FI',
             'localCode'    => $phone,
             'useForSms'    => 'yes'
         ];
@@ -2095,7 +2198,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             $this->error("AWS error: '$message'");
             return $status[$message];
         }
-        return $this->mapStatus($message);
+        return $this->mapStatus($message, $function);
     }
 
     /**
@@ -2201,8 +2304,8 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
                 = $b['location'] . ' ' . $b['branch'] . ' ' . $b['department'];
         }
 
-        $orderA = isset($sortOrder[$a[$key]]) ? $sortOrder[$a[$key]] : null;
-        $orderB = isset($sortOrder[$b[$key]]) ? $sortOrder[$b[$key]] : null;
+        $orderA = $sortOrder[$a[$key]] ?? null;
+        $orderB = $sortOrder[$b[$key]] ?? null;
 
         if ($orderA !== null) {
             if ($orderB !== null) {
@@ -2281,11 +2384,12 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     /**
      * Map statuses
      *
-     * @param string $status as a string
+     * @param string $status   Status as a string
+     * @param string $function AWS function that returned the status
      *
      * @return string Mapped status
      */
-    protected function mapStatus($status)
+    protected function mapStatus($status, $function)
     {
         $statuses =  [
             'copyHasSpecialCircCat' => 'Copy has special circulation',
@@ -2298,7 +2402,9 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
             'patronHasDebt'         => 'renew_debt',
             'patronIsInvoiced'      => 'renew_item_patron_is_invoiced',
             'renewalIsDenied'       => 'renew_denied',
-            'ReservationDenied'     => 'hold_error_denied'
+            'ReservationDenied'     => 'hold_error_denied',
+            'BlockedBorrCard'       => 'addReservation' === $function
+                ? 'hold_error_blocked' : 'Borrowing Block Message'
         ];
 
         if (isset($statuses[$status])) {

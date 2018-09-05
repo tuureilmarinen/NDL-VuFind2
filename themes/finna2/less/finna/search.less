@@ -79,9 +79,21 @@ mark, .highlight {
     display: block;
   }
   & .list-view {
-    & .more-link, & .less-link {
+    & .more-link, & .less-link,  & .less-link-top {
       padding-bottom: 0;
     }
+  }
+  // .media and .media-body code added to fix IE11 display: table-cell issues
+  .media {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    @media(max-width: @screen-sm) {
+      display: block;
+    }
+  }
+  .media-body {
+    width: auto;
   }
 }
 .dateyeartype {
@@ -213,6 +225,11 @@ mark, .highlight {
     flex: 0;
     cursor: pointer;
   }
+  &.condensed-list-view .record-checkbox {
+    position: relative;
+    top: 40px;
+    left: -21px;
+  }
   .media{
     flex: 1;
   }
@@ -283,6 +300,7 @@ mark, .highlight {
   @media (min-width: @screen-sm-min){
     display: flex;
     flex-direction: row-reverse;
+    align-items: center;
   }
 }
 
@@ -304,8 +322,9 @@ mark, .highlight {
 }
 
 .spelling-suggestions {
-  margin-top: 10px;
-  font-size: 1.1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-size: 1.2em;
   a {
     margin-right: 5px;
   }
@@ -352,13 +371,13 @@ mark, .highlight {
   & .search-form-container {
     padding-top: 2em;
     padding-bottom: 2em;
-    #gradient.vertical(@background-start-color; @background-end-color; @background-start-percent; @background-end-percent);                    
+    #gradient.vertical(@background-start-color; @background-end-color; @background-start-percent; @background-end-percent);
   }
   & .searchContent {
     -webkit-overflow-scrolling: touch;
     background-size: cover;
     background-position: center top;
-    background-color: @background-color;    
+    background-color: @background-color;
     background-image: @background-image-url;
     background-repeat: no-repeat;
     @media(max-width:@screen-sm-max) {

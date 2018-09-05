@@ -2,7 +2,7 @@
 /**
  * Module for storing local overrides for VuFindConsole.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -38,7 +38,8 @@ use Zend\Console\Adapter\AdapterInterface as Console;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/dmj/vf2-proxy
  */
-class Module implements \Zend\ModuleManager\Feature\ConsoleUsageProviderInterface
+class Module implements \Zend\ModuleManager\Feature\ConsoleUsageProviderInterface,
+    \Zend\ModuleManager\Feature\ConsoleBannerProviderInterface
 {
     /**
      * Get module configuration
@@ -102,7 +103,8 @@ class Module implements \Zend\ModuleManager\Feature\ConsoleUsageProviderInterfac
             'util encrypt_catalog_passwords' => 'Encrypt ILS passwords in database',
             'util expire_finna_cache'
                 => 'Remove expires Finna cache entries from database',
-            'util expire_users' => 'Anonymize expired user accounts',
+            'util expire_users' => 'Delete expired user accounts',
+            'util import_comments' => 'Import comments',
             'util online_payment_monitor' => 'Process unregistered online payments',
             'util scheduled_alerts' => 'Send scheduled alerts',
             'util update_search_hashes' => 'Update search hashes',

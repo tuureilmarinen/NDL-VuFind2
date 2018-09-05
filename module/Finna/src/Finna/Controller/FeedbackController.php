@@ -2,9 +2,9 @@
 /**
  * Feedback Controller
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015-2017.
+ * Copyright (C) The National Library of Finland 2015-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * PHP version 5
+ * PHP version 7
  *
  * @category VuFind
  * @package  Controller
@@ -80,6 +80,20 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
             $view->useRecaptcha = false;
         }
 
+        $config = $this->getConfig();
+        $institution = $config->Site->institution;
+        $view->institutionName = $this->translate(
+            "institution::$institution", null, $institution
+        );
+        // Try to handle cases like tritonia-tria
+        if ($view->institutionName === $institution && strpos($institution, '-') > 0
+        ) {
+            $part = substr($institution, 0, strpos($institution, '-'));
+            $view->institutionName = $this->translate(
+                "institution::$part", null, $institution
+            );
+        }
+
         // Process form submission:
         if ($this->formWasSubmitted('submit', $view->useRecaptcha)) {
             if (empty($view->comments)) {
@@ -93,8 +107,6 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
             }
 
             // These settings are set in the feedback section of your config.ini
-            $config = $this->serviceLocator->get('VuFind\Config')
-                ->get('config');
             $feedback = isset($config->Feedback) ? $config->Feedback : null;
             $recipient_email = !empty($feedback->recipient_email)
                 ? $feedback->recipient_email : $config->Site->email;
@@ -123,9 +135,9 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
                 . ($view->url ? $view->url : '-') . "\n";
             if ($user) {
                 $loginMethod = $this->translate(
-                    'login_method_' . $user->finna_auth_method,
+                    'login_method_' . $user->auth_method,
                     null,
-                    $user->finna_auth_method
+                    $user->auth_method
                 );
                 $email_message .= $this->translate('feedback_user_login_method')
                     . ": $loginMethod\n";

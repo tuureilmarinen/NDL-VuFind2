@@ -2,7 +2,7 @@
 /**
  * Model for Primo Central records.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2010.
  * Copyright (C) The National Library of Finland 2012-2016.
@@ -106,8 +106,13 @@ class Primo extends \VuFind\RecordDriver\Primo
         $containerTitle = $this->getContainerTitle();
         // Try to take the part after the title. Account for any 'The' etc. in the
         // beginning.
-        $parts = explode($containerTitle, $partOf);
-        return isset($parts[1]) ? trim($parts[1], " \t\n\r,") : $partOf;
+        if ($containerTitle && ($p = strpos($partOf, $containerTitle)) !== false) {
+            return trim(
+                substr($partOf, $p + strlen($containerTitle) + 1),
+                " \t\n\r,"
+            );
+        }
+        return $partOf;
     }
 
     /**
@@ -120,7 +125,7 @@ class Primo extends \VuFind\RecordDriver\Primo
      */
     protected function getSupportedCitationFormats()
     {
-        return ['APA', 'Chicago', 'MLA'];
+        return ['APA', 'Chicago', 'MLA', 'Harvard'];
     }
 
     /**
@@ -158,20 +163,34 @@ class Primo extends \VuFind\RecordDriver\Primo
 
         $links = ['linktorsrc' => false, 'backlink' => true];
         foreach ($links as $link => $citation) {
+            $url = '';
             if (isset($rec->links->{$link})) {
                 $url = (string)$rec->links->{$link};
                 $parts = explode('$$', $url);
                 $url = substr($parts[1], 1);
-
                 $urlParts = parse_url($url);
-                $urls[] = [
-                   'url' => $url,
-                   'urlShort' => isset($urlParts['host']) ? $urlParts['host'] : $url,
-                   'citation' => $citation
-                ];
-                break;
+                if (empty($urlParts['host'])) {
+                    $url = '';
+                }
             }
+            if ('' === $url && !empty($this->fields['resource_urls'][$link])) {
+                $url = (string)$this->fields['resource_urls'][$link];
+                $urlParts = parse_url($url);
+                if (empty($urlParts['host'])) {
+                    $url = '';
+                }
+            }
+            if (empty($url)) {
+                continue;
+            }
+            $urls[] = [
+                'url' => $url,
+                'urlShort' => $urlParts['host'],
+                'citation' => $citation
+            ];
+            break;
         }
+
         return $urls;
     }
 

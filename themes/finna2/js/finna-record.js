@@ -1,4 +1,4 @@
-/*global VuFind, finna, removeHashFromLocation */
+/*global VuFind, finna, removeHashFromLocation, getNewRecordTab, ajaxLoadTab */
 finna.record = (function finnaRecord() {
   function initDescription() {
     var description = $('#description_text');
@@ -7,8 +7,8 @@ finna.record = (function finnaRecord() {
       var url = VuFind.path + '/AJAX/JSON?method=getDescription&id=' + id;
       $.getJSON(url)
         .done(function onGetDescriptionDone(response) {
-          if (response.data.length > 0) {
-            description.html(response.data);
+          if (response.data.html.length > 0) {
+            description.html(response.data.html);
 
             // Make sure any links open in a new window
             description.find('a').attr('target', '_blank');
@@ -145,62 +145,109 @@ finna.record = (function finnaRecord() {
     $(window).trigger('hashchange');
   }
 
-  function initRecordAccordions() {
-    $('.record-accordions .accordion-toggle').click(function accordionClicked(e){
-      var accordion = $(e.target).closest('.accordion');
-      var tabid = accordion.find('.accordion-toggle a').data('tab');
-      var $recordTabs = $('.record-tabs');
-      e.preventDefault();
-      if (accordion.hasClass('active')){
-        $('.record-accordions').find('.accordion.active').removeClass('active');
-        $recordTabs.find('.tab-pane.active').removeClass('active');
-        removeHashFromLocation();
-      } else {
-        $('.record-accordions').find('.accordion.active').removeClass('active');
-        accordion.addClass('active');
-        $recordTabs.find('.' + tabid + '-tab').addClass('active');
-        window.location.hash = tabid;
-        accordion.append($('.tab-content'));
-        if ($('.record-accordions').is(':visible')) {
-          $('html, body').animate({scrollTop: accordion.offset().top - 64}, 150);
-        }
-      }
+  function initAudioAccordion() {
+    $('.audio-accordion .audio-item-wrapper').first().addClass('active');
+    $('.audio-accordion .audio-title-wrapper').click(function audioAccordionClicker() {
+      $('.audio-accordion .audio-item-wrapper.active').removeClass('active');
+      $(this).parent().addClass('active');
+    });
+  }
+
+  function initRecordAccordion() {
+    $('.record-accordions .accordion-toggle').click(function accordionClicked(e) {
+      return _toggleAccordion($(e.target).closest('.accordion'));
     });
   }
 
   function applyRecordAccordionHash() {
-    var activeTab = $('.record-accordions .accordion.active a').data('tab');
-    var $initiallyActiveTab = $('.record-accordions .accordion.initiallyActive a');
     var newTab = typeof window.location.hash !== 'undefined'
       ? window.location.hash.toLowerCase() : '';
 
     // Open tab in url hash
-    if (newTab.length <= 1 || newTab === '#tabnav') {
-      $initiallyActiveTab.click();
-    } else if (newTab.length > 1 && '#' + activeTab !== newTab) {
-      $("a[data-tab='" + newTab.substr(1) + "']").click();
+    var $tab = $("a[data-tab='" + newTab.substr(1) + "']");
+    var accordion = (newTab.length <= 1 || newTab === '#tabnav' || $tab.length === 0)
+      ? $('.record-accordions .accordion.initiallyActive')
+      : $tab.closest('.accordion');
+    if (accordion.length > 0) {
+      _toggleAccordion(accordion, true);
     }
   }
 
-  $(window).on('hashchange', applyRecordAccordionHash);
-
-  $(document).ready(function onReady() {
-    $('.sidebar .similar-records').load(
-      VuFind.path + '/AJAX/SimilarRecords',
-      {id: $('.similar-records').data('id')},
-      function loadDone() {
-        $('.similar-records .fa-spinner').addClass('hidden');
+  // The accordion has a delicate relationship with the tabs. Handle with care!
+  function _toggleAccordion(accordion, _initialLoad) {
+    var initialLoad = typeof _initialLoad === 'undefined' ? false : _initialLoad;
+    var tabid = accordion.find('.accordion-toggle a').data('tab');
+    var $recordTabs = $('.record-tabs');
+    var $tabContent = $recordTabs.find('.tab-content');
+    if (!initialLoad && accordion.hasClass('active')) {
+      $('.record-accordions').find('.accordion.active').removeClass('active');
+      // Hide tab from accordion
+      $recordTabs.find('.tab-pane.active').removeClass('active');
+      // Deactivate any tab since it can't follow the state of a collapsed accordion
+      $recordTabs.find('.nav-tabs li.active').removeClass('active');
+      removeHashFromLocation();
+      // Move tab content out from accordions
+      $tabContent.insertAfter($('.record-accordions'));
+    } else {
+      // Move tab content under the correct accordion toggle
+      $tabContent.insertAfter(accordion);
+      if (accordion.hasClass('noajax') && !$recordTabs.find('.' + tabid + '-tab').length) {
+        return true;
       }
-    );
-  });
+      $('.record-accordions').find('.accordion.active').removeClass('active');
+      accordion.addClass('active');
+      $recordTabs.find('.tab-pane.active').removeClass('active');
+      if (!initialLoad && $('.record-accordions').is(':visible')) {
+        $('html, body').animate({scrollTop: accordion.offset().top - 64}, 150);
+      }
 
-  var init = function init() {
+      if ($recordTabs.find('.' + tabid + '-tab').length > 0) {
+        $recordTabs.find('.' + tabid + '-tab').addClass('active');
+        if (accordion.hasClass('initiallyActive')) {
+          removeHashFromLocation();
+        } else {
+          window.location.hash = tabid;
+        }
+        return false;
+      } else {
+        var newTab = getNewRecordTab(tabid).addClass('active');
+        $recordTabs.find('.tab-content').append(newTab);
+        return ajaxLoadTab(newTab, tabid, !$(this).parent().hasClass('initiallyActive'));
+      }
+    }
+    return false;
+  }
+
+  function loadSimilarRecords()
+  {
+    $.getJSON(
+      VuFind.path + '/AJAX/JSON',
+      {
+        method: 'getSimilarRecords',
+        id: $('.similar-records').data('id')
+      }
+    )
+      .done(function onGetSimilarRecordsDone(response) {
+        if (response.data.length > 0) {
+          $('.sidebar .similar-records').html(response.data);
+        }
+        $('.similar-records .fa-spinner').addClass('hidden');
+      })
+      .fail(function onGetSimilarRecordsFail() {
+        $('.similar-records .fa-spinner').addClass('hidden');
+      });
+  }
+
+  function init() {
     initHideDetails();
     initDescription();
     initRecordNaviHashUpdate();
-    initRecordAccordions();
+    initRecordAccordion();
     applyRecordAccordionHash();
-  };
+    initAudioAccordion();
+    $(window).on('hashchange', applyRecordAccordionHash);
+    loadSimilarRecords();
+  }
 
   var my = {
     checkRequestsAreValid: checkRequestsAreValid,

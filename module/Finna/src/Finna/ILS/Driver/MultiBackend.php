@@ -2,9 +2,9 @@
 /**
  * Multiple Backend Driver.
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015-2016.
+ * Copyright (C) The National Library of Finland 2015-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -46,6 +46,7 @@ class MultiBackend extends \VuFind\ILS\Driver\MultiBackend
     implements TranslatorAwareInterface
 {
     use \VuFind\I18n\Translator\TranslatorAwareTrait;
+    use \VuFind\ILS\Driver\CacheTrait;
 
     /**
      * Change Password
@@ -103,6 +104,25 @@ class MultiBackend extends \VuFind\ILS\Driver\MultiBackend
         $driver = $this->getDriver($source);
         if ($driver) {
             return $driver->getPatronAuthorizationStatus(
+                $this->stripIdPrefixes($patron, $source)
+            );
+        }
+        throw new ILSException('No suitable backend driver found');
+    }
+
+    /**
+     * Check if patron belongs to staff.
+     *
+     * @param array $patron The patron array from patronLogin
+     *
+     * @return bool True if patron is staff, false if not
+     */
+    public function getPatronStaffAuthorizationStatus($patron)
+    {
+        $source = $this->getSource($patron['cat_username']);
+        $driver = $this->getDriver($source);
+        if ($driver) {
+            return $driver->getPatronStaffAuthorizationStatus(
                 $this->stripIdPrefixes($patron, $source)
             );
         }
@@ -289,19 +309,21 @@ class MultiBackend extends \VuFind\ILS\Driver\MultiBackend
      * Return total amount of fees that may be paid online.
      *
      * @param array $patron Patron
+     * @param array $fines  Patron's fines
      *
      * @throws ILSException
      * @return array Associative array of payment info,
      * false if an ILSException occurred.
      */
-    public function getOnlinePayableAmount($patron)
+    public function getOnlinePayableAmount($patron, $fines)
     {
         $source = $this->getSource($patron['cat_username']);
         $driver = $this->getDriver($source);
         if ($driver
         ) {
             return $driver->getOnlinePayableAmount(
-                $this->stripIdPrefixes($patron, $source)
+                $this->stripIdPrefixes($patron, $source),
+                $this->stripIdPrefixes($fines, $source)
             );
         }
         throw new ILSException('Online payment not supported');
@@ -312,22 +334,25 @@ class MultiBackend extends \VuFind\ILS\Driver\MultiBackend
      *
      * This is called after a successful online payment.
      *
-     * @param array  $patron        Patron.
-     * @param int    $amount        Amount to be registered as paid.
-     * @param string $transactionId Transaction ID.
+     * @param array  $patron            Patron
+     * @param int    $amount            Amount to be registered as paid
+     * @param string $transactionId     Transaction ID
+     * @param int    $transactionNumber Internal transaction number
      *
      * @throws ILSException
      * @return boolean success
      */
-    public function markFeesAsPaid($patron, $amount, $transactionId)
-    {
+    public function markFeesAsPaid($patron, $amount, $transactionId,
+        $transactionNumber
+    ) {
         $source = $this->getSource($patron['cat_username']);
         $driver = $this->getDriver($source);
         if ($driver
             && $this->methodSupported($driver, 'markFeesAsPaid')
         ) {
             return $driver->markFeesAsPaid(
-                $this->stripIdPrefixes($patron, $source), $amount, $transactionId
+                $this->stripIdPrefixes($patron, $source), $amount, $transactionId,
+                $transactionNumber
             );
         }
         throw new ILSException('Online payment not supported');
@@ -432,6 +457,45 @@ class MultiBackend extends \VuFind\ILS\Driver\MultiBackend
         if ($driver) {
             return $driver->updateTransactionHistoryState(
                 $this->stripIdPrefixes($patron, $source), $state
+            );
+        }
+        throw new ILSException('No suitable backend driver found');
+    }
+
+    /**
+     * Get a password recovery token for a user
+     *
+     * @param array $params Required params such as cat_username and email
+     *
+     * @return array Associative array of the results
+     */
+    public function getPasswordRecoveryToken($params)
+    {
+        $source = $this->getSource($params['cat_username']);
+        $driver = $this->getDriver($source);
+        if ($driver) {
+            return $driver->getPasswordRecoveryToken(
+                $this->stripIdPrefixes($params, $source)
+            );
+        }
+        throw new ILSException('No suitable backend driver found');
+    }
+
+    /**
+     * Recover user's password with a token from getPasswordRecoveryToken
+     *
+     * @param array $params Required params such as cat_username, token and new
+     * password
+     *
+     * @return array Associative array of the results
+     */
+    public function recoverPassword($params)
+    {
+        $source = $this->getSource($params['cat_username']);
+        $driver = $this->getDriver($source);
+        if ($driver) {
+            return $driver->recoverPassword(
+                $this->stripIdPrefixes($params, $source)
             );
         }
         throw new ILSException('No suitable backend driver found');

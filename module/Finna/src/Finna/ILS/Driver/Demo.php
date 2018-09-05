@@ -6,7 +6,7 @@
  * the session.  You can log out and log back in to get a different set of
  * values.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2007.
  * Copyright (C) The National Library of Finland 2014.
@@ -64,6 +64,15 @@ class Demo extends \VuFind\ILS\Driver\Demo
             return isset($this->config['OnlinePayment'])
                 ? $this->config['OnlinePayment'] : [];
         }
+        if ('getPasswordRecoveryToken' === $function
+            || 'recoverPassword' === $function
+        ) {
+            return !empty($this->config['PasswordRecovery']['enabled'])
+                ? $this->config['PasswordRecovery'] : false;
+        }
+        if ('changePickupLocation' === $function) {
+            return ['method' => 'driver'];
+        }
 
         return parent::getConfig($function, $params);
     }
@@ -94,14 +103,14 @@ class Demo extends \VuFind\ILS\Driver\Demo
      * Return total amount of fees that may be paid online.
      *
      * @param array $patron Patron
+     * @param array $fines  Patron's fines
      *
      * @throws ILSException
      * @return array Associative array of payment info,
      * false if an ILSException occurred.
      */
-    public function getOnlinePayableAmount($patron)
+    public function getOnlinePayableAmount($patron, $fines)
     {
-        $fines = $this->getMyFines($patron);
         if (!empty($fines)) {
             $nonPayableReason = false;
             $amount = 0;
@@ -147,8 +156,7 @@ class Demo extends \VuFind\ILS\Driver\Demo
 
         $config = isset($this->config['OnlinePayment'])
             ? $this->config['OnlinePayment'] : [];
-        $nonPayable = isset($config['nonPayable'])
-            ? $config['nonPayable'] : []
+        $nonPayable = $config['nonPayable'] ?? []
         ;
         $nonPayable[] = $accruedType;
         foreach ($fines as &$fine) {
@@ -170,15 +178,17 @@ class Demo extends \VuFind\ILS\Driver\Demo
      *
      * This is called after a successful online payment.
      *
-     * @param array  $patron        Patron.
-     * @param int    $amount        Amount to be registered as paid.
-     * @param string $transactionId Transaction ID.
+     * @param array  $patron            Patron
+     * @param int    $amount            Amount to be registered as paid
+     * @param string $transactionId     Transaction ID
+     * @param int    $transactionNumber Internal transaction number
      *
      * @throws ILSException
      * @return boolean success
      */
-    public function markFeesAsPaid($patron, $amount, $transactionId)
-    {
+    public function markFeesAsPaid($patron, $amount, $transactionId,
+        $transactionNumber
+    ) {
         if ((rand() % 10) > 8) {
             throw new ILSException('online_payment_registration_failed');
         }
@@ -189,9 +199,6 @@ class Demo extends \VuFind\ILS\Driver\Demo
                     unset($this->session->fines[$key]);
                 }
             }
-        }
-        if (empty($this->sesion->fines)) {
-            unset($this->session->fines);
         }
 
         return true;
@@ -213,7 +220,7 @@ class Demo extends \VuFind\ILS\Driver\Demo
     {
         if ($method == 'markFeesAsPaid') {
             $required = [
-                'currency', 'enabled', 'registrationMethod', 'registrationParams'
+                'currency', 'enabled'
             ];
 
             foreach ($required as $req) {
@@ -228,15 +235,149 @@ class Demo extends \VuFind\ILS\Driver\Demo
                 return false;
             }
 
-            $regParams = $this->config['OnlinePayment']['registrationParams'];
-            $required = ['host', 'port', 'userId', 'password', 'locationCode'];
-            foreach ($required as $req) {
-                if (!isset($regParams[$req]) || empty($regParams[$req])) {
-                    return false;
-                }
-            }
             return true;
         }
         return is_callable([$this, $method]);
+    }
+
+    /**
+     * Get a password recovery token for a user
+     *
+     * @param array $params Required params such as cat_username and email
+     *
+     * @return array Associative array of the results
+     */
+    public function getPasswordRecoveryToken($params)
+    {
+        if ((rand() % 10) > 8) {
+            throw new ILSException('ils_connection_failed');
+        }
+        if ((rand() % 10) > 8) {
+            return [
+                'success' => false,
+                'error' => 'Simulating failure'
+            ];
+        }
+        $session = $this->getSession();
+        $session->passwordRecoveryToken = md5(rand());
+        return [
+            'success' => true,
+            'token' => $session->passwordRecoveryToken
+        ];
+    }
+
+    /**
+     * Recover user's password with a token from getPasswordRecoveryToken
+     *
+     * @param array $params Required params such as cat_username, token and new
+     * password
+     *
+     * @return array Associative array of the results
+     */
+    public function recoverPassword($params)
+    {
+        $session = $this->getSession();
+        if ($session->passwordRecoveryToken != $params['token']) {
+            return [
+                'success' => false,
+                'error' => 'Recovery token mismatch'
+            ];
+        }
+        return [
+            'success' => true
+        ];
+    }
+
+    /**
+     * Change pickup location
+     *
+     * This is responsible for changing the pickup location of a hold
+     *
+     * @param string $patron      Patron array
+     * @param string $holdDetails The request details
+     *
+     * @return array Associative array of the results
+     */
+    public function changePickupLocation($patron, $holdDetails)
+    {
+        $requestId = $holdDetails['requestId'];
+        $pickUpLocation = $holdDetails['pickupLocationId'];
+
+        if (!$this->pickUpLocationIsValid($pickUpLocation, $patron, $holdDetails)) {
+            return $this->holdError('hold_invalid_pickup');
+        }
+
+        $session = $this->getSession();
+        if (!isset($session->holds)) {
+            return $this->holdError('ils_connection_failed');
+        }
+        foreach ($session->holds as &$hold) {
+            if (isset($hold['requestId']) && $hold['requestId'] == $requestId) {
+                $hold['location'] = $pickUpLocation;
+                return ['success' => true];
+            }
+        }
+        return $this->holdError('hold_error_failed');
+    }
+
+    /**
+     * Generate a list of holds, storage retrieval requests or ILL requests.
+     *
+     * @param string $requestType Request type (Holds, StorageRetrievalRequests or
+     * ILLRequests)
+     *
+     * @return ArrayObject List of requests
+     */
+    protected function createRequestList($requestType)
+    {
+        $list = parent::createRequestList($requestType);
+        if ('Holds' === $requestType) {
+            $i = 0;
+            foreach ($list as $key => $item) {
+                $list[$key]['requestId'] = ++$i;
+                $list[$key]['is_editable'] = empty($item['available'])
+                    && empty($item['inTransit']);
+                if (!isset($item['available'])) {
+                    $list[$key]['available'] = false;
+                }
+            }
+        }
+        return $list;
+    }
+
+    /**
+     * Return a hold error message
+     *
+     * @param string $message Error message
+     *
+     * @return array
+     */
+    protected function holdError($message)
+    {
+        return [
+            'success' => false,
+            'sysMessage' => $message
+        ];
+    }
+
+    /**
+     * Is the selected pickup location valid for the hold?
+     *
+     * @param string $pickUpLocation Selected pickup location
+     * @param array  $patron         Patron information returned by the patronLogin
+     * method.
+     * @param array  $holdDetails    Details of hold being placed
+     *
+     * @return bool
+     */
+    protected function pickUpLocationIsValid($pickUpLocation, $patron, $holdDetails)
+    {
+        $pickUpLibs = $this->getPickUpLocations($patron, $holdDetails);
+        foreach ($pickUpLibs as $location) {
+            if ($location['locationID'] == $pickUpLocation) {
+                return true;
+            }
+        }
+        return false;
     }
 }

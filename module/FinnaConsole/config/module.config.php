@@ -4,7 +4,10 @@ namespace FinnaConsole\Module\Configuration;
 $config = [
     'controllers' => [
         'factories' => [
-            'util' => 'FinnaConsole\Controller\Factory::getUtilController',
+            'FinnaConsole\Controller\UtilController' => 'VuFind\Controller\AbstractBaseFactory',
+        ],
+        'aliases' => [
+            'VuFindConsole\Controller\UtilController' => 'FinnaConsole\Controller\UtilController',
         ]
     ],
     'service_manager' => [
@@ -14,6 +17,7 @@ $config = [
             'Finna\DueDateReminders' => 'FinnaConsole\Service\Factory::getDueDateReminders',
             'Finna\EncryptCatalogPasswords' => 'FinnaConsole\Service\Factory::getEncryptCatalogPasswords',
             'Finna\ExpireUsers' => 'FinnaConsole\Service\Factory::getExpireUsers',
+            'Finna\ImportComments' => 'FinnaConsole\Service\Factory::getImportComments',
             'Finna\OnlinePaymentMonitor' => 'FinnaConsole\Service\Factory::getOnlinePaymentMonitor',
             'Finna\ScheduledAlerts' => 'FinnaConsole\Service\Factory::getScheduledAlerts',
             'Finna\UpdateSearchHashes' => 'FinnaConsole\Service\Factory::getUpdateSearchHashes',
@@ -28,6 +32,7 @@ $routes = [
     'util/encrypt_catalog_passwords' => 'util encrypt_catalog_passwords Y',
     'util/expire_finna_cache' => 'util expire_finna_cache [--help|-h] [--batch=] [--sleep=] [<daysOld>]',
     'util/expire_users' => 'util expire_users <days>',
+    'util/import_comments' => 'util import_comments [--source=] [--file=] [--log=] [--defaultdate=] [--onlyratings]',
     'util/online_payment_monitor' => 'util online_payment_monitor <expire_hours> <from_email> <report_interval_hours>',
     'util/scheduled_alerts' => 'util scheduled_alerts <view_base_directory> <VuFind_local_configuration_directory>',
     'util/update_search_hashes' => 'util update_search_hashes Y',

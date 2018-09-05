@@ -2,10 +2,10 @@
 /**
  * Generates record images.
  *
- * PHP Version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2011.
- * Copyright (C) The National Library of Finland 2015-2016.
+ * Copyright (C) The National Library of Finland 2015-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -24,12 +24,16 @@
  * @package  Controller
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org Main Page
  */
 namespace Finna\Controller;
 
-use Finna\Cover\Loader;
+use VuFind\Cover\CachingProxy;
+use VuFind\Cover\Loader;
+use VuFind\Session\Settings as SessionSettings;
+use VuFindCode\ISBN;
 
 /**
  * Generates record images.
@@ -38,11 +42,44 @@ use Finna\Cover\Loader;
  * @package  Controller
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Kalle Pyykkönen <kalle.pyykkonen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org Main Page
  */
 class CoverController extends \VuFind\Controller\CoverController
 {
+    /**
+     * Data source configuration
+     *
+     * @var \Zend\Config\Config
+     */
+    protected $datasourceConfig;
+
+    /**
+     * Record loader
+     *
+     * @var VuFind\Record\Loader
+     */
+    protected $recordLoader;
+
+    /**
+     * Constructor
+     *
+     * @param Loader                $loader       Cover loader
+     * @param CachingProxy          $proxy        Proxy loader
+     * @param SessionSettings       $ss           Session settings
+     * @param \Zend\Config\Config   $datasources  Data source settings
+     * @param \VuFind\Record\Loader $recordLoader Record loader
+     */
+    public function __construct(Loader $loader, CachingProxy $proxy,
+        SessionSettings $ss, \Zend\Config\Config $datasources,
+        \VuFind\Record\Loader $recordLoader
+    ) {
+        parent::__construct($loader, $proxy, $ss);
+        $this->datasourceConfig = $datasources;
+        $this->recordLoader = $recordLoader;
+    }
+
     /**
      * Send image data for display in the view
      *
@@ -50,24 +87,29 @@ class CoverController extends \VuFind\Controller\CoverController
      */
     public function showAction()
     {
-        $this->disableSessionWrites();  // avoid session write timing bug
-        $width = $this->params()->fromQuery('w');
-        $height = $this->params()->fromQuery('h');
-        $size = $this->params()->fromQuery('size');
-        // Support for legacy fullres parameter
-        $fullRes = $this->params()->fromQuery('fullres');
-        if ($fullRes) {
-            $size = 'large';
-        }
+        $this->sessionSettings->disableWrite(); // avoid session write timing bug
 
-        $loader = $this->getLoader();
-        $loader->setParams($width, $height, $size);
+        $params = $this->params();
 
-        if ($id = $this->params()->fromQuery('id')) {
-            $driver = $this->getRecordLoader()->load($id, 'Solr');
-            $index = $this->params()->fromQuery('index');
+        $width = $params->fromQuery('w');
+        $height = $params->fromQuery('h');
+        $size = $params->fromQuery('fullres')
+            ? 'large' : $params->fromQuery('size');
+        $this->loader->setParams($width, $height, $size);
 
-            $this->getLoader()->loadRecordImage($driver, $index ? $index : 0);
+        // Cover image configuration for current datasource
+        $recordId = $params->fromQuery('recordid');
+        $datasourceId = strtok($recordId, '.');
+        $datasourceCovers
+            = isset($this->datasourceConfig->$datasourceId->coverimages)
+                ? $this->datasourceConfig->$datasourceId->coverimages
+                : null;
+        $this->loader->setDatasourceConfig($datasourceCovers);
+
+        if ($id = $params->fromQuery('id')) {
+            $driver = $this->recordLoader->load($id, 'Solr');
+            $index = $params->fromQuery('index');
+            $this->loader->loadRecordImage($driver, $index, $size);
             $response = parent::displayImage();
         } else {
             // Redirect book covers to VuFind's cover controller
@@ -139,18 +181,17 @@ class CoverController extends \VuFind\Controller\CoverController
     {
         // Construct object for loading cover images if it does not already exist:
         if (!$this->loader) {
-            $cacheDir = $this->serviceLocator->get('VuFind\CacheManager')
-                ->getCache('cover')->getOptions()->getCacheDir();
+            $cacheDir = $this->getCacheDir();
             $this->loader = new Loader(
                 $this->getConfig(),
                 $this->serviceLocator->get('VuFind\ContentCoversPluginManager'),
                 $this->serviceLocator->get('VuFindTheme\ThemeInfo'),
-                $this->serviceLocator->get('VuFind\Http')->createClient(),
+                $this->serviceLocator->get('VuFindHttp\HttpService'),
                 $cacheDir
             );
-            \VuFind\ServiceManager\Initializer::initInstance(
-                $this->loader, $this->serviceLocator
-            );
+
+            $initializer = new \VuFind\ServiceManager\ServiceInitializer();
+            $initializer($this->serviceLocator, $this->loader);
         }
         return $this->loader;
     }

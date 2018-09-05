@@ -37,7 +37,7 @@
 }
 @media (min-width:@screen-md-min) {
   .nav > li {
-    display: inline-block;    
+    display: inline-block;
   }
 }
 @media (max-width: @screen-md-max) {
@@ -54,6 +54,7 @@
 
 .navbar-nav>li.lang>a {
   line-height: @line-height-computed;
+  margin: 0;
 }
 
 .navbar-nav>li.lang {
@@ -63,7 +64,7 @@
 
 .navbar-nav>li.lang:first-child {
   border-left: none;
-}  
+}
 
 // fix navbar for logoutoptions
 .finna-navbar .navbar-nav .logoutOptions {
@@ -108,7 +109,7 @@
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
-    vertical-align: bottom;
+    vertical-align: top;
     font-size: @font-size-base;
     text-transform: uppercase;
     font-weight: 600;
@@ -138,6 +139,12 @@
       margin: 0 15px;
     }
   }
+  #loginOptions-navi .login-text {
+    padding-left: 0.5em;
+    @media (max-width: @screen-xxs) {
+      display: inherit;
+    }
+  }
 }
 
 @media(max-width: @grid-float-breakpoint){
@@ -158,6 +165,7 @@
     font-weight: 600;
     background: @gray-ultralight;
     color: @text-color;
+    border-left: 4px solid @action-link-color;
     padding: 15px;
     margin-bottom: 5px;
     margin-top: 0;
@@ -252,9 +260,14 @@
   > li > a {
     padding-top: @navbar-padding-vertical;
     padding-bottom: @navbar-padding-vertical;
-    line-height: @navbar-height;
+    line-height: @navbar-height / 2;
+    margin-top: @navbar-height / 4;
+    margin-bottom: @navbar-height / 4;
     font-size: @navbar-font-size;
     font-weight: @navbar-font-weight;
+    @media (min-width:@screen-md-min) {
+      margin-bottom: 0;
+    }
   }
   &.language:not(.lang-1):before {
     color: @navbar-default-link-color;
@@ -264,7 +277,6 @@
     }
     height: ((@navbar-height) - 24);
     margin-top: ((@navbar-height - (@navbar-height - 24)) / 2);
-    float: left;
   }
   &.lang-1 {
     margin-left: 10px;
@@ -342,8 +354,18 @@
 
   // Uncollapse the nav
   @media (min-width: @grid-float-breakpoint) {
-    float: left;
+    flex-grow: 1;
+    flex-shrink: 1;
+    float: initial;
     margin: 0;
+
+    &.navbar-main {
+      margin-bottom: @navbar-height / 4;
+    }
+  }
+
+  .btn {
+    vertical-align: baseline;
   }
 }
 
@@ -351,6 +373,7 @@
   .navbar-nav > li > a,
   .navbar-collapse.in .dropdown-menu a {
     color: @header-text-color;
+    padding: 0 10px;
   }
 }
 
@@ -366,19 +389,20 @@
   position: absolute;
   margin:0;
   line-height: @navbar-height;
-  
   top: 0px;
   right: 15px;
+  flex-grow: 0;
+  flex-shrink: 0;
   & .dropdown-menu > li > a {
     white-space: normal;
-  }   
+  }
 }
 
 @media (max-width: @screen-sm-max) {
   .nav.nav-absolute {
     right: @navbar-height;
   }
-} 
+}
 
 // Fix dropdowns in navbar for wide screen
 @media (min-width: @screen-md-min) {
@@ -532,6 +556,12 @@
 .navbar-nav.lang {
   line-height: 64px;
 }
+.navbar-nav.nav-login {
+  border-top: 1px solid @gray-lighter;
+  display: none;
+  line-height: 64px;
+  text-align: center;
+}
 
 /* Mobile navbar */
 @media(max-width: @grid-float-breakpoint-max) {
@@ -544,11 +574,14 @@
     border-width: 0 0 1px;
     background-color: @header-background-color;
     box-shadow: 0 0 3px 3px rgba(0,0,0,0.1);
-    .navbar-collapse > ul >li {
+    .navbar-collapse > ul > li {
       border-bottom: 1px solid @gray-lighter;
     }
-    .navbar-nav>li.lang {
+    .navbar-nav > li.lang, .navbar-nav > li.nav-login {
       border-bottom: none;
+    }
+    .navbar-nav.nav-login {
+      display: inherit;
     }
   }
   .navbar-collapse.in {
@@ -568,22 +601,17 @@
     }
     .navbar-collapse {
       flex: 1;
+      display: flex !important; // Needed to override bootstrap defaults
     }
     .navbar-nav.lang {
-      float: right;
+      flex-grow: 0;
+      flex-shrink: 0;
     }
   }
 }
 
 .navbar-nav>li>.dropdown-menu {
   margin-top: -10px;
-}
-
-.navbar-nav>li.lang>a {
-  text-transform: uppercase;
-  font-size: @font-size-base;
-  letter-spacing: 1px;
-  font-weight: 600;
 }
 
 header {

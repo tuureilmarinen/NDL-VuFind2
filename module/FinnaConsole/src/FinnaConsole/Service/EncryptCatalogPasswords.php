@@ -2,7 +2,7 @@
 /**
  * Console service for encrypting ILS passwords.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015-2016.
  *
@@ -91,11 +91,7 @@ class EncryptCatalogPasswords extends AbstractService
             return false;
         }
 
-        $callback = function ($select) {
-            $select->where->notLike('username', 'deleted:%');
-        };
-
-        $users = $this->table->select($callback);
+        $users = $this->table->select();
         $count = 0;
         $usersChanged = 0;
         $cardsChanged = 0;

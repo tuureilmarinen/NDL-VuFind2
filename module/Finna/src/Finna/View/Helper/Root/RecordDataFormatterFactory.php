@@ -2,7 +2,7 @@
 /**
  * Factory for record driver data formatting view helper
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2016.
  * Copyright (C) The National Library of Finland 2017.
@@ -757,12 +757,6 @@ class RecordDataFormatterFactory
             'Uncontrolled Title', 'getUncontrolledTitle', 'data-transEsc.phtml',
             [
                 'context' => ['class' => 'record-uncontrolled-title']
-            ]
-        );
-        $spec->setTemplateLine(
-            'Published In Issue', 'getHostRecords', 'data-hostInfo.phtml',
-            [
-                'context' => ['class' => 'record-article-host']
             ]
         );
         return $spec->getArray();

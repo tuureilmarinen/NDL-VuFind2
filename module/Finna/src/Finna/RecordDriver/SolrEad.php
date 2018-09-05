@@ -2,7 +2,7 @@
 /**
  * Model for EAD records in Solr.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Villanova University 2010.
  * Copyright (C) The National Library of Finland 2012-2017.
@@ -106,9 +106,8 @@ class SolrEad extends \VuFind\RecordDriver\SolrDefault
         if (!isset($record->accessrestrict)) {
             return false;
         }
-        $attributes = $record->accessrestrict->attributes();
-        if (isset($attributes['type'])) {
-            $copyright = (string)$attributes['type'];
+        if (isset($record->accessrestrict->p)) {
+            $copyright = (string)$record->accessrestrict->p;
             $data = [];
             $data['copyright'] = $copyright;
             if ($link = $this->getRightsLink(strtoupper($copyright), $language)) {
@@ -168,16 +167,20 @@ class SolrEad extends \VuFind\RecordDriver\SolrDefault
             }
 
             if (!isset($urls['small'])) {
-                $urls['small'] = isset($urls['medium']) ? $urls['medium']
-                    : $urls['large'];
+                $urls['small'] = $urls['medium']
+                    ?? $urls['large'];
             }
             if (!isset($urls['medium'])) {
-                $urls['medium'] = isset($urls['large']) ? $urls['large']
-                    : $urls['small'];
+                $urls['medium'] = $urls['large']
+                    ?? $urls['small'];
             }
 
-            $description = isset($daogrp->daodesc->p) ? $daogrp->daodesc->p
-                : $daogrp->daodesc;
+            if (isset($daogrp->dapdesc->p) && $daogrp->dapdesc->p != 'Fotografi') {
+                $description = $daogrp->dapdesc->p;
+            } else {
+                $description = '';
+            }
+
             $result[] = [
                 'urls' => $urls,
                 'description' => (string)$description,
@@ -504,6 +507,7 @@ class SolrEad extends \VuFind\RecordDriver\SolrDefault
                 ];
             }
         }
+        $urls = $this->checkForAudioUrls($urls);
         return $urls;
     }
 

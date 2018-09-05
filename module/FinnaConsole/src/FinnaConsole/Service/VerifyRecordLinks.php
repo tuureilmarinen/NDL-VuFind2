@@ -2,7 +2,7 @@
 /**
  * Console service for verifying record links.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016.
  *
@@ -29,6 +29,8 @@ namespace FinnaConsole\Service;
 
 use Zend\Db\Sql\Select;
 
+use Zend\Stdlib\RequestInterface as Request;
+
 /**
  * Console service for verifying record links.
  *
@@ -48,7 +50,7 @@ class VerifyRecordLinks extends AbstractService implements ConsoleServiceInterfa
     protected $commentsTable = null;
 
     /**
-     * Comments-Record link table.
+     * CommentsRecord link table.
      *
      * @var CommentRecords
      */
@@ -65,7 +67,7 @@ class VerifyRecordLinks extends AbstractService implements ConsoleServiceInterfa
      * Constructor
      *
      * @param VuFind\Db\Table     $commentsTable       Comments table.
-     * @param VuFind\Db\Table     $commentsRecordTable Comments-Record link table.
+     * @param VuFind\Db\Table     $commentsRecordTable CommentsRecord link table.
      * @param VuFind\SearchRunner $searchRunner        SearchRunner
      */
     public function __construct($commentsTable, $commentsRecordTable, $searchRunner)
@@ -78,11 +80,12 @@ class VerifyRecordLinks extends AbstractService implements ConsoleServiceInterfa
     /**
      * Run service.
      *
-     * @param array $arguments Command line arguments.
+     * @param array   $arguments Command line arguments.
+     * @param Request $request   Full request
      *
      * @return boolean success
      */
-    public function run($arguments)
+    public function run($arguments, Request $request)
     {
         $this->msg('Record link verification started');
         $count = $fixed = 0;
@@ -112,7 +115,7 @@ class VerifyRecordLinks extends AbstractService implements ConsoleServiceInterfa
                 $results = $this->searchRunner->run(
                     ['lookfor' => $lookfor], 'Solr',
                     function ($runner, $params, $searchId) {
-                        $params->setLimit(100);
+                        $params->setLimit(1000);
                         $params->setPage(1);
                         $params->resetFacetConfig();
                         $options = $params->getOptions();

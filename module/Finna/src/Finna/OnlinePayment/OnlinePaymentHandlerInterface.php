@@ -2,7 +2,7 @@
 /**
  * OnlinePayment handler interface
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2017.
  *
@@ -78,7 +78,7 @@ interface OnlinePaymentHandlerInterface
      * @param strin              $currency       Currency
      * @param string             $statusParam    Payment status URL parameter
      *
-     * @return false on error, otherwise redirects to payment handler.
+     * @return string Error message on error, otherwise redirects to payment handler.
      */
     public function startPayment(
         $finesUrl, $ajaxUrl, $user, $patron, $driver,
