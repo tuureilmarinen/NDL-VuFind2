@@ -11,7 +11,7 @@
             <label for="email"><?=$this->transEsc("Email") ?>:</label>
           </div>
           <div class="my-profile-col">
-            <input id="email" type="email" class="form-control" name="email" value="<?=$user->email?>"/>
+            <input id="email" type="email" class="form-control profileinfo-fields" name="email" value="<?=$user->email?>"/>
           </div>
           <div class="clearfix visible-xs"></div>
           <div class="my-profile-col">
@@ -22,7 +22,7 @@
             <label for="finna_nickname"><?=$this->transEsc("finna_nickname") ?>:</label>
           </div>
           <div class="my-profile-col">
-            <input id="finna_nickname" type="text" class="form-control" name="finna_nickname" value="<?=$this->escapeHtml(trim($this->userPublicName($user)))?>" required pattern ="^(?!.*[_.]{2})[A-ZÅÄÖa-zåäö0-9_.]{3,24}$" title="<?=$this->transEsc("finna_nickname_restrictions") ?>"/>
+            <input id="finna_nickname" type="text" class="form-control profileinfo-fields" name="finna_nickname" value="<?=$this->escapeHtml(trim($this->userPublicName($user)))?>" required pattern ="^(?!.*[_.]{2})[A-ZÅÄÖa-zåäö0-9_.]{3,24}$" title="<?=$this->transEsc("finna_nickname_restrictions") ?>"/>
           </div>
           <div class="clearfix visible-xs"></div>
           <div class="my-profile-col">

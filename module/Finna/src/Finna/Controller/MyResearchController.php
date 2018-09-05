@@ -429,40 +429,39 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             $this->flashMessenger()->setNamespace('info')
                 ->addMessage('profile_update');
         }
+
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
             $email = $validator->isValid($values->email);
             $nickname = $this->validateNickname($values->finna_nickname, $user->id);
-            if (!$nickname && $user->email == $values->email) {
-                $this->flashMessenger()->addErrorMessage(
-                    'profile_update_invalid_nickname'
-                );
-            } elseif ($nickname == $values->finna_nickname && !$email) {
-                $this->flashMessenger()->addErrorMessage(
-                    'profile_update_invalid_email'
-                );
-            } elseif (!$nickname && !$email) {
-                $this->flashMessenger()->setNamespace('error')
-                    ->addMessage('profile_update_failed');
-            } elseif ($nickname == $user->finna_nickname
-                && $user->email == $values->email
-            ) {
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_none');
-            } elseif ($nickname != false && $values->email == $user->email
-                && $nickname != $user->finna_nickname
-            ) {
+            $sameNickname = $values->finna_nickname == $user->finna_nickname;
+            $sameEmail = $values->email == $user->email;
+            if (!$nickname) {
+                if ($sameEmail) {
+                    $this->flashMessenger()->setNamespace('error')
+                        ->addErrorMessage('profile_update_invalid_nickname');
+                } else {
+                    $this->flashMessenger()->setNamespace('error')
+                        ->addMessage('profile_update_failed');
+                }
+            } elseif (!$sameNickname && $sameEmail) {
                 $user->finna_nickname = $nickname;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_nickname');
-            } elseif ($email && $user->email != $values->email
-                && $nickname == $user->finna_nickname
-            ) {
+            } elseif (!$sameEmail && $sameNickname) {
                 $user->email = $values->email;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_email');
+                if (!$email) {
+                    $this->flashMessenger()->setNamespace('error')
+                        ->addErrorMessage('profile_update_invalid_email');
+                }
+            } elseif ($sameNickname && $sameEmail) {
+                $user->finna_nickname = $nickname;
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_none');
             } else {
                 $user->finna_nickname = $nickname;
                 $user->email = $values->email;
@@ -1383,18 +1382,18 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      */
     protected function validateNickname($username, $userid)
     {
+        $result = '';
         if (preg_match('/^(?!.*[._]{2})[A-ZÅÄÖa-zåäö0-9._]{3,24}$/', $username)
         ) {
             $check = $this->getTable('User')->getByNickname($username, $userid);
             if ($check == true) {
-                return $username;
+                $result = $username;
             } elseif ($check == $username) {
-                return $check;
+                $result = true;
             } else {
-                return false;
+                $result = false;
             }
-        } else {
-            return;
         }
+        return $result;
     }
 }
