@@ -270,8 +270,8 @@ finna.record = (function finnaRecord() {
   {
     $('div.authority').each(function initAuthority() {
       var $authority = $(this);
-      $authority.find('i.show-info').click(function onClickShowInfo() {
-        var $authorityInfo = $authority.find('.authority-info');
+      $authority.find('a.show-info').click(function onClickShowInfo() {
+        var $authorityInfo = $authority.find('.authority-info .content');
         if (!$authority.hasClass('loaded')) {
           $authority.addClass('loaded');
           $.getJSON(
@@ -294,7 +294,7 @@ finna.record = (function finnaRecord() {
         return false;
       });
 
-      $authority.find('i.hide-info').click(function onClickHideInfo() {
+      $authority.find('a.hide-info').click(function onClickHideInfo() {
         $authority.removeClass('open');
         return false;
       });
