@@ -1,7 +1,7 @@
 <?php //Don't add START and END comments ?>
 <div class="authority ajax-content" data-authority="<?=$this->id?>" data-source="<?=$this->recordSource?>" data-type="<?=$this->type?>">
   <a href="<?=$this->url?>">
-      <?=$this->label?><?php if (!empty($this->role)): ?><span class="role">, <?=mb_strtolower($this->transEsc('CreatorRoles::' . $this->role), 'UTF-8') ?></span><?php endif; ?>
+      <?=$this->label?>
       <a href="#" class="show-info btn btn-primary"><?=$this->translate('authority_show_info')?></a>
   </a>
   <div class="authority-info">

@@ -79,7 +79,7 @@ class Authority extends \Zend\View\Helper\AbstractHelper
      *
      * @return string|null
      */
-    public function link($url, $label, $id, $type, $role,
+    public function link($url, $label, $id, $type,
         \VuFind\RecordDriver\AbstractBase $driver
     ) {
         if (empty($this->config->Authority->enabled)) {
@@ -103,7 +103,7 @@ class Authority extends \Zend\View\Helper\AbstractHelper
             'authority-link.phtml',
             [
                'url' => $url, 'label' => $label,
-               'id' => $authorityId, 'type' => $type, 'role' => $role,
+               'id' => $authorityId, 'type' => $type,
                'recordSource' => $recordSource
             ]
         );
