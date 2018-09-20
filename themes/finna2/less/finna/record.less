@@ -112,10 +112,14 @@
   }
 
   .authority {
-    .btn {
+      
+    .btn, .show-info {
       font-size: 0.9em;
       line-height: 0.1em;
       margin-left: 0.5em;
+    }
+    .show-info {
+      text-transform: uppercase;
     }
     .authority-info {
       display: none;
@@ -138,11 +142,8 @@
     }
 
     &.open {
-      .fa.show-info {
+      .show-info {
         display: none;
-      }
-      .fa.hide-info {
-        display: inline;
       }
       .authority-info {
         display: block;

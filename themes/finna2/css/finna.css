@@ -20524,10 +20524,14 @@ video:focus {
     content: "";
   }
 }
-.record .authority .btn {
+.record .authority .btn,
+.record .authority .show-info {
   font-size: 0.9em;
   line-height: 0.1em;
   margin-left: 0.5em;
+}
+.record .authority .show-info {
+  text-transform: uppercase;
 }
 .record .authority .authority-info {
   display: none;
@@ -20545,11 +20549,8 @@ video:focus {
 .record .authority .authority-info .content-btn-holder {
   text-align: right;
 }
-.record .authority.open .fa.show-info {
+.record .authority.open .show-info {
   display: none;
-}
-.record .authority.open .fa.hide-info {
-  display: inline;
 }
 .record .authority.open .authority-info {
   display: block;
