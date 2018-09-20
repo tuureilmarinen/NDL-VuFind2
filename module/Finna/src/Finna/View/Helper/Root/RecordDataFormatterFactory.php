@@ -272,14 +272,13 @@ class RecordDataFormatterFactory
                 'context' => ['class' => 'recordAltTitles']
             ]
         );
-        /*
+        
         $setTemplateLine(
-            'Format', 'getFormats', 'RecordHelper',
+            'Format', 'getFormats', 'format-list.phtml',
             [
-                'helperMethod' => 'getFormatList',
                 'context' => ['class' => 'recordFormat']
             ]
-            );*/
+        );
         $setTemplateLine(
             'Physical Description', 'getPhysicalDescriptions',
             'data-escapeHtml.phtml',
