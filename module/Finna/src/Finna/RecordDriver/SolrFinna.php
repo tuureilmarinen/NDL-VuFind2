@@ -805,6 +805,16 @@ trait SolrFinna
     }
 
     /**
+     * Get related records.
+     *
+     * @return array
+     */
+    public function getRelatedItems()
+    {
+        return [];
+    }
+
+    /**
      * A helper function that merges an array of JSON-encoded URLs
      *
      * @param array $urlArray Array of JSON-encoded URL attributes

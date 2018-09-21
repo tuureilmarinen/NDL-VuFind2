@@ -135,12 +135,19 @@ class SolrEad3 extends SolrEad
             switch ($arcRole) {
             case '':
             case 'http://www.rdaregistry.info/Elements/u/P60672':
+                $role = 'pro';
+                break;
             case 'http://www.rdaregistry.info/Elements/u/P60434':
+                $role = 'spk';
+                break;
             case 'http://www.rdaregistry.info/Elements/u/P60444':
-                $role = 'aut2';
+                $role = 'aut';
                 break;
             case 'http://www.rdaregistry.info/Elements/u/P60429':
-                $role = 'pht2';
+                $role = 'rcd';
+                break;
+            case 'http://www.rdaregistry.info/Elements/u/P60434':
+                $role = 'drt';
                 break;
             default:
             }
@@ -151,10 +158,20 @@ class SolrEad3 extends SolrEad
                'id' => (string)$relation->attributes()->href,
                'type' => 'author-id',
                'role' => $role,
-               'arcRole' => $arcRole,
                'name' => trim((string)$relation->relationentry)
             ];
         }
         return $result;
+    }
+
+    
+    public function getRelatedItems()
+    {
+        return [
+            'parents' => ['ahaa-ng.EAD_6336445_87831063', 'fsd.FSD_ess'],
+            'children' => ['ahaa-ng.EAD_6336445_87831063', 'fsd.FSD_ess'],
+            'continued-from' => ['ahaa-ng.EAD_6336445_87831063', 'fsd.FSD_ess'],
+            'other' => ['ahaa-ng.EAD_6336445_87831063', 'fsd.FSD_ess']
+        ];
     }
 }

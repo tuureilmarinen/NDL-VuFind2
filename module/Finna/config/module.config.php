@@ -642,6 +642,7 @@ $config = [
                 'factories' => [
                     'nothing' => 'Finna\Related\Factory::getNothing',
                     'similardeferred' => 'Finna\Related\Factory::getSimilarDeferred',
+                    'RelatedItems' => 'Finna\Related\RelatedItemsFactory',
                 ],
             ],
         ],

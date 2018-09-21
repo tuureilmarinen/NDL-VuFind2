@@ -106,7 +106,8 @@ class RecordDataFormatterFactory
             $final = [];
             foreach ($data as $type => $values) {
                 $final[] = [
-                    'label' => isset($values['arcRole']) ?  'arc_role_' . $values['arcRole'] : null,
+                    'label' => isset($values['role'])
+                        ? ('CreatorRoles::' . $values['role']) : null,
                     'values' => [$type => $values],
                     'options' => [
                         //'pos' => 1,
