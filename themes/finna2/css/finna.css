@@ -13365,23 +13365,33 @@ section.main.template-dir-feedcontent.template-name-content .container-fluid.fin
 .record-holdings-url-table .holdings-url-title .small {
   font-size: 75%;
 }
-.record-holdings-table {
+.record-holdings-table,
+.record-locationsead3-links,
+.record-locationsead3-table {
   margin: 20px 0px;
   border: 1px solid #d1d1d1;
   border-top: none;
 }
 @media print {
-  .record-holdings-table {
+  .record-holdings-table,
+  .record-locationsead3-links,
+  .record-locationsead3-table {
     border-top: 1px solid #d1d1d1;
   }
 }
-.record-holdings-table h5 {
+.record-holdings-table h5,
+.record-locationsead3-links h5,
+.record-locationsead3-table h5 {
   padding-left: 15px;
 }
-.record-holdings-table .holdings-container-heading:hover {
+.record-holdings-table .holdings-container-heading:hover,
+.record-locationsead3-links .holdings-container-heading:hover,
+.record-locationsead3-table .holdings-container-heading:hover {
   cursor: pointer;
 }
-.record-holdings-table .holdings-container-heading .location {
+.record-holdings-table .holdings-container-heading .location,
+.record-locationsead3-links .holdings-container-heading .location,
+.record-locationsead3-table .holdings-container-heading .location {
   width: 50%;
   float: left;
   padding-left: 15px;
@@ -13390,17 +13400,27 @@ section.main.template-dir-feedcontent.template-name-content .container-fluid.fin
   font-size: .92em;
   text-transform: uppercase;
 }
-.record-holdings-table .holdings-container-heading .location > i {
+.record-holdings-table .holdings-container-heading .location > i,
+.record-locationsead3-links .holdings-container-heading .location > i,
+.record-locationsead3-table .holdings-container-heading .location > i {
   margin-left: -11px;
 }
 @media (max-width: 767px) {
-  .record-holdings-table .holdings-container-heading .location {
+  .record-holdings-table .holdings-container-heading .location,
+  .record-locationsead3-links .holdings-container-heading .location,
+  .record-locationsead3-table .holdings-container-heading .location {
     font-size: .87em;
   }
 }
 .record-holdings-table .holdings-container-heading .location,
+.record-locationsead3-links .holdings-container-heading .location,
+.record-locationsead3-table .holdings-container-heading .location,
 .record-holdings-table .holdings-container-heading .holdings-details,
-.record-holdings-table .holdings-container-heading .location-link {
+.record-locationsead3-links .holdings-container-heading .holdings-details,
+.record-locationsead3-table .holdings-container-heading .holdings-details,
+.record-holdings-table .holdings-container-heading .location-link,
+.record-locationsead3-links .holdings-container-heading .location-link,
+.record-locationsead3-table .holdings-container-heading .location-link {
   padding-top: 10px;
   padding-bottom: 5px;
   border-top: 2px solid #d1d1d1;
@@ -13408,65 +13428,103 @@ section.main.template-dir-feedcontent.template-name-content .container-fluid.fin
 }
 @media (min-width: 768px) {
   .record-holdings-table .holdings-container-heading .location,
+  .record-locationsead3-links .holdings-container-heading .location,
+  .record-locationsead3-table .holdings-container-heading .location,
   .record-holdings-table .holdings-container-heading .holdings-details,
-  .record-holdings-table .holdings-container-heading .location-link {
+  .record-locationsead3-links .holdings-container-heading .holdings-details,
+  .record-locationsead3-table .holdings-container-heading .holdings-details,
+  .record-holdings-table .holdings-container-heading .location-link,
+  .record-locationsead3-links .holdings-container-heading .location-link,
+  .record-locationsead3-table .holdings-container-heading .location-link {
     padding-bottom: 10px;
   }
 }
 @media print {
   .record-holdings-table .holdings-container-heading .location,
+  .record-locationsead3-links .holdings-container-heading .location,
+  .record-locationsead3-table .holdings-container-heading .location,
   .record-holdings-table .holdings-container-heading .holdings-details,
-  .record-holdings-table .holdings-container-heading .location-link {
+  .record-locationsead3-links .holdings-container-heading .holdings-details,
+  .record-locationsead3-table .holdings-container-heading .holdings-details,
+  .record-holdings-table .holdings-container-heading .location-link,
+  .record-locationsead3-links .holdings-container-heading .location-link,
+  .record-locationsead3-table .holdings-container-heading .location-link {
     border-top: 1px solid #d1d1d1;
   }
 }
-.record-holdings-table .holdings-container-heading .holdings-details {
+.record-holdings-table .holdings-container-heading .holdings-details,
+.record-locationsead3-links .holdings-container-heading .holdings-details,
+.record-locationsead3-table .holdings-container-heading .holdings-details {
   padding-right: 15px;
   font-weight: bold;
   width: 25%;
   float: left;
 }
 .record-holdings-table .holdings-container-heading .holdings-details:before,
-.record-holdings-table .holdings-container-heading .holdings-details:after {
+.record-locationsead3-links .holdings-container-heading .holdings-details:before,
+.record-locationsead3-table .holdings-container-heading .holdings-details:before,
+.record-holdings-table .holdings-container-heading .holdings-details:after,
+.record-locationsead3-links .holdings-container-heading .holdings-details:after,
+.record-locationsead3-table .holdings-container-heading .holdings-details:after {
   content: " ";
   display: table;
 }
-.record-holdings-table .holdings-container-heading .holdings-details:after {
+.record-holdings-table .holdings-container-heading .holdings-details:after,
+.record-locationsead3-links .holdings-container-heading .holdings-details:after,
+.record-locationsead3-table .holdings-container-heading .holdings-details:after {
   clear: both;
 }
 .record-holdings-table .holdings-container-heading .holdings-details:before,
-.record-holdings-table .holdings-container-heading .holdings-details:after {
+.record-locationsead3-links .holdings-container-heading .holdings-details:before,
+.record-locationsead3-table .holdings-container-heading .holdings-details:before,
+.record-holdings-table .holdings-container-heading .holdings-details:after,
+.record-locationsead3-links .holdings-container-heading .holdings-details:after,
+.record-locationsead3-table .holdings-container-heading .holdings-details:after {
   content: " ";
   display: table;
 }
-.record-holdings-table .holdings-container-heading .holdings-details:after {
+.record-holdings-table .holdings-container-heading .holdings-details:after,
+.record-locationsead3-links .holdings-container-heading .holdings-details:after,
+.record-locationsead3-table .holdings-container-heading .holdings-details:after {
   clear: both;
 }
 @media (max-width: 767px) {
-  .record-holdings-table .holdings-container-heading .holdings-details {
+  .record-holdings-table .holdings-container-heading .holdings-details,
+  .record-locationsead3-links .holdings-container-heading .holdings-details,
+  .record-locationsead3-table .holdings-container-heading .holdings-details {
     width: 50%;
     text-align: right;
     line-height: 1.3;
   }
 }
-.record-holdings-table .holdings-container-heading .holdings-details .small {
+.record-holdings-table .holdings-container-heading .holdings-details .small,
+.record-locationsead3-links .holdings-container-heading .holdings-details .small,
+.record-locationsead3-table .holdings-container-heading .holdings-details .small {
   font-weight: normal;
   color: #2b2b2b;
 }
 @media (max-width: 767px) {
   .record-holdings-table .holdings-container-heading .holdings-details,
-  .record-holdings-table .holdings-container-heading .location {
+  .record-locationsead3-links .holdings-container-heading .holdings-details,
+  .record-locationsead3-table .holdings-container-heading .holdings-details,
+  .record-holdings-table .holdings-container-heading .location,
+  .record-locationsead3-links .holdings-container-heading .location,
+  .record-locationsead3-table .holdings-container-heading .location {
     padding-bottom: 0px;
   }
 }
-.record-holdings-table .holdings-container-heading .location-link {
+.record-holdings-table .holdings-container-heading .location-link,
+.record-locationsead3-links .holdings-container-heading .location-link,
+.record-locationsead3-table .holdings-container-heading .location-link {
   width: 25%;
   float: left;
   font-weight: bold;
   padding-right: 15px;
 }
 @media (max-width: 767px) {
-  .record-holdings-table .holdings-container-heading .location-link {
+  .record-holdings-table .holdings-container-heading .location-link,
+  .record-locationsead3-links .holdings-container-heading .location-link,
+  .record-locationsead3-table .holdings-container-heading .location-link {
     width: 100%;
     text-align: right;
     border-top: none;
@@ -13475,101 +13533,157 @@ section.main.template-dir-feedcontent.template-name-content .container-fluid.fin
     line-height: 1.3;
   }
 }
-.record-holdings-table .holdings-container-heading .holdings-extra-text {
+.record-holdings-table .holdings-container-heading .holdings-extra-text,
+.record-locationsead3-links .holdings-container-heading .holdings-extra-text,
+.record-locationsead3-table .holdings-container-heading .holdings-extra-text {
   padding: 4px;
 }
 .record-holdings-table .row:nth-child(2) .location,
+.record-locationsead3-links .row:nth-child(2) .location,
+.record-locationsead3-table .row:nth-child(2) .location,
 .record-holdings-table .row:nth-child(2) .holdings-details,
-.record-holdings-table .row:nth-child(2) .location-link {
+.record-locationsead3-links .row:nth-child(2) .holdings-details,
+.record-locationsead3-table .row:nth-child(2) .holdings-details,
+.record-holdings-table .row:nth-child(2) .location-link,
+.record-locationsead3-links .row:nth-child(2) .location-link,
+.record-locationsead3-table .row:nth-child(2) .location-link {
   border-top: none;
 }
-.record-holdings-table .copy-title {
+.record-holdings-table .copy-title,
+.record-locationsead3-links .copy-title,
+.record-locationsead3-table .copy-title {
   font-weight: bold;
 }
 .record-holdings-table .copy-title .department,
-.record-holdings-table .copy-title .callnumber {
+.record-locationsead3-links .copy-title .department,
+.record-locationsead3-table .copy-title .department,
+.record-holdings-table .copy-title .callnumber,
+.record-locationsead3-links .copy-title .callnumber,
+.record-locationsead3-table .copy-title .callnumber {
   font-weight: normal;
 }
 @media (min-width: 768px) {
-  .record-holdings-table .copy-title {
+  .record-holdings-table .copy-title,
+  .record-locationsead3-links .copy-title,
+  .record-locationsead3-table .copy-title {
     width: 50%;
     float: left;
   }
 }
 @media (min-width: 768px) {
-  .record-holdings-table .copy-info {
+  .record-holdings-table .copy-info,
+  .record-locationsead3-links .copy-info,
+  .record-locationsead3-table .copy-info {
     width: 50%;
     float: left;
   }
 }
 @media (max-width: 767px) {
-  .record-holdings-table .copy-info {
+  .record-holdings-table .copy-info,
+  .record-locationsead3-links .copy-info,
+  .record-locationsead3-table .copy-info {
     line-height: 1.3;
   }
 }
 @media (min-width: 768px) {
-  .record-holdings-table .copy-available {
+  .record-holdings-table .copy-available,
+  .record-locationsead3-links .copy-available,
+  .record-locationsead3-table .copy-available {
     float: right;
   }
-  .record-holdings-table .copy-available div {
+  .record-holdings-table .copy-available div,
+  .record-locationsead3-links .copy-available div,
+  .record-locationsead3-table .copy-available div {
     margin-left: -15px;
   }
 }
-.record-holdings-table .copy-details {
+.record-holdings-table .copy-details,
+.record-locationsead3-links .copy-details,
+.record-locationsead3-table .copy-details {
   padding: 8px 15px;
 }
 .record-holdings-table .copy-details:before,
-.record-holdings-table .copy-details:after {
+.record-locationsead3-links .copy-details:before,
+.record-locationsead3-table .copy-details:before,
+.record-holdings-table .copy-details:after,
+.record-locationsead3-links .copy-details:after,
+.record-locationsead3-table .copy-details:after {
   content: " ";
   display: table;
 }
-.record-holdings-table .copy-details:after {
+.record-holdings-table .copy-details:after,
+.record-locationsead3-links .copy-details:after,
+.record-locationsead3-table .copy-details:after {
   clear: both;
 }
 .record-holdings-table .copy-details:before,
-.record-holdings-table .copy-details:after {
+.record-locationsead3-links .copy-details:before,
+.record-locationsead3-table .copy-details:before,
+.record-holdings-table .copy-details:after,
+.record-locationsead3-links .copy-details:after,
+.record-locationsead3-table .copy-details:after {
   content: " ";
   display: table;
 }
-.record-holdings-table .copy-details:after {
+.record-holdings-table .copy-details:after,
+.record-locationsead3-links .copy-details:after,
+.record-locationsead3-table .copy-details:after {
   clear: both;
 }
-.record-holdings-table .copy-details.collapsed {
+.record-holdings-table .copy-details.collapsed,
+.record-locationsead3-links .copy-details.collapsed,
+.record-locationsead3-table .copy-details.collapsed {
   display: none;
 }
-.record-holdings-table .copy-details:nth-child(odd):not(.group-heading) {
+.record-holdings-table .copy-details:nth-child(odd):not(.group-heading),
+.record-locationsead3-links .copy-details:nth-child(odd):not(.group-heading),
+.record-locationsead3-table .copy-details:nth-child(odd):not(.group-heading) {
   background-color: #f7f7f7;
 }
-.record-holdings-table .copy-details.group-heading {
+.record-holdings-table .copy-details.group-heading,
+.record-locationsead3-links .copy-details.group-heading,
+.record-locationsead3-table .copy-details.group-heading {
   font-weight: initial;
   padding-top: 2px;
   padding-bottom: 0;
   text-transform: initial;
 }
-.record-holdings-table .copy-details .details-title {
+.record-holdings-table .copy-details .details-title,
+.record-locationsead3-links .copy-details .details-title,
+.record-locationsead3-table .copy-details .details-title {
   width: 50%;
   float: left;
 }
 @media (min-width: 768px) {
-  .record-holdings-table .copy-details .details-title {
+  .record-holdings-table .copy-details .details-title,
+  .record-locationsead3-links .copy-details .details-title,
+  .record-locationsead3-table .copy-details .details-title {
     width: 25%;
   }
 }
-.record-holdings-table .copy-details .details-info {
+.record-holdings-table .copy-details .details-info,
+.record-locationsead3-links .copy-details .details-info,
+.record-locationsead3-table .copy-details .details-info {
   width: 50%;
   float: left;
 }
 @media (min-width: 768px) {
-  .record-holdings-table .copy-details .details-info {
+  .record-holdings-table .copy-details .details-info,
+  .record-locationsead3-links .copy-details .details-info,
+  .record-locationsead3-table .copy-details .details-info {
     width: 75%;
   }
 }
 @media (max-width: 767px) {
-  .record-holdings-table .copy-details .details-info {
+  .record-holdings-table .copy-details .details-info,
+  .record-locationsead3-links .copy-details .details-info,
+  .record-locationsead3-table .copy-details .details-info {
     line-height: 1.3;
   }
 }
-.record-holdings-table .headers {
+.record-holdings-table .headers,
+.record-locationsead3-links .headers,
+.record-locationsead3-table .headers {
   display: flex;
   width: 100%;
   padding: 0 15px;
@@ -13577,31 +13691,47 @@ section.main.template-dir-feedcontent.template-name-content .container-fluid.fin
   color: #fff;
   vertical-align: middle;
 }
-.record-holdings-table .headers .dedup-information {
+.record-holdings-table .headers .dedup-information,
+.record-locationsead3-links .headers .dedup-information,
+.record-locationsead3-table .headers .dedup-information {
   flex: 1;
 }
-.record-holdings-table .headers .reservations-container {
+.record-holdings-table .headers .reservations-container,
+.record-locationsead3-links .headers .reservations-container,
+.record-locationsead3-table .headers .reservations-container {
   flex: 1;
 }
 @media (max-width: 767px) {
-  .record-holdings-table .headers .reservations-container {
+  .record-holdings-table .headers .reservations-container,
+  .record-locationsead3-links .headers .reservations-container,
+  .record-locationsead3-table .headers .reservations-container {
     text-align: right;
   }
 }
-.record-holdings-table .headers .reservations-container .reservations {
+.record-holdings-table .headers .reservations-container .reservations,
+.record-locationsead3-links .headers .reservations-container .reservations,
+.record-locationsead3-table .headers .reservations-container .reservations {
   padding-right: 8px;
 }
 .record-holdings-table .headers .total-container,
-.record-holdings-table .headers .reservations-container {
+.record-locationsead3-links .headers .total-container,
+.record-locationsead3-table .headers .total-container,
+.record-holdings-table .headers .reservations-container,
+.record-locationsead3-links .headers .reservations-container,
+.record-locationsead3-table .headers .reservations-container {
   margin-top: 14px;
 }
-.record-holdings-table .dedup-select {
+.record-holdings-table .dedup-select,
+.record-locationsead3-links .dedup-select,
+.record-locationsead3-table .dedup-select {
   max-width: 130px;
   display: inline-block;
   word-wrap: initial;
   margin: 3px 0px 7px;
 }
-.record-holdings-table .holdings-title {
+.record-holdings-table .holdings-title,
+.record-locationsead3-links .holdings-title,
+.record-locationsead3-table .holdings-title {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-weight: 700;
   line-height: 1.1;
@@ -13616,21 +13746,33 @@ section.main.template-dir-feedcontent.template-name-content .container-fluid.fin
   display: inline-block;
 }
 .record-holdings-table .holdings-title small,
-.record-holdings-table .holdings-title .small {
+.record-locationsead3-links .holdings-title small,
+.record-locationsead3-table .holdings-title small,
+.record-holdings-table .holdings-title .small,
+.record-locationsead3-links .holdings-title .small,
+.record-locationsead3-table .holdings-title .small {
   font-weight: normal;
   line-height: 1;
   color: #595959;
 }
 .record-holdings-table .holdings-title small,
-.record-holdings-table .holdings-title .small {
+.record-locationsead3-links .holdings-title small,
+.record-locationsead3-table .holdings-title small,
+.record-holdings-table .holdings-title .small,
+.record-locationsead3-links .holdings-title .small,
+.record-locationsead3-table .holdings-title .small {
   font-size: 75%;
 }
-.record-holdings-table .btn-primary {
+.record-holdings-table .btn-primary,
+.record-locationsead3-links .btn-primary,
+.record-locationsead3-table .btn-primary {
   padding: 2px 6px;
   margin-bottom: 2px;
 }
 @media (max-width: 767px) {
-  .record-holdings-table .btn-primary {
+  .record-holdings-table .btn-primary,
+  .record-locationsead3-links .btn-primary,
+  .record-locationsead3-table .btn-primary {
     margin-top: 2px;
   }
 }

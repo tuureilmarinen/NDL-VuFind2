@@ -136,6 +136,21 @@ finna.record = (function finnaRecord() {
     VuFind.lightbox.bind($('.holdings-tab'));
   }
 
+  function setupLocationsEad3Tab() {
+    $('.holdings-container-heading').click(function onClickHeading(e) {
+      $(this).nextUntil('.holdings-container-heading').toggleClass('collapsed');
+      if ($('.location .fa', this).hasClass('fa-arrow-down')) {
+        $('.location .fa', this).removeClass('fa-arrow-down');
+        $('.location .fa', this).addClass('fa-arrow-right');
+      }
+      else {
+        $('.location .fa', this).removeClass('fa-arrow-right');
+        $('.location .fa', this).addClass('fa-arrow-down');
+        var rows = $(this).nextUntil('.holdings-container-heading');
+      }
+    });
+  }
+
   function initRecordNaviHashUpdate() {
     $(window).on('hashchange', function onHashChange() {
       $('.pager a').each(function updateHash(i, a) {
@@ -316,7 +331,8 @@ finna.record = (function finnaRecord() {
   var my = {
     checkRequestsAreValid: checkRequestsAreValid,
     init: init,
-    setupHoldingsTab: setupHoldingsTab
+    setupHoldingsTab: setupHoldingsTab,
+    setupLocationsEad3Tab: setupLocationsEad3Tab
   };
 
   return my;

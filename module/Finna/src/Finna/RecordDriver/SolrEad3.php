@@ -174,4 +174,25 @@ class SolrEad3 extends SolrEad
             'other' => ['ahaa-ng.EAD_6336445_87831063', 'fsd.FSD_ess']
         ];
     }
+
+    public function getLocations()
+    {
+        return [
+            'Kansallisarkisto - Mikkeli' =>
+            ['items' => [['label' => 'Paperi', 'id' => 'xzcdf24'],
+                         ['label' => 'Mikrofilmi', 'id' => 'xzcdf24']
+                        ]
+             ],
+            'Kansallisarkisto - Rovaniemi' =>
+            ['items' => [['label' => 'Paperi', 'id' => 'xzcdf24'],
+                         ['label' => 'Mikrofilmi', 'id' => 'xzcdf24'],
+                         ['label' => 'Paperi', 'id' => 'xzcdf24'],
+                         ['label' => 'Mikrofilmi', 'id' => 'xzcdf24'],
+                         ['label' => 'Paperi', 'id' => 'xzcdf24'],
+                         ['label' => 'Mikrofilmi', 'id' => 'xzcdf24']
+                        ]
+            ]
+
+        ];
+    }
 }
