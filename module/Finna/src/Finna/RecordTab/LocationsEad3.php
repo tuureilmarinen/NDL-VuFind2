@@ -75,6 +75,6 @@ class LocationsEad3 extends \VuFind\RecordTab\AbstractBase
      */
     public function getDescription()
     {
-        return 'Locations';
+        return 'Holdings';
     }
 }
