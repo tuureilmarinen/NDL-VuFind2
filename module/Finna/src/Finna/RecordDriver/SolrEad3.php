@@ -131,7 +131,8 @@ class SolrEad3 extends SolrEad
                 continue;
             }
             $role = '';
-            $arcRole = (string)$relation->attributes()->arcrole;
+            $arcRole = trim((string)$relation->attributes()->arcrole);
+            /*
             switch ($arcRole) {
             case '':
             case 'http://www.rdaregistry.info/Elements/u/P60672':
@@ -153,11 +154,11 @@ class SolrEad3 extends SolrEad
             }
             if ('' === $role) {
                 continue;
-            }
+                }*/
             $result[] = [
                'id' => (string)$relation->attributes()->href,
                'type' => 'author-id',
-               'role' => $role,
+               'role' => $arcRole,
                'name' => trim((string)$relation->relationentry)
             ];
         }
