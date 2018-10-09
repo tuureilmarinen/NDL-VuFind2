@@ -1421,12 +1421,20 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
      */
     protected function getItemStatusesForBiblio($id, $patron = null)
     {
-        $result = $this->makeRequest(
+        list($code, $result) = $this->makeRequest(
             ['v1', 'availability', 'biblio', 'search'],
             ['biblionumber' => $id],
             'GET',
-            $patron
+            $patron,
+            true
         );
+        if (404 === $code) {
+            return [];
+        }
+        if ($code !== 200) {
+            throw new ILSException('Problem with Koha REST API.');
+        }
+
         if (empty($result[0]['item_availabilities'])) {
             return [];
         }
@@ -1664,9 +1672,19 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
             );
             $blockReason = [];
             if (!empty($result['blocks'])) {
-                $blockReason[] = $this->translate('Borrowing Block Message');
+                $holdBlock = false;
+                $nonHoldBlock = false;
                 foreach ($result['blocks'] as $reason => $details) {
                     $params = [];
+                    if ($reason === 'Hold::MaximumHoldsReached') {
+                        $holdBlock = true;
+                        $params = [
+                            '%%blockCount%%' => $details['current_hold_count'],
+                            '%%blockLimit%%' => $details['max_holds_allowed']
+                        ];
+                    } else {
+                        $nonHoldBlock = true;
+                    }
                     if (($reason == 'Patron::Debt'
                         || $reason == 'Patron::DebtGuarantees')
                         && !empty($details['current_outstanding'])
@@ -1684,6 +1702,13 @@ class KohaRest extends \VuFind\ILS\Driver\AbstractBase implements
                         $reason = $translated;
                         $blockReason[] = $reason;
                     }
+                }
+                // Add the generic block message to the beginning if we have blocks
+                // other than hold block
+                if ($nonHoldBlock) {
+                    array_unshift(
+                        $blockReason, $this->translate('Borrowing Block Message')
+                    );
                 }
             }
             $this->putCachedData($cacheId, $blockReason);
