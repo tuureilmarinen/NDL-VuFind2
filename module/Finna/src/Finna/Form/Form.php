@@ -145,7 +145,7 @@ class Form extends \Zend\Form\Form
             }
             foreach (['general', 'forms'] as $section) {
                 if (isset($localConfig[$section])) {
-                    $config[$section] = array_replace(
+                    $config[$section] = array_replace_recursive(
                         $parentConfig[$section], $localConfig[$section]
                     );
                 }
@@ -184,7 +184,7 @@ class Form extends \Zend\Form\Form
         ];
         $fields = [
             'title', 'help', 'submit', 'response',
-            'enabled', 'onlyLogged', 'emailSubject'
+            'enabled', 'onlyLogged', 'emailSubject', 'senderInfoRequired'
         ];
         foreach ($fields as $key) {
             if (isset($config[$key])) {
@@ -195,7 +195,28 @@ class Form extends \Zend\Form\Form
         $this->formConfig = $formConfig;
 
         $elements = [];
-        foreach ($this->getFormElements($config) as $el) {
+        $configuredElements = $this->getFormElements($config);
+
+        // Add sender contact name & email fields
+        $senderName = [
+            'name' => '__name__', 'type' => 'text', 'label' => 'feedback_name',
+            'group' => '__sender__'
+        ];
+        $senderEmail = [
+            'name' => '__email__', 'type' => 'text', 'label' => 'feedback_email',
+            'group' => '__sender__'
+        ];
+        if (isset($formConfig['senderInfoRequired'])
+            && $formConfig['senderInfoRequired'] == true
+        ) {
+            $senderEmail['required'] = $senderEmail['aria-required']
+                = $senderName['required'] = $senderName['aria-required'] = true;
+        }
+
+        $configuredElements[] = $senderName;
+        $configuredElements[] = $senderEmail;
+
+        foreach ($configuredElements as $el) {
             $element = [];
 
             $required = ['type', 'name'];
@@ -262,6 +283,8 @@ class Form extends \Zend\Form\Form
             }
             $elements[] = $element;
         }
+        
+        $elements[] = ['type' => 'submit', 'name' => 'submit', 'label' => 'Send'];
 
         return $elements;
     }

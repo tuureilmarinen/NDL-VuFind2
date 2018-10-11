@@ -4,7 +4,7 @@
   $form->prepare();
 
   $title = $form->getTitle();
-  $title = !empty($title) && !$this->translationEmpty($title)
+  $title = !empty($title)
     ? $this->translate($title) : null;
 
   $formUrl = $this->url('feedback-form', ['id' => $this->formId]);

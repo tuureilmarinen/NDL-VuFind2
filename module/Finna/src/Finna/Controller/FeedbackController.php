@@ -74,29 +74,29 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
         $requestParams = $this->params();
         $view = $this->prepareView($requestParams);
 
+        $feedbackConfig = $this->getFeedbackConfig();
+        $user = $this->getUser();
+
+        $view->category = $requestParams->fromPost(
+            'category', $requestParams->fromQuery('category')
+        );
+        $view->name = $requestParams->fromPost(
+            'name',
+            $user ? trim($user->firstname . ' ' . $user->lastname) : ''
+        );
+        $view->users_email = $requestParams->fromPost(
+            'email',
+            $user ? $user->email : ''
+        );
+        $view->comments = $requestParams->fromPost(
+            'comments', $requestParams->fromQuery('comments')
+        );
+        $view->url = $requestParams->fromPost(
+            'url', $requestParams->fromQuery('url')
+        );
+
         // Process form submission:
         if ($this->formWasSubmitted('submit', $view->useRecaptcha)) {
-            $feedbackConfig = $this->getFeedbackConfig();
-            $user = $this->getUser();
-
-            $view->category = $requestParams->fromPost(
-                'category', $requestParams->fromQuery('category')
-            );
-            $view->name = $requestParams->fromPost(
-                'name',
-                $user ? trim($user->firstname . ' ' . $user->lastname) : ''
-            );
-            $view->users_email = $requestParams->fromPost(
-                'email',
-                $user ? $user->email : ''
-            );
-            $view->comments = $requestParams->fromPost(
-                'comments', $requestParams->fromQuery('comments')
-            );
-            $view->url = $requestParams->fromPost(
-                'url', $requestParams->fromQuery('url')
-            );
-
             if (empty($view->comments)) {
                 throw new \Exception('Missing data.');
             }
