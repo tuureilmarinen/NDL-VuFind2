@@ -143,12 +143,10 @@ class Form extends \Zend\Form\Form
                     $localConfig['forms'][$id] = $parentConfig['forms'][$id];
                 }
             }
-            foreach (['general', 'forms'] as $section) {
-                if (isset($localConfig[$section])) {
-                    $config[$section] = array_replace_recursive(
-                        $parentConfig[$section], $localConfig[$section]
-                    );
-                }
+            if (isset($localConfig['forms'])) {
+                $config['forms'] = array_replace_recursive(
+                    $parentConfig['forms'], $localConfig['forms']
+                );
             }
         }
             

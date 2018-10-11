@@ -1,7 +1,4 @@
 {
-  "general": {
-      "default": "FeedbackSite"
-  },
   "forms": {
     
     "FeedbackSite": {
