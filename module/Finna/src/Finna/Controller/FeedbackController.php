@@ -47,8 +47,6 @@ use Zend\Mail as Mail;
  */
 class FeedbackController extends \VuFind\Controller\FeedbackController
 {
-    use \Finna\Form\DynamicFormTrait;
-
     /**
      * Display Feedback home form.
      *
