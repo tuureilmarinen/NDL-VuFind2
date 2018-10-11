@@ -127,13 +127,12 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
                 . ($view->users_email ? $view->users_email : '-') . "\n";
             $message .= $this->translate('feedback_url') . ': '
                 . ($view->url ? $view->url : '-') . "\n";
-            
+
             $message .= $this->getUserStatus($user);
-            
+
             $message .= "\n" . $this->translate('feedback_message') . ":\n";
             $message .= "----------\n\n{$view->comments}\n\n----------\n";
-            //
-            
+
             $replyToName = $replyToEmail = null;
             if (!empty($view->users_email)) {
                 $replyToName = $view->name;
@@ -227,7 +226,7 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
 
         $translated = [];
         foreach ($params->fromPost() as $key => $val) {
-            $translated["%%{$key}%%"] = $translator->translate($val);  
+            $translated["%%{$key}%%"] = $translator->translate($val);
         }
 
         $subject = $this->translate($form->getEmailSubject(), $translated);
