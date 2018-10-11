@@ -63,7 +63,7 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
 
     /**
      * Receives input from the user and sends an email to the recipient set in
-     * the config.ini
+     * the config.ini. This method is used only for legacy Feedback-form.
      *
      * @return void
      */
@@ -151,8 +151,8 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
     }
 
     /**
-     * Receives submitted dynamic form data and sends an email.
-     * Form configuration is specified in FeedbackForms.json
+     * Handles rendering and submit of dynamic forms.
+     * Form configurations are specified in FeedbackForms.json
      *
      * @return void
      */
