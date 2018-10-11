@@ -119,18 +119,15 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
                 );
             }
 
-            // Format message
-            $fields = [
-                'feedback_category' => $this->translate($view->category),
-                'feedback_name' => $view->name ?: '-',
-                'feedback_email' => $view->users_email ?: '-',
-                'feedback_url' => $view->url ?: '-'
-            ];
-
-            $message = '';
-            foreach ($fields as $field => $value) {
-                $message .= $this->translate($field) . ": $value\n";
-            }
+            $message = $this->translate('feedback_category') . ': '
+                . $this->translate($view->category) . "\n";
+            $message .= $this->translate('feedback_name') . ': '
+                . ($view->name ? $view->name : '-') . "\n";
+            $message .= $this->translate('feedback_email') . ': '
+                . ($view->users_email ? $view->users_email : '-') . "\n";
+            $message .= $this->translate('feedback_url') . ': '
+                . ($view->url ? $view->url : '-') . "\n";
+            
             $message .= $this->getUserStatus($user);
             
             $message .= "\n" . $this->translate('feedback_message') . ":\n";
