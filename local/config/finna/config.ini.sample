@@ -1327,7 +1327,7 @@ sender_email      = "noreply@finna.fi"
 sender_name       = "Finna-palaute"
 
 ; Enable dynamic forms configured in FeedbackForms.json
-dynamicForms = true
+; dynamicForms = true
 
 ; Activate Captcha validation on select forms
 ; VuFind will use reCaptcha validation to prevent bots from using certain actions of
