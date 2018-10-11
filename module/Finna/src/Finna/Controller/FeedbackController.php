@@ -64,8 +64,8 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
     }
 
     /**
-     * Receives submitted form data and sends an email.
-     * Form configuration is specified in form<form-id>.ini
+     * Receives input from the user and sends an email to the recipient set in
+     * the config.ini
      *
      * @return void
      */
