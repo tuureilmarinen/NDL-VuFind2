@@ -280,7 +280,6 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
             $this->serviceLocator->get('VuFind\Mailer')->getTransport()
                 ->send($mail);
         } catch (\Exception $e) {
-            die($e->getMessage());
             $this->flashMessenger()->addErrorMessage('feedback_error');
         }
     }
