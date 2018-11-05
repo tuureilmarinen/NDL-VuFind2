@@ -3,8 +3,9 @@
   <?php $cards = $this->user->getLibraryCards(); if ($cards->count() > 1): ?>
     <?php $targetCount = $this->ils()->checkCapability('getLoginDrivers') ? count($this->ils()->getLoginDrivers()) : 1; ?>
     <?php if (isset($loginMenu) && $loginMenu): ?>
-      <li role="menuitem" class="logoutOptions card-selection">
-        <h5><?=$this->transEsc(isset($this->label) ? $this->label : 'Kirjastokortti') ?></h5>
+      <li class="logoutOptions card-selection">
+        <p><?=$this->transEsc(isset($this->label) ? $this->label : 'Kirjastokortti') ?></p>
+        <label id="select-card-label-dropdown"><?= $this->transEsc('Library Card') ?></label>
         <?php foreach ($cards as $card): ?>
           <?php
             $target = '';
@@ -21,12 +22,15 @@
             }
           ?>
           <?php $selectedCard = (!isset($this->displaySelected) || $this->displaySelected) && (strcasecmp($card->cat_username, $this->user->cat_username) === 0); ?>
-          <a href="<?=$this->url('librarycards-selectcard')?>?cardID=<?=$this->escapeHtmlAttr($card->id)?>"><?=$selectedCard ? '<i class="fa fa-check"></i><span class="sr-only">(' . $this->transEsc("selected") . ')</span> ' : '' ?><?=$display ?></a>
+          <a aria-describedby="select-card-label-dropdown" role="menuitem" href="<?=$this->url('librarycards-selectcard')?>?cardID=<?=$this->escapeHtmlAttr($card->id)?>"><?=$selectedCard ? '<i class="fa fa-check"></i><span class="sr-only">(' . $this->transEsc("selected") . ')</span> ' : '' ?><?=$display ?></a>
         <?php endforeach; ?>
       </li>
     <?php else: ?>
       <div class="select-card-wrapper">
-        <span class="select-card-label"><?=$this->transEsc(isset($this->label) ? $this->label :'') ?></span>
+        <?php if (isset($this->label)): ?>
+          <span class="select-card-label"><?=$this->transEsc($this->label)?>:</span>
+        <?php endif; ?>
+        <label id="select-card-label-maincontent"><?= $this->transEsc('Library Card') ?></label>
         <div class="dropdown select-card">
           <?php
             $display = null;
@@ -53,7 +57,7 @@
               $display = $this->transEsc('Select');
             }
           ?>
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span><?=$display ?></span> <i class="fa fa-arrow-down"></i></a>
+          <a href="#" class="dropdown-toggle" aria-describedby="select-card-label-maincontent" aria-expanded="false" aria-haspopup="true" data-toggle="dropdown"><span><?=$display ?></span> <i class="fa fa-arrow-down"></i></a>
           <ul class="dropdown-menu library_card" role="menu">
           <?php foreach ($cards as $card): ?>
             <?php
@@ -70,8 +74,8 @@
                 $display .= ' (' . $this->transEsc("source_$target", null, $target) . ')';
               }
             ?>
-            <li role="menuitem">
-              <a href="<?=$this->url('librarycards-selectcard')?>?cardID=<?=$this->escapeHtmlAttr($card->id);?>"><?=$display ?></a>
+            <li>
+              <a aria-describedby="select-card-label-maincontent" role="menuitem" href="<?=$this->url('librarycards-selectcard')?>?cardID=<?=$this->escapeHtmlAttr($card->id);?>"><?=$display ?></a>
             </li>
         <?php endforeach; ?>
         </ul>

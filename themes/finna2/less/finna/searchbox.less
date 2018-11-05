@@ -4,11 +4,11 @@
       width: 30%;
     }
     .btn.btn-link {
-      background: @finna-searchbox-link-background;
+      background: @background-color;
       border-radius: @border-radius-small;
     }
     .btn.btn-link {
-      color: @finna-searchbox-link-color;
+      color:  mix(@background-color, contrast(@background-color), 5%);
       font-size: 1em;
       font-weight: normal;
       line-height: 25px;
@@ -16,18 +16,19 @@
       padding: 0px 5px;
       overflow: hidden;
       text-transform: none;
-      & .adv-search {
+      .adv-search {
         i {
-          color: @finna-searchbox-link-color;
+          color:  mix(@body-bg, contrast(@body-bg), 95%);
         }
       }
     }
   }
   .pager {
-    & li.pager-text {
+    li.pager-text {
       font-size: 1em;
+      color:  mix(@finna-search-background, contrast(@finna-search-background), 5%);
     }
-    & li > a {
+    li > a {
       padding: 0 5px;        
     }
   }
@@ -39,20 +40,32 @@
 }
 
 .finna-filters, .checkboxFilter {
-  & .checkbox label input {
-    display: none;
-  }
-  & .checkbox label:before {
-    content: "\f096";
-    font-family: 'Fontawesome';
-    font-size: 20px;
-    vertical-align: -2px;
+  .filters {
     display: inline-block;
-    width: 16px;
   }
-  & .checkbox.checked label:before {
-    font-family: 'Fontawesome';
-    content: "\f14a";
+  input[type=checkbox] {
+    height: 16px;
+    width: 16px;
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid @gray-light;
+    border-radius: 4px;
+    margin: 0px;
+    top: 3px;
+
+    &:checked{
+      background-color: black;
+      &:after{
+        font-family: 'Fontawesome';
+        content: "\f00c";
+        color: white;
+        position: absolute;
+        font-size: 14px;
+        line-height: 14px;
+        font-weight: normal;
+      }
+    }
   }
 }
 
@@ -76,11 +89,11 @@
     transition: none;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
-    & .btn-link {
+    .btn-link {
       display: none;
     }
   }
-  & .nav.searchbox {
+  .nav.searchbox {
     margin: 0;
   }
 }
@@ -90,12 +103,12 @@
   font-size: 1em;
   font-weight: 600;
   color: @finna-search-link-color;
-  & i {
+  i {
     vertical-align: text-top;
     font-size: 1.5em;
     margin-right: 5px;
   }
-  & .btn {
+  .btn {
     margin-right: 10px;
   }
   .back-to-search-text {
@@ -164,6 +177,11 @@
     width: 50%;
     flex: 1;
   }
+  .pager {
+    .disabled {
+      color: mix(@finna-search-background, contrast(@finna-search-background), 50%);
+    }
+  }
   .search-tooltip {
     line-height: 48px;
     a {
@@ -175,7 +193,7 @@
   }
   @media(max-width: @screen-md) {
     .pager {
-      & li.pager-text {
+      li.pager-text {
         margin: 0 5px;
       }
     }

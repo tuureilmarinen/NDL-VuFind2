@@ -820,7 +820,7 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     public function getStatuses($idList)
     {
         $items = [];
-        foreach ($ids as $id) {
+        foreach ($idList as $id) {
             $items[] = $this->getHolding($id);
         }
         return $items;
@@ -922,10 +922,10 @@ class AxiellWebServices extends \VuFind\ILS\Driver\AbstractBase
     protected function parseHoldings($organisationHoldings, $id, $journalInfo = null)
     {
         if ($organisationHoldings[0]->status == 'noHolding') {
-            return;
+            return [];
         }
         if ($organisationHoldings[0]->type != 'organisation') {
-            return;
+            return [];
         }
 
         $result = [];

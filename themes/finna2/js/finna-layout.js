@@ -90,8 +90,7 @@ finna.layout = (function finnaLayout() {
 
     function notifyTruncateChange(field) {
       field.find('.truncate-change span').each(function setupTruncateChange(ind, e) {
-        var visible = $(e).position().top <= field.height();
-        $(e).trigger('truncate-change', [visible]);
+        $(e).trigger('truncate-change');
       });
     }
 
@@ -175,14 +174,12 @@ finna.layout = (function finnaLayout() {
 
     // Load truncated record images lazily when parent container is opened
     $('.recordcovers .truncate-change span').each(function addTruncateChangeHandler() {
-      $(this).bind('truncate-change', function onTruncateChange(e, visible) {
-        if (visible) {
-          $(this).unbind('truncate-change');
-          // Postpone loading until the image placeholder is scrolled into viewport
-          $(this).unbind('inview').one('inview', function onInView() {
-            displayTruncatedImage($(this));
-          });
-        }
+      $(this).bind('truncate-change', function onTruncateChange() {
+        $(this).unbind('truncate-change');
+        // Postpone loading until the image placeholder is scrolled into viewport
+        $(this).unbind('inview').one('inview', function onInView() {
+          displayTruncatedImage($(this));
+        });
       });
     });
 
@@ -385,11 +382,19 @@ finna.layout = (function finnaLayout() {
       form.find('.clear-button').addClass('hidden');
       form.find('.searchForm_lookfor').focus();
     });
-    $('.searchForm_lookfor').bind('autocomplete:select', function onAutocompleteSelect() { $('.navbar-form').submit() });
 
-    $('.select-type').click(function onClickSelectType() {
-      $('input[name=type]:hidden').val($(this).children().val());
-      $('.type-dropdown .dropdown-toggle span').text($(this).text());
+    $('.searchForm_lookfor').bind('autocomplete:select', function onAutocompleteSelect() { 
+      $('.navbar-form').submit() 
+    });
+
+    $('.select-type').on('click', function onClickSelectType(event) {
+      event.preventDefault();
+      var dropdownToggle = $('.type-dropdown .dropdown-toggle');
+
+      $('input[name=type]:hidden').val($(this).siblings().val());
+      dropdownToggle.find('span').text($(this).text());
+      dropdownToggle.dropdown('toggle');
+      dropdownToggle.focus();
     });
 
     if (sessionStorage.getItem('vufind_retain_filters')) {
@@ -880,7 +885,7 @@ finna.layout = (function finnaLayout() {
   }
 
   function initFiltersToggle () {
-    $('.filters-toggle').click(function filterToggleClicked(e){
+    $('.filters-toggle').click(function filterToggleClicked(e) {
       var finnaFilters = $(e.target).closest('.finna-filters');
       var filtersBar = finnaFilters.find('.filters-bar');
       if (filtersBar.hasClass('hidden')) {
