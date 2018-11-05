@@ -116,7 +116,6 @@ trait FinnaRecord
      */
     public function getUserById($user_id)
     {
-        $table = $this->getDbTable('User');
-        return $table->getById($user_id);
+        return $this->getDbTable('User')->getById($user_id);
     }
 }

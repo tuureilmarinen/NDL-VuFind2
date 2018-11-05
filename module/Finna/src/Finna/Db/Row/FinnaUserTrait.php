@@ -71,6 +71,9 @@ trait FinnaUserTrait
      */
     public function getDisplayName()
     {
+        if (isset($this->finna_nickname)) {
+            return $this->finna_nickname;
+        }
         if ($this->firstname && $this->lastname) {
             return $this->firstname . ' ' . $this->lastname;
         }
