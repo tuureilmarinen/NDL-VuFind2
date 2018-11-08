@@ -432,42 +432,30 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
 
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
-            $email = $validator->isValid($values->email);
-            $nickname = $this->validateNickname($values->finna_nickname, $user->id);
-            $sameNickname = $values->finna_nickname == $user->finna_nickname;
-            $sameEmail = $values->email == $user->email;
-            if (!$nickname) {
-                if ($sameEmail) {
-                    $this->flashMessenger()->setNamespace('error')
-                        ->addErrorMessage('profile_update_invalid_nickname');
-                } else {
-                    $this->flashMessenger()->setNamespace('error')
-                        ->addMessage('profile_update_failed');
-                }
-            } elseif (!$sameNickname && $sameEmail) {
-                $user->finna_nickname = $nickname;
-                $user->save();
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_nickname');
-            } elseif (!$sameEmail && $sameNickname) {
-                $user->email = $values->email;
-                $user->save();
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_email');
-                if (!$email) {
-                    $this->flashMessenger()->setNamespace('error')
-                        ->addErrorMessage('profile_update_invalid_email');
-                }
-            } elseif ($sameNickname && $sameEmail) {
-                $user->finna_nickname = $nickname;
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_none');
-            } else {
-                $user->finna_nickname = $nickname;
+            if ('' === $values->email || $validator->isValid($values->email)) {
                 $user->email = $values->email;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
+            } else {
+                $this->flashMessenger()->setNamespace('error')
+                    ->addMessage('profile_update_failed');
+            }
+        }
+
+        if ($this->formWasSubmitted('saveUserNickname')) {
+            $nickname = $this->checkIfAvailableNickname($values->finna_nickname);
+            if ($nickname && !$sameNickname) {
+                $user->finna_nickname = $nickname;
+                $user->save();
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_nickname');
+            } elseif ($user->finna_nickname == $values->finna_nickname && !$nickname) {
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_none');
+            } else {
+                $this->flashMessenger()->setNamespace('error')
+                    ->addErrorMessage('profile_update_invalid_nickname');
             }
         }
 
@@ -1376,24 +1364,15 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      * Validate user's nickname.
      *
      * @param string $username User nickname
-     * @param string $userid   User id
      *
-     * @return mixed Validated username or false if not valid
+     * @return mixed Return username or false if not valid
      */
-    protected function validateNickname($username, $userid)
+    protected function checkIfAvailableNickname($username)
     {
-        $result = '';
-        if (preg_match('/^(?!.*[._]{2})[A-ZÅÄÖa-zåäö0-9._]{3,24}$/', $username)
-        ) {
-            $check = $this->getTable('User')->getByNickname($username, $userid);
-            if ($check == true) {
-                $result = $username;
-            } elseif ($check == $username) {
-                $result = true;
-            } else {
-                $result = false;
-            }
-        }
-        return $result;
+        return $this->getTable('User')->nicknameIsTaken($username) 
+            ? false : $username;
+        //if (preg_match('/^(?!.*[._]{2})[A-ZÅÄÖa-zåäö0-9._]{3,24}$/', $username)
+        //) {
+        //}
     }
 }

@@ -162,21 +162,12 @@ class User extends \VuFind\Db\Table\User
      * Check if user input for nickname exists already in database.
      *
      * @param string $nickname to compare with user table column finna_nickname
-     * @param int    $userid   User id to help identify user's own nickname
      *
-     * @return mixed true if available nickname, false if taken and string if
-     * taken and it is user's own current nickname
+     * @return boolean true if taken nickname, false if available
      */
-    public function getByNickname($nickname, $userid)
+    public function nicknameIsTaken($nickname)
     {
         $row = $this->select(['finna_nickname' => $nickname])->current();
-        if (empty($row)) {
-            return true;
-        } else {
-            if ($row->id == $userid) {
-                return $row->finna_nickname;
-            }
-            return false;
-        }
+        return $row;
     }
 }

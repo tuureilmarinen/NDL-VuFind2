@@ -53,10 +53,10 @@ class UserPublicName extends \Zend\View\Helper\AbstractHelper
         if ($user) {
             if ($user->email
                 && ($pos = strpos($user->email, '@')) !== false
-                && $user->finna_nickname == null
+                && empty($user->finna_nickname)
             ) {
                 $username = substr($user->email, 0, $pos);
-            } elseif ($user->finna_nickname != null
+            } elseif (!empty($user->finna_nickname)
             ) {
                 $username = $user->finna_nickname;
             } else {
