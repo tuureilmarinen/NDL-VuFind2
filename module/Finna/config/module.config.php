@@ -30,19 +30,6 @@ namespace Finna\Module\Configuration;
 $config = [
     'router' => [
         'routes' => [
-            'cache-file' => [
-                'type'    => 'Zend\Router\Http\Segment',
-                'options' => [
-                    'route'    => '/cache/[:file]',
-                    'constraints' => [
-                        'file'     => '[.a-zA-Z0-9_-]*',
-                    ],
-                    'defaults' => [
-                        'controller' => 'Cache',
-                        'action'     => 'File',
-                    ]
-                ],
-            ],
             'comments-inappropriate' => [
                 'type'    => 'Zend\Router\Http\Segment',
                 'options' => [
@@ -159,7 +146,6 @@ $config = [
             'Finna\Controller\AjaxController' => 'VuFind\Controller\AjaxControllerFactory',
             'Finna\Controller\BarcodeController' => 'VuFind\Controller\AbstractBaseFactory',
             'Finna\Controller\BrowseController' => 'VuFind\Controller\AbstractBaseWithConfigFactory',
-            'Finna\Controller\CacheController' => 'Finna\Controller\CacheControllerFactory',
             'Finna\Controller\CartController' => 'VuFind\Controller\CartControllerFactory',
             'Finna\Controller\CollectionController' => 'VuFind\Controller\AbstractBaseWithConfigFactory',
             'Finna\Controller\CombinedController' => 'VuFind\Controller\AbstractBaseFactory',
@@ -188,8 +174,6 @@ $config = [
         'aliases' => [
             'Barcode' => 'Finna\Controller\BarcodeController',
             'barcode' => 'Finna\Controller\BarcodeController',
-            'Cache' => 'Finna\Controller\CacheController',
-            'cache' => 'Finna\Controller\CacheController',
             'Comments' => 'Finna\Controller\CommentsController',
             'comments' => 'Finna\Controller\CommentsController',
             'FeedContent' => 'Finna\Controller\FeedContentController',
@@ -248,6 +232,7 @@ $config = [
             'Finna\Config\YamlReader' => 'VuFind\Config\YamlReaderFactory',
             'Finna\Cover\Loader' => 'VuFind\Cover\LoaderFactory',
             'Finna\Feed\Feed' => 'Finna\Service\Factory::getFeed',
+            'Finna\Form\Form' => 'Finna\Form\FormFactory',
             'Finna\ILS\Connection' => 'VuFind\ILS\ConnectionFactory',
             'Finna\LocationService\LocationService' => 'Finna\Service\Factory::getLocationService',
             'Finna\Mailer\Mailer' => 'VuFind\Mailer\Factory',
@@ -272,6 +257,7 @@ $config = [
             'VuFind\Config\SearchSpecsReader' => 'Finna\Config\SearchSpecsReader',
             'VuFind\Config\YamlReader' => 'Finna\Config\YamlReader',
             'VuFind\Cover\Loader' => 'Finna\Cover\Loader',
+            'VuFind\Form\Form' => 'Finna\Form\Form',
             'VuFind\ILS\Connection' => 'Finna\ILS\Connection',
             'VuFind\Mailer\Mailer' => 'Finna\Mailer\Mailer',
             'VuFind\Record\Loader' => 'Finna\Record\Loader',

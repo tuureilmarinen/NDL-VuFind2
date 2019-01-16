@@ -124,8 +124,8 @@ finna.layout = (function finnaLayout() {
       // truncate only if there's more than one line to hide
       if (self.height() > (truncation[index] + rowHeight[index] + 1)) {
         self.css('height', truncation[index] - 1 + 'px');
-        self.before('<div class="less-link-top">' + VuFind.translate('show_less') + ' <i class="fa fa-arrow-up" aria-hidden="true"></i></div>');
-        self.after('<div class="more-link">' + VuFind.translate('show_more') + ' <i class="fa fa-arrow-down" aria-hidden="true"></i></div><div class="less-link">' + VuFind.translate('show_less') + ' <i class="fa fa-arrow-up" aria-hidden="true"></i></div>');
+        self.before('<button type="button" class="less-link-top">' + VuFind.translate('show_less') + ' <i class="fa fa-arrow-up" aria-hidden="true"></i></button>');
+        self.after('<button type="button" class="more-link">' + VuFind.translate('show_more') + ' <i class="fa fa-arrow-down" aria-hidden="true"></i></button><button type="button" class="less-link">' + VuFind.translate('show_less') + ' <i class="fa fa-arrow-up" aria-hidden="true"></i></button>');
         $('.less-link-top').hide();
         $('.less-link').hide();
 
@@ -901,7 +901,7 @@ finna.layout = (function finnaLayout() {
   function initCookieConsent() {
     var state = $.cookie('cookieConsent');
     if ('undefined' === typeof state || !state) {
-      $('a.cookie-consent-dismiss').click(function dismiss() {
+      $('.cookie-consent-dismiss').click(function dismiss() {
         $.cookie('cookieConsent', 1, {path: VuFind.path, expires: 365});
         $('.cookie-consent').addClass('hidden');
       });
