@@ -1,0 +1,22 @@
+<!-- START of: finna - myresearch/profile-my-comments.phtml -->
+<?php if($comments): ?>
+<table class="alphabrowse table table-striped">
+    <thead>
+      <tr>
+        <th>Kommentti</th>
+      </tr>
+    </thead>
+    <tbody>
+       <?php foreach ($comments as $key => $comment): ?>
+            <tr>
+              <td>
+                <?= $comment->comment ?>
+              </td>
+            </tr>
+       <?php endforeach; ?>
+    </tbody>
+</table>
+<?php else: ?>
+    <h1>Ei kommentteja</h1>
+<?php endif; ?>
+<!-- END of: finna - myresearch/profile-my-comments.phtml -->

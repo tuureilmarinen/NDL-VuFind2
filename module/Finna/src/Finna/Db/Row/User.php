@@ -103,4 +103,15 @@ class User extends \VuFind\Db\Row\User
         $this->finna_language = $language;
         $this->save();
     }
+    
+    /**
+     * Get all comments associated with the user.
+     *
+     * @return \Zend\Db\ResultSet\AbstractResultSet
+     */
+    public function getComments()
+    {
+        $userCard = $this->getDbTable('Comments');
+        return $userCard->select(['user_id' => $this->id]);
+    }
 }
