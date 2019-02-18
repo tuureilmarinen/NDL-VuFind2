@@ -1,22 +1,32 @@
 <!-- START of: finna - myresearch/profile-my-comments.phtml -->
-<?php if($comments): ?>
+<?php if(!empty($comments)): ?>
 <table class="alphabrowse table table-striped">
     <thead>
       <tr>
-        <th>Kommentti</th>
+        <th><?= $this->transEsc("Comment") ?></th><th><?= $this->transEsc("Record") ?></th>
       </tr>
     </thead>
     <tbody>
        <?php foreach ($comments as $key => $comment): ?>
             <tr>
               <td>
-                <?= $comment->comment ?>
+                <?= $comment['comment'] ?>
+                <?php if($comment['finna_rating']): ?>
+                  (<?= $comment['finna_rating'] ?>/5)
+                <?php endif; ?>
+              </td>
+              <td>
+                <a href="<?=$this->url('record', ['id' => $comment['record_id']])?>">
+                  <?= $comment['record_title'] ?>
+                </a>
               </td>
             </tr>
        <?php endforeach; ?>
     </tbody>
 </table>
 <?php else: ?>
-    <h1>Ei kommentteja</h1>
+  <div>
+    <h4><?= $this->transEsc("No Comments") ?></h4>
+  </div>
 <?php endif; ?>
 <!-- END of: finna - myresearch/profile-my-comments.phtml -->

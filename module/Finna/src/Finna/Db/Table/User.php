@@ -155,4 +155,20 @@ class User extends \VuFind\Db\Table\User
             }
         );
     }
+
+    /**
+     * Get user rows with insecure passwords and/or catalog passwords
+     *
+     * @return mixed
+     */
+    public function getComments($id)
+    {
+        $callback = function ($select) use ($id) {
+            $select
+                ->join('Comments', 'Comments.user_id = User.id','*','right')
+                ->join('Resource', 'Resource.id = Comments.resource_id')
+                ->where->equalTo('User.id', $id);
+        };
+        return $this->select($callback);
+    }
 }

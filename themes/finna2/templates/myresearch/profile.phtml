@@ -7,7 +7,6 @@
     // Only display home library form if we have multiple pickup locations:
     $showHomeLibForm = (isset($this->pickup) && count($this->pickup) > 1);
     $user = $this->auth()->isLoggedIn();
-    $comments = $user->getComments();
     $cards = $user->getLibraryCards();
     $patron = $user ? $this->auth()->getILSPatron() : false;
     $capabilityParams = $patron ? ['patron' => $patron] : [];
@@ -261,10 +260,10 @@
       <?php endif; ?>
     </div>
     <div class="myresearch-profile-header">
-      <span>!!!<?= $this->transEsc("my_comments") ?></span>
+      <span><?= $this->transEsc("Your Comment") ?></span>
     </div>
     <div class="myresearch-profile-list library-profile">
-      <?= $this->partial('myresearch/profile-my-comments.phtml', ['user' => $user, 'comments' => $comments]); ?>  
+      <?= $this->partial('myresearch/profile-my-comments.phtml', ['user' => $user, 'comments' => $this->comments]); ?>  
     </div>
     <div class="myresearch-profile-header">
       <span><?= $this->transEsc("history_schedule") ?></span>

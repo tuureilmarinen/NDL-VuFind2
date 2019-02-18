@@ -464,6 +464,12 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         $view = parent::profileAction();
+        $userTable = $this->getTable('user');
+        $loader = $this->serviceLocator->get('VuFind\Record\Loader');
+        $view->comments = array_map( function ($comment) use ($loader) {
+            $comment['record_title'] = $loader->load($comment['record_id'])->getTitle();
+            return $comment;
+        }, $userTable->getComments($user->id)->toArray());
         $profile = $view->profile;
         $patron = $this->catalogLogin();
 
