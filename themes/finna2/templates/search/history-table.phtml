@@ -57,13 +57,14 @@
             <option value="0"<?=($schedule == 0) ? (' selected') : ('')?>><?=$this->transEsc("schedule_none")?></option>
             <option value="1"<?=($schedule == 1) ? (' selected') : ('')?>><?=$this->transEsc("schedule_daily")?></option>
             <option value="2"<?=($schedule == 2) ? (' selected') : ('')?>><?=$this->transEsc("schedule_weekly")?></option>
+            <option value="3"<?=($schedule == 3) ? (' selected') : ('')?>><?=$this->transEsc("schedule_monthly")?></option>
           </select>
           <input type="hidden" name="searchid" value="<?= $info->getSearchId(); ?>"/>
         </form>
       <?php else: ?>
         <span class="disable"><?=$this->transEsc("cannot set")?></span>
       <?php endif; ?>
-      <?php if ($schedule == 1 || $schedule == 2): ?>
+      <?php if (in_array($schedule,[1,2,3])): ?>
       <script>
         $('.alert-email-notification').removeClass('hidden');
       </script>

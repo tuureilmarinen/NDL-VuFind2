@@ -355,6 +355,16 @@ class ScheduledAlerts extends AbstractService
                     );
                     continue;
                 }
+            } elseif ($schedule == 3) {
+                $diff = $todayTime->diff($lastTime);
+                if ($diff->days < 30) {
+                    $this->msg(
+                        '      Bypassing search ' . $s->id
+                        . ': previous execution too recent (monthly, '
+                        . $lastTime->format($iso8601) . ')'
+                    );
+                    continue;
+                }
             } else {
                 $this->err(
                     'Search ' . $s->id . ': unknown schedule: ' . $s->schedule, '='
