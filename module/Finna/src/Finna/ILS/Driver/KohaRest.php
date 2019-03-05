@@ -791,8 +791,7 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
         );
         if ($code != 204) {
             $error = "Failed to mark payment of $amount paid for patron"
-                . " {$patron['id']}: $code: $result";
-
+                . " {$patron['id']}: $code: " . print_r($result, true);
             $this->error($error);
             throw new ILSException($error);
         }
@@ -1341,11 +1340,6 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
                     continue;
                 }
                 $holdingData = $this->getHoldingData($holding, true);
-                // Don't display a standalone holding unless there's some information
-                // available.
-                if (empty($holdingData)) {
-                    continue;
-                }
 
                 $i++;
                 $location = $this->getBranchName($holding['holdingbranch']);
@@ -1656,6 +1650,11 @@ class KohaRest extends \VuFind\ILS\Driver\KohaRest
 
         if (0 === $result) {
             $result = strcmp($a['location'], $b['location']);
+        }
+
+        if (0 === $result && $this->sortItemsByEnumChron) {
+            // Reverse chronological order
+            $result = strnatcmp($b['number'] ?? '', $a['number'] ?? '');
         }
 
         if (0 === $result) {
