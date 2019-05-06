@@ -39,6 +39,13 @@ namespace Finna\RecordDriver;
 trait FinnaRecord
 {
     /**
+     * Preferred language for display strings
+     *
+     * @var string
+     */
+    protected $preferredLanguage = null;
+
+    /**
      * Get inappropriate comments for this record reported by the given user.
      *
      * @param object $userId Reporter ID
@@ -86,6 +93,20 @@ trait FinnaRecord
     }
 
     /**
+     * Get OpenURL parameters for an article.
+     *
+     * @return array
+     */
+    protected function getArticleOpenUrlParams()
+    {
+        $params = parent::getArticleOpenUrlParams();
+        if ($doi = $this->tryMethod('getCleanDOI')) {
+            $params['rft.doi'] = $doi;
+        }
+        return $params;
+    }
+
+    /**
      * Get saved time associated with this record in a user list.
      *
      * @param int $list_id List id
@@ -103,5 +124,17 @@ trait FinnaRecord
             return $current->saved;
         }
         return null;
+    }
+
+    /**
+     * Set preferred language for display strings.
+     *
+     * @param string $language Language
+     *
+     * @return void
+     */
+    public function setPreferredLanguage($language)
+    {
+        $this->preferredLanguage = $language;
     }
 }
