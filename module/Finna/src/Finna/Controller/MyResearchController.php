@@ -450,6 +450,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             $this->flashMessenger()->setNamespace('info')
                 ->addMessage('profile_update');
         }
+
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
             if ('' === $values->email || $validator->isValid($values->email)) {
@@ -460,6 +461,22 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             } else {
                 $this->flashMessenger()->setNamespace('error')
                     ->addMessage('profile_update_failed');
+            }
+        }
+
+        if ($this->formWasSubmitted('saveUserNickname')) {
+            $nickname = $this->checkIfAvailableNickname($values->finna_nickname);
+            if ($nickname && !$sameNickname) {
+                $user->finna_nickname = $nickname;
+                $user->save();
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_nickname');
+            } elseif ($user->finna_nickname == $values->finna_nickname && !$nickname) {
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_none');
+            } else {
+                $this->flashMessenger()->setNamespace('error')
+                    ->addErrorMessage('profile_update_invalid_nickname');
             }
         }
 
@@ -1382,5 +1399,20 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             return $blocks;
         }
         return [];
+    }
+    /**
+     * Validate user's nickname.
+     *
+     * @param string $username User nickname
+     *
+     * @return mixed Return username or false if not valid
+     */
+    protected function checkIfAvailableNickname($username)
+    {
+        return $this->getTable('User')->nicknameIsTaken($username) 
+            ? false : $username;
+        //if (preg_match('/^(?!.*[._]{2})[A-ZÅÄÖa-zåäö0-9._]{3,24}$/', $username)
+        //) {
+        //}
     }
 }

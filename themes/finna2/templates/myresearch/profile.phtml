@@ -256,6 +256,9 @@
               <div class="clearfix"></div>
             </div>
           </form>
+          <div class="my-profile-row">
+          <?= $this->partial('myresearch/profile-nickname.phtml', ['user' => $user]); ?>
+          </div>
         </div>
       <?php endif; ?>
     </div>
