@@ -465,13 +465,14 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         }
 
         if ($this->formWasSubmitted('saveUserNickname')) {
-            $nickname = $this->checkIfAvailableNickname($values->finna_nickname);
-            if ($nickname) {
-                $user->finna_nickname = $nickname;
+            $nicknameAvailable = $this->checkIfAvailableNickname($values->finna_nickname);
+            $nicknameValid = $this->checkIfValidNickname($values->finna_nickname);
+            if ($nicknameAvailable && $nicknameValid) {
+                $user->finna_nickname = $values->finna_nickname;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_nickname');
-            } elseif ($user->finna_nickname == $values->finna_nickname && !$nickname) {
+            } elseif ($user->finna_nickname == $values->finna_nickname && !$nicknameAvailable) {
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_none');
             } elseif (empty($values->finna_nickname)) {
@@ -479,9 +480,12 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_nickname_removed');
-            } else {
+            } elseif (!$nicknameValid) {
                 $this->flashMessenger()->setNamespace('error')
                     ->addErrorMessage('profile_update_invalid_nickname');
+            } else {
+                $this->flashMessenger()->setNamespace('error')
+                    ->addErrorMessage('profile_update_taken_nickname');
             }
         }
 
@@ -1406,18 +1410,26 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         return [];
     }
     /**
+     * Check if nickname is avaliable
+     *
+     * @param string $nickname User nickname
+     *
+     * @return bool Return username or false if not valid
+     */
+    protected function checkIfAvailableNickname($nickname): bool
+    {
+        return ! $this->getTable('User')->nicknameIsTaken($nickname);
+    }
+
+    /**
      * Validate user's nickname.
      *
-     * @param string $username User nickname
+     * @param string $nickname User nickname
      *
-     * @return mixed Return username or false if not valid
+     * @return bool Return username or false if not valid
      */
-    protected function checkIfAvailableNickname($username)
+    protected function checkIfValidNickname($nickname): bool
     {
-        return $this->getTable('User')->nicknameIsTaken($username) 
-            ? false : $username;
-        //if (preg_match('/^(?!.*[._]{2})[A-ZÅÄÖa-zåäö0-9._]{3,24}$/', $username)
-        //) {
-        //}
+        return preg_match('/^(?!.*[._]{2})[A-ZÅÄÖa-zåäö0-9._]{3,24}$/', $nickname);
     }
 }
