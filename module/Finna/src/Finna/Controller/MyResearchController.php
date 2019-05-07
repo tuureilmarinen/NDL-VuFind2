@@ -466,7 +466,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
 
         if ($this->formWasSubmitted('saveUserNickname')) {
             $nickname = $this->checkIfAvailableNickname($values->finna_nickname);
-            if ($nickname && !$sameNickname) {
+            if ($nickname) {
                 $user->finna_nickname = $nickname;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
@@ -474,6 +474,11 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             } elseif ($user->finna_nickname == $values->finna_nickname && !$nickname) {
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_none');
+            } elseif (empty($values->finna_nickname)) {
+                $user->finna_nickname = null;
+                $user->save();
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update_nickname_removed');
             } else {
                 $this->flashMessenger()->setNamespace('error')
                     ->addErrorMessage('profile_update_invalid_nickname');
