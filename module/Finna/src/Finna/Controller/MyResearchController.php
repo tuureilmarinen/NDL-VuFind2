@@ -476,7 +476,8 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_nickname');
             } elseif ($user->finna_nickname == $values->finna_nickname
-                && !$nicknameAvailable) {
+                && !$nicknameAvailable
+            ) {
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update_none');
             } elseif (empty($values->finna_nickname)) {
