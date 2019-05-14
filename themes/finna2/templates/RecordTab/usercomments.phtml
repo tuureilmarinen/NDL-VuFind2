@@ -29,6 +29,18 @@
             </div>
           </div>
           <?php endif; ?>
+          <div class="nickname-holder">
+            <div>
+              <?php if ($user->finna_nickname): ?>
+                <?= $this->translate('finna_nickname') ?>:
+              <?php else: ?>
+                <?= $this->translate('finna_name') ?>:
+              <?php endif; ?>
+            </div>
+            <div>
+              <b><?= $this->escapeHtml(trim($this->userPublicName($user)))?></b>
+            </div>
+          </div>
           <textarea name="comment" class="form-control" rows="4" cols="37" maxlength="8000" required></textarea><br/>
           </div>
           <?=$this->recaptcha()->html($this->tab->isRecaptchaActive()) ?>
