@@ -139,7 +139,7 @@ trait FinnaRecord
     {
         $this->preferredLanguage = $language;
     }
-    
+
     /**
      * Get user id from db
      *
