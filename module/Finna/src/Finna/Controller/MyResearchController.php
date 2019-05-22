@@ -462,10 +462,9 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             } else {
                 $this->flashMessenger()->setNamespace('error')
                     ->addMessage('profile_update_failed');
+                    
             }
-        }
 
-        if ($this->formWasSubmitted('saveUserNickname')) {
             $nicknameAvailable = $this->checkIfAvailableNickname(
                 $values->finna_nickname
             );
