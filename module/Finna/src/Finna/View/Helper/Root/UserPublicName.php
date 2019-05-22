@@ -34,12 +34,16 @@ namespace Finna\View\Helper\Root;
  * @category VuFind
  * @package  View_Helpers
  * @author   Mika Hatakka <mika.hatakka@helsinki.fi>
- * @author   Konsta Raunio <konsta.rauniohelsinki.fi>
+ * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
+ * @author   Tuure Ilmarinen <tuure.ilmarinen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org/wiki/vufind2:developer_manual Wiki
  */
-class UserPublicName extends \Zend\View\Helper\AbstractHelper
+class UserPublicName
+extends \Zend\View\Helper\AbstractHelper
+implements \VuFind\I18n\Translator\TranslatorAwareInterface
 {
+    use \VuFind\I18n\Translator\TranslatorAwareTrait;
     /**
      * Create publicly shown user name
      *
@@ -58,7 +62,8 @@ class UserPublicName extends \Zend\View\Helper\AbstractHelper
                 $username = substr($user->email, 0, $pos);
             } elseif (!empty($user->finna_nickname)
             ) {
-                $username = $user->finna_nickname;
+                $nicknameTranslation = $this->translate("finna_nickname");
+                $username = $user->finna_nickname . " ($nicknameTranslation)";
             } else {
                 $username = "$user->firstname $user->lastname";
             }
