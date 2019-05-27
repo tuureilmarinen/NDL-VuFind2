@@ -27,7 +27,7 @@
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
 namespace Finna\RecordDriver;
-
+use \Finna\Db\Row\User;
 /**
  * Additional functionality for Finna records.
  *
@@ -145,9 +145,9 @@ trait FinnaRecord
      *
      * @param int $user_id user user_id
      *
-     * @return string
+     * @return User
      */
-    public function getUserById($user_id)
+    public function getUserById($user_id): User
     {
         return $this->getDbTable('User')->getById($user_id);
     }
