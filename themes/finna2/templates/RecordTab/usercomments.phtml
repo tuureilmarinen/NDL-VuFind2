@@ -31,13 +31,6 @@
           <?php endif; ?>
           <div class="nickname-holder">
             <div>
-              <?php if ($user->finna_nickname): ?>
-                <?= $this->translate('finna_nickname') ?>:
-              <?php else: ?>
-                <?= $this->translate('finna_name') ?>:
-              <?php endif; ?>
-            </div>
-            <div>
               <b><?= $this->escapeHtml(trim($this->userPublicName($user)))?></b>
             </div>
           </div>
