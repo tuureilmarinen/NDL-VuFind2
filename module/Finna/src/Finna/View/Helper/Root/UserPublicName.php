@@ -45,6 +45,7 @@ extends \Zend\View\Helper\AbstractHelper
 implements \VuFind\I18n\Translator\TranslatorAwareInterface
 {
     use \VuFind\I18n\Translator\TranslatorAwareTrait;
+
     /**
      * Create publicly shown user name
      *

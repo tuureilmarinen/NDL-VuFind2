@@ -27,7 +27,9 @@
  * @link     http://vufind.org/wiki/vufind2:record_drivers Wiki
  */
 namespace Finna\RecordDriver;
-use \Finna\Db\Row\User;
+
+use Finna\Db\Row\User;
+
 /**
  * Additional functionality for Finna records.
  *

@@ -459,10 +459,9 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
-            } elseif($user->email !== $values->email) {
+            } elseif ($user->email !== $values->email) {
                 $this->flashMessenger()->setNamespace('error')
                     ->addMessage('profile_update_failed');
-                    
             }
 
             $nicknameAvailable = $this->checkIfAvailableNickname(
@@ -474,12 +473,12 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
-            }
-            elseif (!$nicknameValid) {
+            } elseif (!$nicknameValid) {
                 $this->flashMessenger()->setNamespace('error')
                     ->addErrorMessage('profile_update_failed');
-            }
-            elseif ($nicknameAvailable ||  $user->finna_nickname == $values->finna_nickname) {
+            } elseif ($nicknameAvailable
+                || $user->finna_nickname == $values->finna_nickname
+            ) {
                 $user->finna_nickname = $values->finna_nickname;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
