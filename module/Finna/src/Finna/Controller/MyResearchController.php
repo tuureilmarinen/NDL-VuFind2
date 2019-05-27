@@ -459,7 +459,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
-            } else {
+            } elseif($user->email !== $values->email) {
                 $this->flashMessenger()->setNamespace('error')
                     ->addMessage('profile_update_failed');
                     
@@ -469,24 +469,21 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $values->finna_nickname
             );
             $nicknameValid = $this->checkIfValidNickname($values->finna_nickname);
-            if ($nicknameAvailable && $nicknameValid) {
-                $user->finna_nickname = $values->finna_nickname;
-                $user->save();
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_nickname');
-            } elseif ($user->finna_nickname == $values->finna_nickname
-                && !$nicknameAvailable
-            ) {
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_none');
-            } elseif (empty($values->finna_nickname)) {
+            if (empty($values->finna_nickname)) {
                 $user->finna_nickname = null;
                 $user->save();
                 $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update_nickname_removed');
-            } elseif (!$nicknameValid) {
+                    ->addMessage('profile_update');
+            }
+            elseif (!$nicknameValid) {
                 $this->flashMessenger()->setNamespace('error')
-                    ->addErrorMessage('profile_update_invalid_nickname');
+                    ->addErrorMessage('profile_update_failed');
+            }
+            elseif ($nicknameAvailable ||  $user->finna_nickname == $values->finna_nickname) {
+                $user->finna_nickname = $values->finna_nickname;
+                $user->save();
+                $this->flashMessenger()->setNamespace('info')
+                    ->addMessage('profile_update');
             } else {
                 $this->flashMessenger()->setNamespace('error')
                     ->addErrorMessage('profile_update_taken_nickname');

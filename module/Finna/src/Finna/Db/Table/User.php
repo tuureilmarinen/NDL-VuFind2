@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015-2018.
+ * Copyright (C) The National Library of Finland 2015-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,6 +23,7 @@
  * @package  Db_Table
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
+ * @author   Tuure Ilmarinen <tuure.ilmarinen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -37,6 +38,7 @@ use Zend\Db\Sql\Select;
  * @package  Db_Table
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Konsta Raunio <konsta.raunio@helsinki.fi>
+ * @author   Tuure Ilmarinen <tuure.ilmarinen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -165,9 +167,8 @@ class User extends \VuFind\Db\Table\User
      *
      * @return boolean true if taken nickname, false if available
      */
-    public function nicknameIsTaken($nickname)
+    public function nicknameIsTaken($nickname): bool
     {
-        $row = $this->select(['finna_nickname' => $nickname])->current();
-        return $row;
+        return ! empty($this->select(['finna_nickname' => $nickname])->current());
     }
 }
