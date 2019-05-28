@@ -64,7 +64,8 @@ implements \VuFind\I18n\Translator\TranslatorAwareInterface
                 $username = substr($user->email, 0, $pos);
             } elseif (!empty($user->finna_nickname)
             ) {
-                $nicknameTranslation = $this->translate("finna_nickname");
+                $nicknameTranslation
+                    = strtolower($this->translate('finna_nickname'));
                 $username = $user->finna_nickname . " ($nicknameTranslation)";
             } else {
                 $username = "$user->firstname $user->lastname";
