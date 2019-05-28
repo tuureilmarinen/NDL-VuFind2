@@ -454,14 +454,13 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
 
         if ($this->formWasSubmitted('saveUserProfile')) {
             $validator = new \Zend\Validator\EmailAddress();
+            $showSuccess = $showError = false;
             if ('' === $values->email || $validator->isValid($values->email)) {
                 $user->email = $values->email;
                 $user->save();
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update');
-            } elseif ($user->email !== $values->email) {
-                $this->flashMessenger()->setNamespace('error')
-                    ->addMessage('profile_update_failed');
+                $showSuccess = true;
+            } else {
+                $showError = true;
             }
 
             $nicknameAvailable = $this->checkIfAvailableNickname(
@@ -471,21 +470,26 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             if (empty($values->finna_nickname)) {
                 $user->finna_nickname = null;
                 $user->save();
-                $this->flashMessenger()->setNamespace('info')
-                    ->addMessage('profile_update');
+                $showSuccess = true;
             } elseif (!$nicknameValid) {
-                $this->flashMessenger()->setNamespace('error')
-                    ->addErrorMessage('profile_update_failed');
+                $showError = true;
             } elseif ($nicknameAvailable
                 || $user->finna_nickname == $values->finna_nickname
             ) {
                 $user->finna_nickname = $values->finna_nickname;
                 $user->save();
+                $showSuccess = true;
+            } else {
+                $showSuccess = $showError = false;
+                $this->flashMessenger()->setNamespace('error')
+                    ->addErrorMessage('profile_update_nickname_taken');
+            }
+            if ($showError) {
+                $this->flashMessenger()->setNamespace('error')
+                    ->addMessage('profile_update_failed');
+            } elseif ($showSuccess) {
                 $this->flashMessenger()->setNamespace('info')
                     ->addMessage('profile_update');
-            } else {
-                $this->flashMessenger()->setNamespace('error')
-                    ->addErrorMessage('profile_update_taken_nickname');
             }
         }
 
