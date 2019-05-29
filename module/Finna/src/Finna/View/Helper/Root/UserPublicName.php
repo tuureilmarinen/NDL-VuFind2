@@ -57,16 +57,14 @@ implements \VuFind\I18n\Translator\TranslatorAwareInterface
     {
         $username = '';
         if ($user) {
-            if ($user->email
-                && ($pos = strpos($user->email, '@')) !== false
-                && empty($user->finna_nickname)
-            ) {
-                $username = substr($user->email, 0, $pos);
-            } elseif (!empty($user->finna_nickname)
-            ) {
+            if (!empty($user->finna_nickname)) {
                 $nicknameTranslation
                     = strtolower($this->translate('finna_nickname'));
                 $username = $user->finna_nickname . " ($nicknameTranslation)";
+            } elseif ($user->email
+                && ($pos = strpos($user->email, '@')) !== false
+            ) {
+                $username = substr($user->email, 0, $pos);
             } else {
                 $username = "$user->firstname $user->lastname";
             }

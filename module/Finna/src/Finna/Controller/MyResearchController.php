@@ -473,9 +473,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $showSuccess = true;
             } elseif (!$nicknameValid) {
                 $showError = true;
-            } elseif ($nicknameAvailable
-                || $user->finna_nickname == $values->finna_nickname
-            ) {
+            } elseif ($nicknameAvailable) {
                 $user->finna_nickname = $values->finna_nickname;
                 $user->save();
                 $showSuccess = true;
@@ -1436,7 +1434,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
     protected function checkIfValidNickname($nickname): bool
     {
         return preg_match(
-            '/^(?!.*[._\-\s]{2})[A-ZÅÄÖa-zåäö0-9._\-\s]{3,100}$/',
+            '/^(?!.*[._\-\s]{2})[A-ZÅÄÖa-zåäö0-9._\-\s]{3,50}$/',
             $nickname
         );
     }
