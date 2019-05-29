@@ -477,6 +477,8 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $user->finna_nickname = $values->finna_nickname;
                 $user->save();
                 $showSuccess = true;
+            } elseif ($user->finna_nickname === $values->finna_nickname) {
+                $showSuccess = true;
             } else {
                 $showSuccess = $showError = false;
                 $this->flashMessenger()->setNamespace('error')
