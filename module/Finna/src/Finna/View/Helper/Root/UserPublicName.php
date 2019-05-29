@@ -65,7 +65,7 @@ implements \VuFind\I18n\Translator\TranslatorAwareInterface
                 && ($pos = strpos($user->email, '@')) !== false
             ) {
                 $username = substr($user->email, 0, $pos);
-            } else {
+            } elseif ($user->firstname && $user->lastname) {
                 $username = "$user->firstname $user->lastname";
             }
         }
