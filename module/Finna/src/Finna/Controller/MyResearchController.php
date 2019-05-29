@@ -1435,6 +1435,9 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      */
     protected function checkIfValidNickname($nickname): bool
     {
-        return preg_match('/^(?!.*[._\-\s]{2})[A-ZÅÄÖa-zåäö0-9._\-\s]{3,100}$/', $nickname);
+        return preg_match(
+            '/^(?!.*[._\-\s]{2})[A-ZÅÄÖa-zåäö0-9._\-\s]{3,100}$/',
+            $nickname
+        );
     }
 }
