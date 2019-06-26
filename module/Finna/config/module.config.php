@@ -57,6 +57,20 @@ $config = [
                     ]
                 ],
             ],
+            'list' => [
+                'type'    => 'Zend\Router\Http\Segment',
+                'options' => [
+                    'route'    => '/List/[:id]/save',
+                    'constraints' => [
+                        'controller' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                        'action'     => '[a-zA-Z][a-zA-Z0-9_-]*',
+                    ],
+                    'defaults' => [
+                        'controller' => 'ListPage',
+                        'action'     => 'Save',
+                    ]
+                ]
+            ],
             'list-page' => [
                 'type'    => 'Zend\Router\Http\Segment',
                 'options' => [

@@ -332,7 +332,7 @@ class User extends RowGateway implements \VuFind\Db\Table\DbTableAwareInterface,
     /**
      * Add/update a resource in the user's account.
      *
-     * @param \VuFind\Db\Row\Resource $resource        The resource to add/update
+     * @param array $resources        The resources to add/update \VuFind\Db\Row\Resource
      * @param \VuFind\Db\Row\UserList $list            The list to store the resource
      * in.
      * @param array                   $tagArray        An array of tags to associate
@@ -343,23 +343,29 @@ class User extends RowGateway implements \VuFind\Db\Table\DbTableAwareInterface,
      *
      * @return void
      */
-    public function saveResource(
-        $resource, $list, $tagArray, $notes, $replaceExisting = true
+    public function saveResources(
+        array $resources,
+        \VuFind\Db\Row\UserList $list,
+        array $tagArray,
+        string $notes,
+        bool $replaceExisting = true
     ) {
         // Create the resource link if it doesn't exist and update the notes in any
         // case:
         $linkTable = $this->getDbTable('UserResource');
-        $linkTable->createOrUpdateLink($resource->id, $this->id, $list->id, $notes);
+        foreach ($resources as $resource) {
+            $linkTable->createOrUpdateLink($resource->id, $this->id, $list->id, $notes);
 
-        // If we're replacing existing tags, delete the old ones before adding the
-        // new ones:
-        if ($replaceExisting) {
-            $resource->deleteTags($this, $list->id);
-        }
+            // If we're replacing existing tags, delete the old ones before adding the
+            // new ones:
+            if ($replaceExisting) {
+                $resource->deleteTags($this, $list->id);
+            }
 
-        // Add the new tags:
-        foreach ($tagArray as $tag) {
-            $resource->addTag($tag, $this, $list->id);
+            // Add the new tags:
+            foreach ($tagArray as $tag) {
+                $resource->addTag($tag, $this, $list->id);
+            }
         }
     }
 
