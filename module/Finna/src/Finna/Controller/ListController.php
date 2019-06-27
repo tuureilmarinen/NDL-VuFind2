@@ -22,6 +22,7 @@
  * @category VuFind
  * @package  Controller
  * @author   Mika Hatakka <mika.hatakka@helsinki.fi>
+ * @author   Tuure Ilmarinen <tuure.ilmarinen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */
@@ -188,8 +189,8 @@ class ListController extends \Finna\Controller\MyResearchController
         // Perform the save operation:
         $post = $this->getRequest()->getPost()->toArray();
         $favorites = $this->serviceLocator
-            ->get(\VuFind\Favorites\FavoritesService::class);
-        $results = $favorites->save($post, $user, $drivers);
+            ->get(\Finna\Favorites\FavoritesService::class);
+        $results = $favorites->saveMany($post, $user, $drivers);
 
         // Display a success status message:
         $listUrl = $this->url()->fromRoute('userList', ['id' => $results['listId']]);

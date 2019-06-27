@@ -138,14 +138,12 @@ class FavoritesService implements \VuFind\I18n\Translator\TranslatorAwareInterfa
      *    <li>list - ID of list to save record into (omit to create new list)</li>
      *  </ul>
      * @param \VuFind\Db\Row\User $user   The user saving the record
-     * @param array RecordDriver[]        $drivers Record drivers for record being saved
+     * @param RecordDriver        $driver Record driver for record being saved
      *
      * @return array list information
      */
-    public function save(
-        array $params,
-        \VuFind\Db\Row\User $user,
-        array $drivers
+    public function save(array $params, \VuFind\Db\Row\User $user,
+        RecordDriver $driver
     ) {
         // Validate incoming parameters:
         if (!$user) {
@@ -159,23 +157,16 @@ class FavoritesService implements \VuFind\I18n\Translator\TranslatorAwareInterfa
         );
 
         // Get or create a resource object as needed:
-        $resources = array_map(function($driver) {
-                $resource = $this->resourceTable->findResource(
-                    $driver->getUniqueId(),
-                    $driver->getSourceIdentifier(),
-                    true,
-                    $driver
-                );
-                // Persist record in the database for "offline" use
-                $this->persistToCache($driver, $resource);
-                return $resource;
-            },
-        $drivers);
+        $resource = $this->resourceTable->findResource(
+            $driver->getUniqueId(), $driver->getSourceIdentifier(), true, $driver
+        );
+
+        // Persist record in the database for "offline" use
+        $this->persistToCache($driver, $resource);
 
         // Add the information to the user's account:
         $user->saveResource(
-            $resources,
-            $list,
+            $resource, $list,
             $params['mytags'] ?? [],
             $params['notes'] ?? ''
         );
