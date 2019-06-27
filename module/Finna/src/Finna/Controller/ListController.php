@@ -33,11 +33,12 @@ use VuFind\Exception\RecordMissing as RecordMissingException;
 use Zend\Stdlib\Parameters;
 
 /**
- * Controller for the user account area.
+ * Controller for the public favorite lists.
  *
  * @category VuFind
  * @package  Controller
  * @author   Mika Hatakka <mika.hatakka@helsinki.fi>
+ * @author   Tuure Ilmarinen <tuure.ilmarinen@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     http://vufind.org   Main Site
  */

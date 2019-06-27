@@ -32,7 +32,7 @@ $this->headScript()->prependScript("var listId = {$list->id}; var publicList = 1
         <?=$this->render('search/controls/view.phtml')?>
         <?=$this->render('search/controls/sort.phtml')?>
         <?=$this->render('search/controls/limit.phtml')?>
-        <a class="save-record" data-lightbox="" href="<?= $this->url('list', [ 'id' => $list->id ]) ?>" title="<?=$this->transEsc('Add to favorites')?>" rel="nofollow"><i class="fa fa-plus" aria-hidden="true"></i><span class="hidden-xs"> <?=$this->transEsc('Add to favorites')?></span></a>
+        <a class="save-record" data-lightbox="" href="<?= $this->url('list', [ 'id' => $list->id ]) ?>" title="<?=$this->transEsc('import_favorites_from_list')?>" rel="nofollow"><i class="fa fa-plus" aria-hidden="true"></i><span class="hidden-xs"> <?=$this->transEsc('import_favorites_from_list')?></span></a>
     </div>
     <div class="pagination-container">
         <?=$this->paginationControl($this->results->getPaginator(), 'Sliding', 'search/pagination_simple.phtml', ['results' => $this->results]) ?>

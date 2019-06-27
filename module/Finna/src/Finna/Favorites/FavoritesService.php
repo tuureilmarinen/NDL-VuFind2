@@ -1,6 +1,6 @@
 <?php
 /**
- * Table Definition for user_resource
+ * Service for modifying User Lists
  *
  * PHP version 7
  *
