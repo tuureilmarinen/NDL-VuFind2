@@ -146,17 +146,18 @@ class ListController extends \Finna\Controller\MyResearchController
         if (!($user = $this->getUser())) {
             return $this->forceLogin();
         }
-        
+        $listId = $this->params()->fromRoute('id');
         $this->setFollowupUrlToReferer();
         $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
 
         $request = $this->getRequest()->getQuery()->toArray()
             + $this->getRequest()->getPost()->toArray()
-            + ['id' => $this->params()->fromRoute('id')];
+            + ['id' => $listId];
         $records = $runner->run($request, 'Favorites', $runner)->getResults();
 
         $view = $this->createViewModel(
             [
+                'listId' => $listId,
                 'lists' => $user->getLists(),
                 'records' => $records,
             ]
