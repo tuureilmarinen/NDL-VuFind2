@@ -134,6 +134,16 @@ $config = [
                     ]
                 ],
             ],
+            'myresearch-import-public-list' => [
+                'type' => 'Zend\Router\Http\Literal',
+                'options' => [
+                    'route'    => '/MyResearch/ImportPublicList',
+                    'defaults' => [
+                        'controller' => 'MyResearch',
+                        'action'     => 'Importpubliclist',
+                    ]
+                ],
+            ],
             'record-feedback' => [
                 'type'    => 'Zend\Router\Http\Segment',
                 'options' => [

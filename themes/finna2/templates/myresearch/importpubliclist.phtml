@@ -1,0 +1,46 @@
+<!-- START of: finna - myresearch/importpubliclist.phtml -->
+<?php
+    // Set up page title:
+    $this->headTitle($this->transEsc("import_favorites_from_public_list"));
+?>
+
+<!-- Leftside navigationbar -->
+<?= $this->context($this)->renderInContext("myresearch/menu.phtml", ['active' => 'importFavorites']); ?>
+
+<div class="mainbody right myresearch-body">
+    <h1><?= $this->transEsc("import_favorites_from_public_list") ?></h1>
+    <?=$this->flashmessages()?>
+    <form name="import_public_list_form" class="inline" method="post">
+        <div class="form-group">
+            <label class="control-label" for="url"><?=$this->transEsc("Public List URL") ?>:</label>
+            <input class="form-control" pattern="^https*:\/\/([a-z]+\.)?finna.fi\/(\w+\/)?List\/(.+)$" id="url" class="form-control" name="url" value="<?= $this->url ?>"/>
+        </div>
+        <input type="hidden" name="submit" value="1" />
+        <?php $showLists = (!empty($this->lists)); ?>
+
+        <div class="form-group">
+            <?php if ($showLists): ?>
+                <label class="control-label" for="save_list"><?=$this->transEsc('Choose a List') ?></label>
+            <?php endif; ?>
+            <?php if ($showLists): ?>
+                <select class="form-control" id="save_list" name="list">
+                    <?php if ($this->lists): ?>
+                        <?php foreach ($this->lists as $list): ?>
+                            <option value="<?=$list['id'] ?>"<?php if ($list['id'] == $this->userlist()->lastUsed()): ?> selected="selected"<?php endif; ?>><?=$this->escapeHtml($list['title'])?></option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value=""><?=$this->transEsc('My Favorites') ?></option>
+                    <?php endif; ?>
+                </select>
+            <?php endif; ?>
+            <a class="btn btn-link" id="make-list" href="<?=$this->url('editList', ['id' => 'NEW'])?>"><?=$showLists ? $this->transEsc('or create a new list') : $this->transEsc('Create a List'); ?></a>
+        </div>
+
+        <?php if ($showLists): ?>
+            <div class="form-group">
+                <input id="import_public_list_form" name="import_public_list_form" type="submit" value="<?=$this->transEsc("Save") ?>" class="btn btn-primary" />
+            </div>
+        <?php endif; ?>
+    </form>
+</div>
+<!-- END of: finna - myresearch/importpubliclist.phtml -->
