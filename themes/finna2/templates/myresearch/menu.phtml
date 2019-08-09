@@ -179,6 +179,11 @@
       <?php endif; ?>
     </div>
   </li>
+  <li class="menu-logout hidden-xs hidden-sm">
+    <a href="<?=$this->url('myresearch-import-public-list')?>" class="list-group-item">
+      <?=$this->transEsc('import_favorites_from_public_list')?>
+    </a>
+  </li>
 <?php endif; ?>
 <li class="menu-logout hidden-xs hidden-sm">
   <a href="<?=$this->url('myresearch-logout')?>" class="list-group-item">
@@ -203,6 +208,7 @@
             case 'fines': echo $this->transEsc('Fines'); break;
             case 'librarycards': echo $this->transEsc('Library Cards'); break;
             case 'favorites': echo $this->transEsc('Favorites'); break;
+            case 'importFavorites': echo $this->transEsc('import_favorites_from_public_list'); break;
             case 'history': echo $this->transEsc('history_saved_searches'); break;
             default:
                 if (substr($this->active, 0, 4) == 'list') {
