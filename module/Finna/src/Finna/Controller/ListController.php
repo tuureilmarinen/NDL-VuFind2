@@ -136,6 +136,18 @@ class ListController extends \Finna\Controller\MyResearchController
         if (is_object($response)) {
             return $response;
         }
+        $listId = $this->params()->fromRoute('id');
+        if ($listId === null) {
+            return $this->notFoundAction();
+        }
+        try {
+            $list = $this->getTable('UserList')->getExisting($listId);
+            if (!$list->isPublic()) {
+                return $this->createNoAccessView();
+            }
+        } catch (RecordMissingException $e) {
+            return $this->notFoundAction();
+        }
 
         // Process form submission:
         if ($this->formWasSubmitted('submit')) {
@@ -146,14 +158,10 @@ class ListController extends \Finna\Controller\MyResearchController
         if (!($user = $this->getUser())) {
             return $this->forceLogin();
         }
-        $listId = $this->params()->fromRoute('id');
+
         $this->setFollowupUrlToReferer();
         $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
-
-        $request = $this->getRequest()->getQuery()->toArray()
-            + $this->getRequest()->getPost()->toArray()
-            + ['id' => $listId];
-        $records = $runner->run($request, 'Favorites', $runner)->getResults();
+        $records = $runner->run(['id' => $listId], 'Favorites', $runner)->getResults();
 
         $view = $this->createViewModel(
             [
@@ -179,14 +187,8 @@ class ListController extends \Finna\Controller\MyResearchController
         }
 
         $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
-
-        // We want to merge together GET, POST and route parameters to
-        // initialize our search object:
-        $request = $this->getRequest()->getQuery()->toArray()
-            + $this->getRequest()->getPost()->toArray()
-            + ['id' => $this->params()->fromRoute('id')];
-
-        $drivers = $runner->run($request, 'Favorites', $runner)->getResults();
+        $sourceListId = intval($this->params()->fromRoute('id'));
+        $drivers = $runner->run(['id' => $sourceListId], 'Favorites', $runner)->getResults();
 
         // Perform the save operation:
         $post = $this->getRequest()->getPost()->toArray();
@@ -210,8 +212,8 @@ class ListController extends \Finna\Controller\MyResearchController
             return $this->redirect()->toUrl($url);
         }
 
-        // No followup info found?  Send back to record view:
-        return $this->redirectToList();
+        // No followup info found?  Send back to list view:
+        return $this->redirect()->toRoute('list-page', ['lid' => $sourceListId]);
     }
 
     /**
