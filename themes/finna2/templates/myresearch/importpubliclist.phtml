@@ -33,7 +33,8 @@
                     <?php endif; ?>
                 </select>
             <?php endif; ?>
-            <a class="btn btn-link" id="make-list" href="<?=$this->url('editList', ['id' => 'NEW'])?>"><?=$showLists ? $this->transEsc('or create a new list') : $this->transEsc('Create a List'); ?></a>
+            <?php $urlparams = urlencode($this->url('myresearch-import-public-list')); ?>
+            <a class="btn btn-link" id="make-list"  href="<?=$this->url('editList', ['id' => 'NEW']) . '?followup=' .  $urlparams ?>"><?=$this->transEsc('or create a new list'); ?></a>
         </div>
 
         <?php if ($showLists): ?>
