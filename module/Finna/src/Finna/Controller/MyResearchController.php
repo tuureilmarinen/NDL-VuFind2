@@ -1051,33 +1051,57 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
         $view = $this->createViewModel();
         $view->lists = $user->getLists();
         $view->url = "";
-        if($this->formWasSubmitted('import_public_list_form')){
+        if ($this->formWasSubmitted('import_public_list_form')) {
             $publicUserListUrl = $this->params()->fromPost('url');
             $view->url = $publicUserListUrl;
             $targetListId = $this->params()->fromPost('list');
             $matches = [];
-            $publicUserListUrlValidatorRegex = "/^https*:\/\/([a-z]+\.)?finna.fi\/(\w+\/)?List\/(.+)$/";
-            preg_match($publicUserListUrlValidatorRegex, $publicUserListUrl, $matches);
-            if(empty($matches)){
-                $this->flashMessenger()->addErrorMessage("import_favorites_error_invalid_url");
+            $urlValidator = "/^https*:\/\/([a-z]+\.)?finna.fi\/(\w+\/)?List\/(.+)$/";
+            preg_match(
+                $urlValidator,
+                $publicUserListUrl,
+                $matches
+            );
+            if (empty($matches)) {
+                $this
+                    ->flashMessenger()
+                    ->addErrorMessage("import_favorites_error_invalid_url");
                 return $view;
             }
             $sourceListId = intval(array_pop($matches));
             try {
-                $sourceList = $this->getTable('UserList')->getExisting($sourceListId);
+                $sourceList = $this
+                    ->getTable('UserList')
+                    ->getExisting($sourceListId);
                 if (!$sourceList->isPublic()) {
-                    $this->flashMessenger()->addErrorMessage("import_favorites_error_source_list_not_found");
+                    $this->flashMessenger()
+                        ->addErrorMessage(
+                            "import_favorites_error_source_list_not_found"
+                        );
                     return $view;
                 }
             } catch (\VuFind\Exception\RecordMissing $e) {
-                $this->flashMessenger()->addErrorMessage("import_favorites_error_source_list_not_found");
+                $this
+                    ->flashMessenger()
+                    ->addErrorMessage(
+                        "import_favorites_error_source_list_not_found"
+                    );
                 return $view;
             }
             $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
-            $results = $runner->run(['id' => $sourceListId], 'Favorites')->getResults();
-            $ids = array_map(function($i){
-                return sprintf("%s|%s", $i->getSourceIdentifier(), $i->getUniqueID());
-            }, $results);
+            $results = $runner->run(
+                ['id' => $sourceListId],
+                'Favorites'
+            )->getResults();
+            $ids = array_map(
+                function ($i) {
+                    return sprintf(
+                        "%s|%s",
+                        $i->getSourceIdentifier(),
+                        $i->getUniqueID()
+                    );
+                }, $results
+            );
             $drivers = $this->loadRecordByIds($ids);
             $favoritesService = $this->serviceLocator
                 ->get(\Finna\Favorites\FavoritesService::class);
@@ -1086,10 +1110,13 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             ];
             $favoritesService->saveMany($params, $user, $drivers);
             $driverCount = count($drivers);
-            if($driverCount>0){
+            if ($driverCount>0) {
                 $view->url = "";
             }
-            $msg = $this->translate('import_favorites_results_new_resources', ['%%count%%' => $driverCount]);
+            $msg = $this->translate(
+                'import_favorites_results_new_resources',
+                ['%%count%%' => $driverCount]
+            );
             $this->flashMessenger()->addInfoMessage($msg);
         }
         return $view;
@@ -1511,6 +1538,8 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
     /**
      * Load multiple records at once
      *
+     * @param array $ids Array of record ids
+     * 
      * @return array AbstractRecordDriver[]
      */
     protected function loadRecordByIds(array $ids): array
