@@ -324,10 +324,13 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      *
      * @return mixed
      */
-    public function editlistAction() {
+    public function editlistAction()
+    {
         $followup = $this->params()->fromQuery('followup');
         $view = parent::editlistAction();
-        if($view instanceof \Zend\Http\PhpEnvironment\Response && !empty($followup)){
+        if ($view instanceof \Zend\Http\PhpEnvironment\Response
+            && !empty($followup)
+        ) {
             return $this->redirect()->toUrl($followup);
         }
         $view->followup = $followup;

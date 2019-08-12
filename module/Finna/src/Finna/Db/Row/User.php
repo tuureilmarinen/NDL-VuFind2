@@ -108,7 +108,7 @@ class User extends \VuFind\Db\Row\User
     /**
      * Add/update a resource in the user's account.
      *
-     * @param array $resources        The resources to add/update \VuFind\Db\Row\Resource
+     * @param array                   $resources       The resources to add/update
      * @param \VuFind\Db\Row\UserList $list            The list to store the resource
      * in.
      * @param array                   $tagArray        An array of tags to associate
@@ -130,9 +130,14 @@ class User extends \VuFind\Db\Row\User
         // case:
         $linkTable = $this->getDbTable('UserResource');
         foreach ($resources as $resource) {
-            $linkTable->createOrUpdateLink($resource->id, $this->id, $list->id, $notes);
-            // If we're replacing existing tags, delete the old ones before adding the
-            // new ones:
+            $linkTable->createOrUpdateLink(
+                $resource->id,
+                $this->id,
+                $list->id,
+                $notes
+            );
+            // If we're replacing existing tags, delete the old ones before adding
+            // the new ones:
             if ($replaceExisting) {
                 $resource->deleteTags($this, $list->id);
             }

@@ -29,19 +29,28 @@
  */
 namespace Finna\Favorites;
 
+/**
+ *  Favorites service
+ *
+ * @category VuFind
+ * @package  Favorites
+ * @author   Tuure Ilmarinen <tuure.ilmarinen@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://vufind.org Main Page
+ */
 class FavoritesService extends \VuFind\Favorites\FavoritesService
 {
     /**
      * Save this record to the user's favorites.
      *
-     * @param array               $params Array with some or all of these keys:
+     * @param array                 $params  Array with some or all of these keys:
      *  <ul>
      *    <li>mytags - Tag array to associate with record (optional)</li>
      *    <li>notes - Notes to associate with record (optional)</li>
      *    <li>list - ID of list to save record into (omit to create new list)</li>
      *  </ul>
-     * @param \VuFind\Db\Row\User $user   The user saving the record
-     * @param array RecordDriver[]        $drivers Record drivers for record being saved
+     * @param \VuFind\Db\Row\User   $user    The user saving the record
+     * @param array  RecordDriver[] $drivers Record drivers for record being saved
      *
      * @return array list information
      */
@@ -62,7 +71,8 @@ class FavoritesService extends \VuFind\Favorites\FavoritesService
         );
 
         // Get or create a resource object as needed:
-        $resources = array_map(function($driver) {
+        $resources = array_map(
+            function ($driver) {
                 $resource = $this->resourceTable->findResource(
                     $driver->getUniqueId(),
                     $driver->getSourceIdentifier(),
@@ -73,7 +83,8 @@ class FavoritesService extends \VuFind\Favorites\FavoritesService
                 $this->persistToCache($driver, $resource);
                 return $resource;
             },
-        $drivers);
+            $drivers
+        );
 
         // Add the information to the user's account:
         $user->saveResources(

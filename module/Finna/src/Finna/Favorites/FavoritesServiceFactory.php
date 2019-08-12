@@ -28,8 +28,18 @@
 namespace Finna\Favorites;
 
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
 
+/**
+ * Favorites service
+ *
+ * @category VuFind
+ * @package  Favorites
+ * @author   Tuure Ilmarinen <tuure.ilmarinen@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://vufind.org Main Page
+ *
+ * @codeCoverageIgnore
+ */
 class FavoritesServiceFactory extends \VuFind\Favorites\FavoritesServiceFactory
 {
     /**
