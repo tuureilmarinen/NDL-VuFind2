@@ -1110,7 +1110,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             ];
             $favoritesService->saveMany($params, $user, $drivers);
             $driverCount = count($drivers);
-            if ($driverCount>0) {
+            if ($driverCount > 0) {
                 $view->url = "";
             }
             $msg = $this->translate(
@@ -1539,7 +1539,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      * Load multiple records at once
      *
      * @param array $ids Array of record ids
-     * 
+     *
      * @return array AbstractRecordDriver[]
      */
     protected function loadRecordByIds(array $ids): array
