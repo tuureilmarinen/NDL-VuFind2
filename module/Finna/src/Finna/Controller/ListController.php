@@ -161,7 +161,11 @@ class ListController extends \Finna\Controller\MyResearchController
 
         $this->setFollowupUrlToReferer();
         $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
-        $records = $runner->run(['id' => $listId], 'Favorites', $runner)->getResults();
+        $records = $runner->run(
+            ['id' => $listId],
+            'Favorites',
+            $runner
+        )->getResults();
 
         $view = $this->createViewModel(
             [
@@ -188,7 +192,11 @@ class ListController extends \Finna\Controller\MyResearchController
 
         $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
         $sourceListId = intval($this->params()->fromRoute('id'));
-        $drivers = $runner->run(['id' => $sourceListId], 'Favorites', $runner)->getResults();
+        $drivers = $runner->run(
+            ['id' => $sourceListId],
+            'Favorites',
+            $runner
+        )->getResults();
 
         // Perform the save operation:
         $post = $this->getRequest()->getPost()->toArray();
