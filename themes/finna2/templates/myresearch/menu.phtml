@@ -7,13 +7,19 @@
     $showLibraryTabs = $this->ils()->loginAvailable();
     $listOpen = $this->active == 'favorites' || substr($this->active, 0, 4) == 'list';
     //Get the data for vertical menu to show lists on correct site
-    if ($listOpen) {
+    if ($listOpen && $this->results) {
       $list = $this->results->getListObject();
       $activeId = $list['id'];
       $activeUrl = $this->serverUrl() . $this->url('home') . 'List/' . $activeId;
       $activePublic = $list['public'];
       $isDefaultList = !isset($list);
       $lists = $user ? $user->getLists() : null;
+    }
+    if($listOpen){
+      $lists = $user ? $user->getLists() : null;
+      $isDefaultList=false;
+      $activeId=0;
+      $activePublic=0;
     }
 ?>
 <?php ob_start(); ?>
@@ -179,11 +185,6 @@
       <?php endif; ?>
     </div>
   </li>
-  <li class="menu-logout hidden-xs hidden-sm">
-    <a href="<?=$this->url('myresearch-import-public-list')?>" class="list-group-item">
-      <?=$this->transEsc('import_favorites_from_public_list')?>
-    </a>
-  </li>
 <?php endif; ?>
 <li class="menu-logout hidden-xs hidden-sm">
   <a href="<?=$this->url('myresearch-logout')?>" class="list-group-item">
@@ -208,7 +209,6 @@
             case 'fines': echo $this->transEsc('Fines'); break;
             case 'librarycards': echo $this->transEsc('Library Cards'); break;
             case 'favorites': echo $this->transEsc('Favorites'); break;
-            case 'importFavorites': echo $this->transEsc('import_favorites_from_public_list'); break;
             case 'history': echo $this->transEsc('history_saved_searches'); break;
             default:
                 if (substr($this->active, 0, 4) == 'list') {

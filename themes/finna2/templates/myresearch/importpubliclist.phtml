@@ -5,10 +5,10 @@
 ?>
 
 <!-- Leftside navigationbar -->
-<?= $this->context($this)->renderInContext("myresearch/menu.phtml", ['active' => 'importFavorites']); ?>
+<?= $this->context($this)->renderInContext("myresearch/menu.phtml", ['active' => 'favorites']); ?>
 
 <div class="mainbody right myresearch-body">
-    <h1><?= $this->transEsc("import_favorites_from_public_list") ?></h1>
+    <h2><?= $this->transEsc("import_favorites_from_public_list") ?></h2>
     <?=$this->flashmessages()?>
     <form name="import_public_list_form" class="inline" method="post">
         <div class="form-group">
@@ -34,7 +34,9 @@
                 </select>
             <?php endif; ?>
             <?php $urlparams = urlencode($this->url('myresearch-import-public-list')); ?>
-            <a class="btn btn-link" id="make-list"  href="<?=$this->url('editList', ['id' => 'NEW']) . '?followup=' . $urlparams ?>"><?=$this->transEsc('or create a new list'); ?></a>
+            <a class="btn btn-link" id="make-list" data-lightbox data-toggle="modal" data-target="#modal" rel="nofollow" href="<?=$this->url('editList', ['id' => 'NEW']) . '?followup=' . $urlparams ?>"><?=$this->transEsc('or create a new list'); ?></a>
+            <a class="btn btn-link" id="make-list2" data-lightbox rel="nofollow" href="<?=$this->url('editList', ['id' => 'NEW']) . '?followup=' . $urlparams ?>"><?=$this->transEsc('or create a new list'); ?>light</a>
+
         </div>
 
         <?php if ($showLists): ?>
