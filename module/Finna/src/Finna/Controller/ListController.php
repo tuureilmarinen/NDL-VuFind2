@@ -149,17 +149,11 @@ class ListController extends \Finna\Controller\MyResearchController
             return $this->notFoundAction();
         }
 
-        // Process form submission:
-        if ($this->formWasSubmitted('submit')) {
-            return $this->processSave();
-        }
-
         // Retrieve user object and force login if necessary:
         if (!($user = $this->getUser())) {
             return $this->forceLogin();
         }
 
-        $this->setFollowupUrlToReferer();
         $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
         $records = $runner->run(
             ['id' => $listId],
@@ -167,6 +161,19 @@ class ListController extends \Finna\Controller\MyResearchController
             $runner
         )->getResults();
 
+        $this->setFollowupUrlToReferer();
+
+        // Process form submission:
+        if ($this->formWasSubmitted('submit')) {
+            $this->processSave($user, $records);
+            // redirect to followup url saved in saveAction
+            if ($url = $this->getFollowupUrl()) {
+                $this->clearFollowupUrl();
+                return $this->redirect()->toUrl($url);
+            }
+            // No followup info found?  Send back to list view:
+            return $this->redirect()->toRoute('list-page', ['lid' => $sourceListId]);
+        }
         $view = $this->createViewModel(
             [
                 'listId' => $listId,
@@ -181,28 +188,15 @@ class ListController extends \Finna\Controller\MyResearchController
     /**
      * ProcessSave -- store the results of the Save action.
      *
-     * @return mixed
+     * @return void
      */
-    protected function processSave()
+    protected function processSave($user, array $records): void
     {
-        // Retrieve user object and force login if necessary:
-        if (!($user = $this->getUser())) {
-            return $this->forceLogin();
-        }
-
-        $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
-        $sourceListId = intval($this->params()->fromRoute('id'));
-        $drivers = $runner->run(
-            ['id' => $sourceListId],
-            'Favorites',
-            $runner
-        )->getResults();
-
         // Perform the save operation:
         $post = $this->getRequest()->getPost()->toArray();
         $favorites = $this->serviceLocator
             ->get(\VuFind\Favorites\FavoritesService::class);
-        $results = $favorites->saveMany($post, $user, $drivers);
+        $results = $favorites->saveMany($post, $user, $records);
 
         // Display a success status message:
         $listUrl = $this->url()->fromRoute('userList', ['id' => $results['listId']]);
@@ -213,15 +207,6 @@ class ListController extends \Finna\Controller\MyResearchController
             . $this->translate('go_to_list') . '</a>.'
         ];
         $this->flashMessenger()->addMessage($message, 'success');
-
-        // redirect to followup url saved in saveAction
-        if ($url = $this->getFollowupUrl()) {
-            $this->clearFollowupUrl();
-            return $this->redirect()->toUrl($url);
-        }
-
-        // No followup info found?  Send back to list view:
-        return $this->redirect()->toRoute('list-page', ['lid' => $sourceListId]);
     }
 
     /**

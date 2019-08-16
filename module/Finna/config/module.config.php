@@ -259,7 +259,7 @@ $config = [
             'Finna\Role\PermissionManager' => 'VuFind\Role\PermissionManagerFactory',
             'Finna\Search\Memory' => 'VuFind\Search\MemoryFactory',
             'Finna\Search\Solr\HierarchicalFacetHelper' => 'Zend\ServiceManager\Factory\InvokableFactory',
-            'VuFind\Favorites\FavoritesService' => 'Finna\Favorites\FavoritesServiceFactory',
+            'Finna\Favorites\FavoritesService' => 'Finna\Favorites\FavoritesServiceFactory',
 
             'FinnaSearch\Service' => 'VuFind\Service\SearchServiceFactory',
 
