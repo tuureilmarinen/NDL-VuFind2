@@ -28,7 +28,7 @@
  */
 namespace Finna\AjaxHandler;
 
-use Finna\Favorites\FavoritesService;
+use VuFind\Favorites\FavoritesService;
 use VuFind\Db\Row\User;
 use VuFind\Db\Table\Search as SearchTable;
 use VuFind\Db\Table\UserList as UserListTable;

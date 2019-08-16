@@ -259,7 +259,7 @@ $config = [
             'Finna\Role\PermissionManager' => 'VuFind\Role\PermissionManagerFactory',
             'Finna\Search\Memory' => 'VuFind\Search\MemoryFactory',
             'Finna\Search\Solr\HierarchicalFacetHelper' => 'Zend\ServiceManager\Factory\InvokableFactory',
-            'Finna\Favorites\FavoritesService' => 'Finna\Favorites\FavoritesServiceFactory',
+            'VuFind\Favorites\FavoritesService' => 'Finna\Favorites\FavoritesServiceFactory',
 
             'FinnaSearch\Service' => 'VuFind\Service\SearchServiceFactory',
 
@@ -275,6 +275,7 @@ $config = [
             'VuFind\Config\SearchSpecsReader' => 'Finna\Config\SearchSpecsReader',
             'VuFind\Config\YamlReader' => 'Finna\Config\YamlReader',
             'VuFind\Cover\Loader' => 'Finna\Cover\Loader',
+            'VuFind\Favorites\FavoritesService' => 'Finna\Favorites\FavoritesService',
             'VuFind\Form\Form' => 'Finna\Form\Form',
             'VuFind\ILS\Connection' => 'Finna\ILS\Connection',
             'VuFind\Mailer\Mailer' => 'Finna\Mailer\Mailer',

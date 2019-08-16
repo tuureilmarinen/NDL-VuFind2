@@ -27,7 +27,7 @@
  */
 namespace Finna\AjaxHandler;
 
-use Finna\Favorites\FavoritesService;
+use VuFind\Favorites\FavoritesService;
 use VuFind\Db\Row\User;
 use VuFind\Db\Table\UserList;
 use VuFind\I18n\Translator\TranslatorAwareInterface;

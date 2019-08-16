@@ -201,7 +201,7 @@ class ListController extends \Finna\Controller\MyResearchController
         // Perform the save operation:
         $post = $this->getRequest()->getPost()->toArray();
         $favorites = $this->serviceLocator
-            ->get(\Finna\Favorites\FavoritesService::class);
+            ->get(\VuFind\Favorites\FavoritesService::class);
         $results = $favorites->saveMany($post, $user, $drivers);
 
         // Display a success status message:

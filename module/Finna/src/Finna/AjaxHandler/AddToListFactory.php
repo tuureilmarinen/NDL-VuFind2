@@ -66,7 +66,7 @@ class AddToListFactory implements \Zend\ServiceManager\Factory\FactoryInterface
         $capabilities = $container->get(\VuFind\Config\AccountCapabilities::class);
         return new $requestedName(
             $tablePluginManager->get(\VuFind\Db\Table\UserList::class),
-            $container->get(\Finna\Favorites\FavoritesService::class),
+            $container->get(\VuFind\Favorites\FavoritesService::class),
             $container->get(\VuFind\Record\Loader::class),
             $container->get(\VuFind\Auth\Manager::class)->isLoggedIn(),
             $capabilities->getListSetting() !== 'disabled'
