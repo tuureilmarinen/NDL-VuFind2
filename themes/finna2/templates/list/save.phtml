@@ -3,7 +3,7 @@
   $this->headTitle($this->translate('import_favorites_from_list'));
 ?>
 <h2><?=$this->translate("import_favorites_from_list") ?></h2>
-<form class="form-record-save" method="post" action="<?=$this->url('list', ['id' => $this->listId])?>" name="cloneList" data-lightbox-onclose="checkSaveStatusesCallback">
+<form class="form-record-save" method="post" action="<?=$this->url('list-save', ['id' => $this->listId])?>" name="cloneList" data-lightbox-onclose="checkSaveStatusesCallback">
   <input type="hidden" name="submit" value="1" />
   <input type="hidden" name="list" value="<?=$this->listId ?>" />
   <?php $showLists = (!empty($this->lists)); ?>
@@ -23,7 +23,7 @@
       <?php endif; ?>
       </select>
     <?php endif; ?>
-    <?php $urlparams = urlencode($this->url('list', ['id' => $this->listId])); ?>
+    <?php $urlparams = urlencode($this->url('list-save', ['id' => $this->listId])); ?>
     <a class="btn btn-link" id="make-list"  href="<?=$this->url('editList', ['id' => 'NEW']) . '?followup=' . $urlparams ?>"><?=$this->transEsc('or create a new list'); ?></a>
   </div>
 

@@ -57,7 +57,7 @@ $config = [
                     ]
                 ],
             ],
-            'list' => [
+            'list-save' => [
                 'type'    => 'Zend\Router\Http\Segment',
                 'options' => [
                     'route'    => '/List/[:id]/save',

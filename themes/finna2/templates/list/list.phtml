@@ -38,7 +38,7 @@ $this->headScript()->prependScript("var listId = {$list->id}; var publicList = 1
         <div class="hidden-xs col-sm-2 col-lg-3">
         </div>
         <div class="col-xs-12 col-sm-4 col-lg-3">
-          <a class="btn btn-primary btn-sm pull-right btn-block" role="button" href="<?= $this->url('list', [ 'id' => $list->id ]) ?>" title="<?=$this->transEsc('import_favorites_from_list')?>"><?=$this->transEsc('import_favorites_from_list')?></a>
+          <a class="btn btn-primary btn-sm pull-right btn-block" role="button" href="<?= $this->url('list-save', [ 'id' => $list->id ]) ?>" title="<?=$this->transEsc('import_favorites_from_list')?>"><?=$this->transEsc('import_favorites_from_list')?></a>
         </div>
       </div>
     </div>
