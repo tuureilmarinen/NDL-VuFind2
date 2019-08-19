@@ -71,7 +71,7 @@ class ImportFavoritesFactory implements \Zend\ServiceManager\Factory\FactoryInte
             $tablePluginManager->get(\VuFind\Db\Table\UserResource::class),
             $container->get(\VuFind\Search\Results\PluginManager::class),
             $container->get(\VuFind\Record\Loader::class),
-            $container->get(\Finna\Favorites\FavoritesService::class)
+            $container->get(\VuFind\Favorites\FavoritesService::class)
         );
     }
 }

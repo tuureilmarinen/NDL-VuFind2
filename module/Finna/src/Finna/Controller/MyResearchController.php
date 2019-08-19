@@ -326,14 +326,13 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      */
     public function editlistAction()
     {
-        $followup = $this->params()->fromQuery('followup');
         $view = parent::editlistAction();
         if ($view instanceof \Zend\Http\PhpEnvironment\Response
-            && !empty($followup)
+            && !empty($url = $this->getFollowupUrl())
         ) {
-            return $this->redirect()->toUrl($followup);
+            return $this->redirect()->toUrl($url);
         }
-        $view->followup = $followup;
+        $this->setFollowupUrlToReferer();
         return $view;
     }
 
@@ -411,7 +410,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             ) {
                 $this->flashMessenger()->addErrorMessage('An error has occurred');
             } else {
-                return $this->redirect()->toRoute('userList', ['id' => $listID]);
+                $this->flashMessenger()->addMessage('list_order_saved', 'success');
             }
         }
 
@@ -430,8 +429,14 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             };
             $results = $runner->run($request, 'Favorites', $setupCallback);
 
+            $url = $this->getViewRenderer()->plugin('url');
+            $listUrl = $url('home') . 'MyResearch/MyList/' . $listId;
+
             return $this->createViewModel(
-                ['params' => $results->getParams(), 'results' => $results]
+                ['params' => $results->getParams(),
+                 'results' => $results,
+                 'listUrl' => $listUrl
+                ]
             );
         } catch (ListPermissionException $e) {
             if (!$this->getUser()) {
