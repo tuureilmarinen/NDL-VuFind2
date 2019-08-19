@@ -28,7 +28,7 @@ $this->headScript()->prependScript("var listId = {$list->id}; var publicList = 1
     </div>
 </div>
 <div class="search-controls">
-    <div style="display: flex; justify-content:space-between; flex-wrap: wrap;" class="control-container text-right hidden-print">
+    <div class="control-container text-right hidden-print mylist-controls">
       <div>
         <?=$this->render('search/controls/view.phtml')?>
         <?=$this->render('search/controls/sort.phtml')?>
