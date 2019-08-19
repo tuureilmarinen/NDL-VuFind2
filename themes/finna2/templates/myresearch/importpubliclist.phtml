@@ -34,8 +34,7 @@
                 </select>
             <?php endif; ?>
             <?php $urlparams = urlencode($this->url('myresearch-import-public-list')); ?>
-            <a class="btn btn-link" id="make-list" data-lightbox data-toggle="modal" data-target="#modal" rel="nofollow" href="<?=$this->url('editList', ['id' => 'NEW']) . '?followup=' . $urlparams ?>"><?=$this->transEsc('or create a new list'); ?></a>
-            <a class="btn btn-link" id="make-list2" data-lightbox rel="nofollow" href="<?=$this->url('editList', ['id' => 'NEW']) . '?followup=' . $urlparams ?>"><?=$this->transEsc('or create a new list'); ?>light</a>
+            <a class="btn btn-link" id="make-list2" data-lightbox rel="nofollow" href="<?=$this->url('editList', ['id' => 'NEW']) ?>"><?=$this->transEsc('or create a new list'); ?></a>
 
         </div>
 
