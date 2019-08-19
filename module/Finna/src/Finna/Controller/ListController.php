@@ -191,6 +191,9 @@ class ListController extends \Finna\Controller\MyResearchController
     /**
      * ProcessSave -- store the results of the Save action.
      *
+     * @param VuFind\Db\Row\User $user    User
+     * @param array              $records Records to be saved in userlist
+     *
      * @return void
      */
     protected function processSave($user, array $records): void
