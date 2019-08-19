@@ -166,6 +166,9 @@ class ListController extends \Finna\Controller\MyResearchController
         // Process form submission:
         if ($this->formWasSubmitted('submit')) {
             $this->processSave($user, $records);
+            if ($this->params()->fromQuery('layout', 'false') == 'lightbox') {
+                return $this->getResponse()->setStatusCode(204);
+            }
             // redirect to followup url saved in saveAction
             if ($url = $this->getFollowupUrl()) {
                 $this->clearFollowupUrl();

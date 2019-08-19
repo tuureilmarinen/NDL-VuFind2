@@ -144,7 +144,11 @@ VuFind.register('lightbox', function Lightbox() {
     _xhr.always(function lbAjaxAlways() { _xhr = false; })
       .done(function lbAjaxDone(content, status, jq_xhr) {
         var errorMsgs = [];
-        if (jq_xhr.status !== 205) {
+        if (jq_xhr.status === 204) {
+          // No content, close lightbox
+          close();
+          return;
+        } else if (jq_xhr.status !== 205) {
           var testDiv = $('<div/>').html(content);
           errorMsgs = testDiv.find('.flash-message.alert-danger:not([data-lightbox-ignore])');
           // Place Hold error isolation
