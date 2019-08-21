@@ -1048,7 +1048,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
      *
      * @return mixed
      */
-    public function importpubliclistAction()
+    public function importPublicListAction()
     {
         if (!($user = $this->getUser())) {
             return $this->forceLogin();

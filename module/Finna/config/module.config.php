@@ -140,7 +140,7 @@ $config = [
                     'route'    => '/MyResearch/ImportPublicList',
                     'defaults' => [
                         'controller' => 'MyResearch',
-                        'action'     => 'Importpubliclist',
+                        'action'     => 'ImportPublicList',
                     ]
                 ],
             ],
