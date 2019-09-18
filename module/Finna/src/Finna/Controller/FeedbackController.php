@@ -75,6 +75,24 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
      */
     public function formAction()
     {
+        $formId = $this->params()->fromRoute('id', $this->params()->fromQuery('id'));
+        if (!$formId) {
+            $formId = 'FeedbackSite';
+        }
+        $form = $this->serviceLocator->get(\VuFind\Form\Form::class);
+        $form->setFormId($formId);
+        $oneSubmissionPerUser = $form->oneSubmissionPerUser() && $form->showOnlyForLoggedUsers();
+        $user = $this->getUser();
+        if($oneSubmissionPerUser && $user){
+            $userId = $user ? $user->id : null;
+            $url = rtrim($this->getServerUrl('home'), '/');
+            $url = substr($url, strpos($url, '://') + 3);
+            $feedback = $this->getTable('Feedback');
+            $this->flashMessenger()->addErrorMessage('feedback_one_submission_per_user');
+            $errorView = parent::createViewModel(compact('form', 'formId', 'user'));
+            $errorView->setTemplate('feedback/error');
+            return $errorView;
+        }
         $view = parent::formAction();
 
         // Set record driver (used by FeedbackRecord form)

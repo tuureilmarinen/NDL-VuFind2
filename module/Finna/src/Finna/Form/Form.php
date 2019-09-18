@@ -499,4 +499,8 @@ class Form extends \VuFind\Form\Form
 
         return $data;
     }
+
+    public function oneSubmissionPerUser() : bool {
+        return true;
+    }
 }
