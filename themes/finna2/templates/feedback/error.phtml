@@ -3,11 +3,22 @@
   $title = !empty($title)
     ? $this->transEsc($title) : null;
   $lightbox = $this->layout()->getTemplate() === 'layout/lightbox';
+  $form = $this->form;
+  $form->prepare();
+
+  $title = $form->getTitle();
+  $title = !empty($title)
+    ? $this->transEsc($title) : null;
 ?>
 <?php if (!$lightbox): ?>
 <div class="feedback-content">
 <?php endif; ?>
-  <?=$this->flashmessages()?>
+<?php if ($title): ?>
+    <?php $this->headTitle($title); ?>
+    <?php $headTag = $this->inLightbox ? 'h2' : 'h1'; ?>
+    <<?=$headTag?>><?=$title?></<?=$headTag?>>
+<?php endif; ?>
+<?=$this->flashmessages()?>
 <?php if (!$lightbox): ?>
 </div>
 <?php endif; ?>

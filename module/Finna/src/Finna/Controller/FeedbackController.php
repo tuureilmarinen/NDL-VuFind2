@@ -88,10 +88,13 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
             $url = rtrim($this->getServerUrl('home'), '/');
             $url = substr($url, strpos($url, '://') + 3);
             $feedback = $this->getTable('Feedback');
-            $this->flashMessenger()->addErrorMessage('feedback_one_submission_per_user');
-            $errorView = parent::createViewModel(compact('form', 'formId', 'user'));
-            $errorView->setTemplate('feedback/error');
-            return $errorView;
+            $userFeedbacksCurrrentForm = $feedback->getFeedbacksByUserAndFormAndUrl($userId, $formId, $url);
+            if ($userFeedbacksCurrrentForm->count() > 0) {
+                $this->flashMessenger()->addErrorMessage('feedback_one_submission_per_user');
+                $errorView = parent::createViewModel(compact('form', 'formId', 'user'));
+                $errorView->setTemplate('feedback/error');
+                return $errorView;
+            }
         }
         $view = parent::formAction();
 
