@@ -508,8 +508,15 @@ class Form extends \VuFind\Form\Form
 
         return $data;
     }
-
-    public function oneSubmissionPerUser() : bool {
-        return true;
+    /**
+     * Tells whether user is allowed to submit form only once.
+     *
+     * @return bool
+     */
+    public function oneSubmissionPerUser() : bool
+    {
+        $config = $this->getFormConfig($this->formId);
+        return \array_key_exists('oneSubmissionPerUser', $config)
+            && $config['oneSubmissionPerUser'];
     }
 }
