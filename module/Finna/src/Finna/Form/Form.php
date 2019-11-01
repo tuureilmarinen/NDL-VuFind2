@@ -508,6 +508,7 @@ class Form extends \VuFind\Form\Form
 
         return $data;
     }
+
     /**
      * Tells whether user is allowed to submit form only once.
      *

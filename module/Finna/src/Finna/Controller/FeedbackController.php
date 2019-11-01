@@ -81,17 +81,23 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
         }
         $form = $this->serviceLocator->get(\VuFind\Form\Form::class);
         $form->setFormId($formId);
-        $oneSubmissionPerUser = $form->oneSubmissionPerUser() && $form->showOnlyForLoggedUsers();
+        $oneSubmissionPerUser = $form->oneSubmissionPerUser()
+            && $form->showOnlyForLoggedUsers();
         $user = $this->getUser();
-        if($oneSubmissionPerUser && $user){
+        if ($oneSubmissionPerUser && $user) {
             $userId = $user ? $user->id : null;
             $url = rtrim($this->getServerUrl('home'), '/');
             $url = substr($url, strpos($url, '://') + 3);
             $feedback = $this->getTable('Feedback');
-            $userFeedbacksCurrrentForm = $feedback->getFeedbacksByUserAndFormAndUrl($userId, $formId, $url);
+            $userFeedbacksCurrrentForm = $feedback->getFeedbacksByUserAndFormAndUrl(
+                $userId, $formId, $url
+            );
             if ($userFeedbacksCurrrentForm->count() > 0) {
-                $this->flashMessenger()->addErrorMessage('feedback_one_submission_per_user');
-                $errorView = parent::createViewModel(compact('form', 'formId', 'user'));
+                $this->flashMessenger()
+                    ->addErrorMessage('feedback_one_submission_per_user');
+                $errorView = parent::createViewModel(
+                    compact('form', 'formId', 'user')
+                );
                 $errorView->setTemplate('feedback/error');
                 return $errorView;
             }
