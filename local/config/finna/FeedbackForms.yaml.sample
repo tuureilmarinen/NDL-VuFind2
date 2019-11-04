@@ -30,7 +30,7 @@
 #     email (string) Recipient email address (default = recipient_email setting from
 #                    config.ini [Feedback] section)
 #   reminderEmail (string) Email address where reminders about pending feedbacks are sent.
-#                          Possible only when 'sendMethod' is database.
+#                          Possible only when 'sendMethod' is 'database'.
 #
 #   response (string) Reponse after form submit (translation key)
 #
@@ -92,7 +92,7 @@ forms:
     senderInfoHelp: feedback_info
     hideSenderInfo: false
     sendMethod: email
-    #reminderEmail: sample@example.com
+    #reminderEmail: feedback@myuniversity.edu
     #help:
     #  pre: feedback_help_pre
     #  post: feedback_help_post
