@@ -83,26 +83,26 @@ class Feedback extends \VuFind\Db\Table\Gateway
     }
 
     /**
-     * Get information saved in a user's favorites for a particular record.
+     * Check if user has already submitted this form
      *
-     * @param int    $userId User ID (to limit results to a particular
-     * user).
+     * @param int    $userId User ID
      * @param string $form   ID of form being checked.
      * @param string $url    UI URL
      *
-     * @return \Zend\Db\ResultSet\AbstractResultSet
+     * @return bool
      */
-    public function getFeedbacksByUserAndFormAndUrl(
+    public function userHasFeedbacks(
         int $userId,
         string $form,
         string $url
-    ) : \Zend\Db\ResultSet\AbstractResultSet {
+    ) : bool {
         $callback = function ($select) use ($userId, $form, $url) {
             $select->columns(['*']);
             $select->where->equalTo('ui_url', $url);
             $select->where->equalTo('form', $form);
             $select->where->equalTo('user_id', $userId);
+            $select->limit(1);
         };
-        return $this->select($callback);
+        return count($this->select($callback)) > 0;
     }
 }

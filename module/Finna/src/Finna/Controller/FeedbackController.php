@@ -75,24 +75,14 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
      */
     public function formAction()
     {
-        $formId = $this->params()->fromRoute('id', $this->params()->fromQuery('id'));
-        if (!$formId) {
-            $formId = 'FeedbackSite';
-        }
-        $form = $this->serviceLocator->get(\VuFind\Form\Form::class);
-        $form->setFormId($formId);
+        $form = $this->_getFrom();
         $oneSubmissionPerUser = $form->oneSubmissionPerUser()
             && $form->showOnlyForLoggedUsers();
         $user = $this->getUser();
         if ($oneSubmissionPerUser && $user) {
-            $userId = $user ? $user->id : null;
-            $url = rtrim($this->getServerUrl('home'), '/');
-            $url = substr($url, strpos($url, '://') + 3);
+            $url = $this->_getViewUrl();
             $feedback = $this->getTable('Feedback');
-            $userFeedbacksCurrrentForm = $feedback->getFeedbacksByUserAndFormAndUrl(
-                $userId, $formId, $url
-            );
-            if ($userFeedbacksCurrrentForm->count() > 0) {
+            if ($feedback->userHasFeedbacks($user->id, $form->getFormId(), $url)) {
                 $this->flashMessenger()
                     ->addErrorMessage('feedback_one_submission_per_user');
                 $errorView = parent::createViewModel(
@@ -164,12 +154,8 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
         $recipientName, $recipientEmail, $senderName, $senderEmail,
         $replyToName, $replyToEmail, $emailSubject, $emailMessage
     ) {
-        $formId = $this->params()->fromRoute('id', $this->params()->fromQuery('id'));
-        if (!$formId) {
-            $formId = 'FeedbackSite';
-        }
-        $form = $this->serviceLocator->get(\VuFind\Form\Form::class);
-        $form->setFormId($formId);
+        $form = $this->_getFrom();
+        $formId = $form->getFormId();
 
         if ($formId === 'FeedbackRecord') {
             // Resolve recipient email from datasource configuration
@@ -204,8 +190,7 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
         $user = $this->getUser();
         $userId = $user ? $user->id : null;
 
-        $url = rtrim($this->getServerUrl('home'), '/');
-        $url = substr($url, strpos($url, '://') + 3);
+        $url = $this->_getViewUrl();
 
         $formFields = $form->getFormFields();
 
@@ -229,5 +214,32 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
         );
 
         return [true, null];
+    }
+
+    /**
+     * Gets form instance
+     *
+     * @return Form
+     */
+    private function _getFrom() : Form
+    {
+        $formId = $this->params()->fromRoute('id', $this->params()->fromQuery('id'));
+        if (!$formId) {
+            $formId = 'FeedbackSite';
+        }
+        $form = $this->serviceLocator->get(\VuFind\Form\Form::class);
+        $form->setFormId($formId);
+        return $form;
+    }
+
+    /**
+     * Gets view url
+     *
+     * @return string
+     */
+    private function _getViewUrl() : string
+    {
+        $url = rtrim($this->getServerUrl('home'), '/');
+        return substr($url, strpos($url, '://') + 3);
     }
 }

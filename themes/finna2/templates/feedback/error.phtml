@@ -1,17 +1,9 @@
+<!-- START of: finna - feedback/error.phtml -->
 <?php
-  $title = $form->getTitle();
-  $title = !empty($title)
-    ? $this->transEsc($title) : null;
-  $lightbox = $this->layout()->getTemplate() === 'layout/lightbox';
-  $form = $this->form;
-  $form->prepare();
-
-  $title = $form->getTitle();
-  $title = !empty($title)
-    ? $this->transEsc($title) : null;
+  $title = $this->transEsc($this->form->getTitle() ?? '');
 ?>
-<?php if (!$lightbox): ?>
-<div class="feedback-content">
+<?php if (!$this->inLightbox): ?>
+  <div class="feedback-content">
 <?php endif; ?>
 <?php if ($title): ?>
     <?php $this->headTitle($title); ?>
@@ -19,6 +11,7 @@
     <<?=$headTag?>><?=$title?></<?=$headTag?>>
 <?php endif; ?>
 <?=$this->flashmessages()?>
-<?php if (!$lightbox): ?>
-</div>
+<?php if (!$this->inLightbox): ?>
+  </div>
 <?php endif; ?>
+<!-- END of: finna - feedback/error.phtml -->

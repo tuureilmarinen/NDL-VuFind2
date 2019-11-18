@@ -117,6 +117,16 @@ class Form extends \VuFind\Form\Form
     }
 
     /**
+     * Get form id
+     *
+     * @return string
+     */
+    public function getFormId() : string
+    {
+        return $this->formId;
+    }
+
+    /**
      * Set institution
      *
      * @param string $institution Institution
@@ -517,7 +527,6 @@ class Form extends \VuFind\Form\Form
     public function oneSubmissionPerUser() : bool
     {
         $config = $this->getFormConfig($this->formId);
-        return \array_key_exists('oneSubmissionPerUser', $config)
-            && $config['oneSubmissionPerUser'];
+        return !empty($config['oneSubmissionPerUser']);
     }
 }
