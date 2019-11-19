@@ -19,6 +19,15 @@ finna.imagePaginator = (function imagePaginator() {
     recordType: 'default-type'
   };
 
+  var translations = {
+    image: '',
+    close: '',
+    next_record: '',
+    previous_record: '',
+    no_cover: '',
+    isSet: false
+  };
+
   /**
    * Initializer function
    *
@@ -74,6 +83,16 @@ finna.imagePaginator = (function imagePaginator() {
    * @param {object} settings 
    */
   function initPaginator(images, settings) {
+    if (translations.isSet === false) {
+      translations = {
+        image: VuFind.translate('Image'),
+        close: VuFind.translate('close'),
+        next_record: VuFind.translate('Next Record'),
+        previous_record: VuFind.translate('Previous Record'),
+        no_cover: VuFind.translate('No Cover Image'),
+        isSet: true
+      };
+    }
     if (settings.recordType === 'marc') {
       settings.imagesOnPopup = 4;
     }
@@ -164,16 +183,9 @@ finna.imagePaginator = (function imagePaginator() {
    */
   FinnaPaginator.prototype.setBrowseButtons = function setBrowseButtons(isList) {
     var _ = this;
-
     var state = typeof isList !== "undefined" && isList !== false;
-
-    if (state) {
-      _.leftBrowseBtn.prop('disabled', true);
-      _.rightBrowseBtn.prop('disabled', true);
-    } else {
-      _.leftBrowseBtn.prop('disabled', _.openImageIndex < 1);
-      _.rightBrowseBtn.prop('disabled', _.openImageIndex >= _.images.length - 1);
-    }
+    _.leftBrowseBtn.prop('disabled', state || _.openImageIndex < 1);
+    _.rightBrowseBtn.prop('disabled', state || _.openImageIndex >= _.images.length - 1);
   };
 
   /**
@@ -294,10 +306,12 @@ finna.imagePaginator = (function imagePaginator() {
 
     var img = new Image();
     img.src = image.data('largest');
+    $(img).attr('alt', image.data('alt'));
     img.onload = function onLoad() {
       if (this.naturalWidth && this.naturalWidth === 10 && this.naturalHeight === 10) {
         _.nonZoomableHolder.addClass('no-image');
         icon.show();
+        $(this).attr('alt', translations.no_cover);
       } else if (_.nonZoomableHolder.hasClass('no-image')) {
         icon.hide();
       }
@@ -356,9 +370,11 @@ finna.imagePaginator = (function imagePaginator() {
       var w = this.naturalWidth;
       var zoomLevel = 10;
 
+      var alt = h === 10 && w === 10 ? translations.no_cover : image.data('alt');
       var bounds = new L.LatLngBounds(_.leafletHolder.unproject([0, h], zoomLevel), _.leafletHolder.unproject([w, 0], zoomLevel));
+
       _.leafletHolder.flyToBounds(bounds, {animate: false});
-      L.imageOverlay(img.src, bounds).addTo(_.leafletHolder);
+      L.imageOverlay(img.src, bounds, {alt: alt}).addTo(_.leafletHolder);
       _.leafletHolder.invalidateSize(false);
       _.leafletLoader.removeClass('loading');
       _.leafletHolder.setMaxBounds(bounds);
@@ -366,6 +382,7 @@ finna.imagePaginator = (function imagePaginator() {
       _.leafletHolder.setMinZoom(_.leafletHolder.getZoom());
       _.setZoomButtons();
     };
+    _.setBrowseButtons();
   };
 
   /**
@@ -461,7 +478,7 @@ finna.imagePaginator = (function imagePaginator() {
     if (typeof isPopup === 'undefined' || !isPopup) {
       infoText = imageIndex + " / " + _.images.length;
     } else {
-      infoText = VuFind.translate('Image') + ' ' + imageIndex + ' / ' + _.images.length;
+      infoText = translations.image + ' ' + imageIndex + ' / ' + _.images.length;
     }
     _.pagerInfo.find('.image-index').html(infoText);
   };
@@ -514,14 +531,19 @@ finna.imagePaginator = (function imagePaginator() {
   FinnaPaginator.prototype.changeTriggerImage = function changeTriggerImage(imagePopup) {
     var _ = this;
     var img = _.trigger.find('img');
-    img.attr('data-src', imagePopup.attr('href')).css('opacity', 0.5);
-    img.attr('alt', imagePopup.find('img').attr('alt'));
+    img.attr('data-src', imagePopup.attr('href'));
+    img.attr('alt', imagePopup.data('alt'));
+
+    if (_.openImageIndex !== imagePopup.attr('index')) {
+      img.css('opacity', 0.5);
+    }
 
     function setImageProperties(image) {
       $(image).css('opacity', '');
       _.setDimensions();
       if (image.naturalWidth && image.naturalWidth === 10 && image.naturalHeight === 10) {
         _.trigger.addClass('no-image');
+        $(image).attr('alt', translations.no_cover);
         if (_.isList) {
           if (_.images.length < 2) {
             _.settings.enableImageZoom = false;
@@ -553,7 +575,7 @@ finna.imagePaginator = (function imagePaginator() {
     _.imageDetail.html(imagePopup.data('description'));
 
     if (_.isList) {
-      img.unveil(200, function tryMasonry(){
+      img.unveil(200, function tryMasonry() {
         $(this).load(function handleImage() {
           setImageProperties(this);
           if (finna.layout.getMasonryState()) {
@@ -744,12 +766,14 @@ finna.imagePaginator = (function imagePaginator() {
         $(this).siblings('i').remove();
       };
     }
-    holder.attr({'index': image.index, 'data-largest': image.largest, 'data-description': image.description});
-    if (!_.isList && _.settings.enableImageZoom) {
-      holder.attr('href', image.largest);
-    } else {
-      holder.attr('href', image.medium);
-    }
+    holder.attr({
+      'index': image.index,
+      'data-largest': image.largest,
+      'data-description': image.description,
+      'href': (!_.isList && _.settings.enableImageZoom) ? image.largest : image.medium,
+      'data-alt': image.alt
+    });
+
     return holder;
   };
 
@@ -762,16 +786,8 @@ finna.imagePaginator = (function imagePaginator() {
       $('.previous-record, .next-record').hide();
       return;
     }
-    if (_.paginatorIndex < 1) {
-      $('.previous-record').hide();
-    } else {
-      $('.previous-record').show();
-    }
-    if (_.paginatorIndex === paginatorIndex - 1) {
-      $('.next-record').hide();
-    } else {
-      $('.next-record').show();
-    }
+    $('.previous-record').toggle(_.paginatorIndex > 0);
+    $('.next-record').toggle(_.paginatorIndex !== paginatorIndex - 1);
   };
 
   /**
@@ -852,7 +868,7 @@ finna.imagePaginator = (function imagePaginator() {
         type: 'inline',
       },
       fixedContentPos: true,
-      tClose: VuFind.translate('close'),
+      tClose: translations.close,
       callbacks: {
         beforeOpen: function unveilClosest() {
           if (_.isList) {
@@ -861,6 +877,7 @@ finna.imagePaginator = (function imagePaginator() {
         },
         open: function onPopupOpen() {
           var mfpContainer = $(this)[0].container;
+          var mfpContent = mfpContainer.find('.mfp-content');
           mfpContainer.find('.leaflet-map-image').attr('id', 'leaflet-map-image');
           mfpContainer.find('.popup-nonzoom').attr('id', 'popup-nonzoom');
           mfpContainer.find('.popup-video').attr('id', 'popup-video');
@@ -874,19 +891,19 @@ finna.imagePaginator = (function imagePaginator() {
           var previousRecord = $(previousRecordButton).clone();
           var nextRecord = $(nextRecordButton).clone();
           
-          mfpContainer.find('.mfp-content').addClass('loaded ' + _.settings.recordType);
+          mfpContent.addClass('loaded ' + _.settings.recordType);
           mfpContainer.append(previousRecord, nextRecord);
 
           previousRecord.off('click').click(function loadNextPaginator(e){
             e.preventDefault();
             e.stopPropagation();
             _.getNextPaginator(-1);
-          });
+          }).attr('title', translations.previous_record);
           nextRecord.off('click').click(function loadNextPaginator(e){
             e.preventDefault();
             e.stopPropagation();
             _.getNextPaginator(1);
-          });
+          }).attr('title', translations.next_record);
 
           _.leafletHolder = $('#leaflet-map-image');
           _.nonZoomableHolder = $('#popup-nonzoom');
@@ -895,7 +912,7 @@ finna.imagePaginator = (function imagePaginator() {
           if (_.settings.enableImageZoom) {
             _.onZoomableOpen();
           } else {
-            mfpContainer.find('.mfp-content').addClass('nonzoomable');
+            mfpContent.addClass('nonzoomable');
             _.onNonZoomableOpen();
           }
           _.createPopupTrack(mfpContainer.find('.finna-image-pagination'), true);
@@ -978,7 +995,11 @@ finna.imagePaginator = (function imagePaginator() {
     var _ = this;
     var tmpImg = $(_.imagePopup).clone(true);
     tmpImg.find('img').data('src', image.small);
-    tmpImg.attr({'index': image.index, 'href': image.medium});
+    tmpImg.attr({
+      'index': image.index,
+      'href': image.medium,
+      'data-alt': image.alt
+    });
     tmpImg.click();
   };
 

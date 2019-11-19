@@ -48,9 +48,25 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
      * @var array
      */
     protected $nonPresenterAuthorRelators = [
-        'A00', 'A03', 'A06', 'A50', 'A99', 'D01', 'D02', 'F01', 'F02',
-        'anm', 'aud', 'chr', 'cnd', 'cst', 'exp', 'lgd', 'oth', 'pmn', 'prn',
-        'sds', 'std', 'trl', 'wst'
+        'a00', 'a01', 'a03', 'a06', 'a50', 'a99',
+        'd01', 'd02', 'd99',
+        'e02', 'e03', 'e04', 'e05', 'e06', 'e08',
+        'f01', 'f02', 'f99',
+        'cmp', 'cph', 'exp', 'fds', 'fmp', 'rce', 'wst', 'oth', 'prn',
+        // These are copied from Marc
+        'act', 'anm', 'ann', 'arr', 'acp', 'ar', 'ard', 'aft', 'aud', 'aui', 'aus',
+        'bjd', 'bpd', 'cll', 'ctg', 'chr', 'cng', 'clb', 'clr', 'cwt', 'com',
+        'cpl', 'cpt', 'cpe', 'ccp', 'cnd', 'cos', 'cot', 'coe', 'cts', 'ctt', 'cte',
+        'ctb', 'crp', 'cst', 'cov', 'cur', 'dnc', 'dtc', 'dto', 'dfd', 'dft', 'dfe',
+        'dln', 'dpc', 'dsr', 'dis', 'drm', 'edt', 'elt', 'egr', 'etr', 'fac',
+        'fld', 'flm', 'frg', 'ilu', 'ill', 'ins', 'itr', 'ivr', 'ldr', 'lsa', 'led',
+        'lil', 'lit', 'lie', 'lel', 'let', 'lee', 'lbt', 'lgd', 'ltg', 'lyr', 'mrb',
+        'mte', 'msd', 'mus', 'nrt', 'opn', 'org', 'pta', 'pth', 'prf', 'pht', 'ptf',
+        'ptt', 'pte', 'prt', 'pop', 'prm', 'pro', 'pmn', 'prd', 'prg', 'pdr', 'pbd',
+        'ppt', 'ren', 'rpt', 'rth', 'rtm', 'res', 'rsp', 'rst', 'rse', 'rpy', 'rsg',
+        'rev', 'rbr', 'sce', 'sad', 'scr', 'scl', 'spy', 'std', 'sng', 'sds', 'spk',
+        'stm', 'str', 'stl', 'sht', 'ths', 'trl', 'tyd', 'tyg', 'vdg', 'voc', 'wde',
+        'wdc', 'wam'
     ];
 
     /**
@@ -66,7 +82,7 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
      * @var array
      */
     protected $presenterAuthorRelators = [
-        'E01', 'E99', 'cmm'
+        'e01', 'e99', 'cmm'
     ];
 
     /**
@@ -83,6 +99,8 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
         'D01' => 'fmp',
         'D02' => 'drt',
         'E01' => 'act',
+        'E04' => 'spk',
+        'E10' => 'pro',
         'F01' => 'cng',
         'F02' => 'flm'
     ];
@@ -95,10 +113,14 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
     protected $elonetRoleMap = [
         'dialogi' => 'aud',
         'lavastus' => 'std',
+        'lavastaja' => 'std',
         'puvustus' => 'cst',
         'tuotannon suunnittelu' => 'prs',
         'tuotantopäällikkö' => 'pmn',
         'muusikko' => 'mus',
+        'selostaja' => 'spk',
+        'valokuvaaja' => 'pht',
+        'valonmääritys' => 'lgd',
         'äänitys' => 'rce'
     ];
 
@@ -544,7 +566,9 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
         $result = [];
         foreach ($authors as $author) {
             $isPrimary = isset($author['role'])
-                && in_array($author['role'], $this->primaryAuthorRelators);
+                && in_array(
+                    strtolower($author['role']), $this->primaryAuthorRelators
+                );
             if ($isPrimary === $primary) {
                 $result[] = $author;
             }
@@ -768,8 +792,16 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
                 && (empty($requiredValue)
                 || $attributes->{$attribute} == $requiredValue)
             ) {
+                $authId = isset($agent->AgentIdentifier)
+                    ? (string)$agent->AgentIdentifier->IDTypeName . '_' .
+                    (string)$agent->AgentIdentifier->IDValue
+                    : null;
+                $authType = (string)$agent->AgentIdentifier->IDTypeName ?? null;
+
                 $item = [
-                    'name' => (string)$agent->AgentName
+                    'name' => (string)$agent->AgentName,
+                    'id' => $authId,
+                    'type' => $authType
                 ];
                 $agentAttrs = $agent->AgentName->attributes();
                 foreach ($includeAttrs as $key => $attr) {
@@ -843,35 +875,16 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
         $idx = 0;
         foreach ($xml->HasAgent as $agent) {
             $relator = (string)$agent->Activity;
-            if (!in_array($relator, $relators)) {
+            if (!in_array(strtolower($relator), $relators)) {
                 continue;
             }
-            $normalizedRelator = mb_strtoupper($relator, 'UTF-8');
-            $primary = $normalizedRelator == 'D02'; // Director
-            $role = isset($this->roleMap[$normalizedRelator])
-                    ? $this->roleMap[$normalizedRelator] : $relator;
 
-            $attributes = $agent->Activity->attributes();
-            if (in_array($normalizedRelator, ['A00', 'A99'])) {
-                if (!empty($attributes->{'elokuva-elolevittaja'})
-                ) {
-                    continue;
-                }
-                if (!empty($attributes->{'elokuva-avustajat'})
-                    || !empty($attributes->{'elokuva-elotuotantoyhtio'})
-                    || !empty($attributes->{'elokuva-elorahoitusyhtio'})
-                    || !empty($attributes->{'elokuva-elolaboratorio'})
-                ) {
-                    continue;
-                }
-                if (!empty($attributes->{'finna-activity-text'})) {
-                    $role = (string)$attributes->{'finna-activity-text'};
-                    if (isset($this->elonetRoleMap[$role])) {
-                        $role = $this->elonetRoleMap[$role];
-                    }
-                }
+            if (null === ($role = $this->getAuthorRole($agent, $relator))) {
+                continue;
             }
 
+            $normalizedRelator = mb_strtoupper($relator, 'UTF-8');
+            $primary = $normalizedRelator == 'D02'; // Director
             $nameAttrs = $agent->AgentName->attributes();
             $roleName = '';
             $uncredited = false;
@@ -899,10 +912,16 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
                 $name = (string)$nameAttrs->{'elokuva-elokreditoimatontekija-nimi'};
             }
 
+            $authType = (string)$agent->AgentIdentifier->IDTypeName;
+            $authId = (string)$agent->AgentIdentifier->IDTypeName . '_' .
+                (string)$agent->AgentIdentifier->IDValue;
+
             ++$idx;
             $result[] = [
                 'name' => $name,
                 'role' => $role,
+                'id' => $authId,
+                'type' => $authType,
                 'roleName' => $roleName,
                 'description' => $description,
                 'uncredited' => $uncredited,
@@ -1039,29 +1058,6 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
                 $videoUrl = (string)$title->TitleText;
                 $videoSources = [];
                 $sourceType = strtolower(pathinfo($videoUrl, PATHINFO_EXTENSION));
-                foreach ($sourceConfigs as $config) {
-                    if (!in_array($sourceType, $config['sourceTypes'])) {
-                        continue;
-                    }
-                    $src = str_replace(
-                        '{videoname}', $videoUrl, $config['src']
-                    );
-                    $videoSources[] = [
-                        'src' => $src,
-                        'type' => $config['mediaType'],
-                        'priority' => $config['priority']
-                    ];
-                }
-                if (empty($videoSources)) {
-                    continue;
-                }
-
-                usort(
-                    $videoSources,
-                    function ($a, $b) {
-                        return $a['priority'] - $b['priority'];
-                    }
-                );
 
                 $poster = '';
                 $videoType = 'elokuva';
@@ -1084,9 +1080,56 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
                     }
                 }
 
+                //If there is no ProductionEventType set, continue
+                if (!isset($xml->ProductionEvent->ProductionEventType)) {
+                    continue;
+                }
                 $eventAttrs = $xml->ProductionEvent->ProductionEventType
                     ->attributes();
+
+                // Lets see if this video has a vimeo-id
+                $vimeo = (string)$eventAttrs->{'vimeo-id'};
+                $vimeo_url = $this->recordConfig->Record->vimeo_url;
+                if (!empty($vimeo) && !empty($vimeo_url)) {
+                    $src = str_replace(
+                        '{videoid}', $vimeo, $vimeo_url
+                    );
+                    $videoUrls[] = [
+                        'url' => $src,
+                        'posterUrl' => $poster,
+                        // Include both 'text' and 'desc' for online and normal urls
+                        'text' => $description ?: $videoType,
+                        'desc' => $description ?: $videoType,
+                        'source' => $source,
+                    ];
+                }
+
                 $url = (string)$eventAttrs->{'elokuva-elonet-materiaali-video-url'};
+
+                foreach ($sourceConfigs as $config) {
+                    if (!in_array($sourceType, $config['sourceTypes'])) {
+                        continue;
+                    }
+                    $src = str_replace(
+                        '{videoname}', $videoUrl, $config['src']
+                    );
+                    $videoSources[] = [
+                        'src' => $src,
+                        'type' => $config['mediaType'],
+                        'priority' => $config['priority']
+                    ];
+                }
+
+                if (empty($videoSources)) {
+                    continue;
+                }
+
+                usort(
+                    $videoSources,
+                    function ($a, $b) {
+                        return $a['priority'] - $b['priority'];
+                    }
+                );
 
                 if ($this->urlBlacklisted($url, $description)) {
                     continue;
@@ -1440,5 +1483,46 @@ class SolrForward extends \VuFind\RecordDriver\SolrDefault
             return $this->fields['fullrecord'];
         }
         return parent::getXML($format, $baseUrl, $recordLink);
+    }
+
+    /**
+     * Convert author relator to role.
+     *
+     * @param SimpleXMLNode $agent   Agent
+     * @param string        $relator Agent relator
+     *
+     * @return string
+     */
+    protected function getAuthorRole($agent, $relator)
+    {
+        $normalizedRelator = mb_strtoupper($relator, 'UTF-8');
+        $role = $this->roleMap[$normalizedRelator] ?? $relator;
+
+        $attributes = $agent->Activity->attributes();
+        if (in_array(
+            $normalizedRelator,
+            ['A00', 'A08', 'A99', 'D99', 'E04', 'E99']
+        )
+        ) {
+            if (!empty($attributes->{'elokuva-elolevittaja'})
+            ) {
+                return null;
+            }
+            if (!empty($attributes->{'elokuva-avustajat'})
+                || !empty($attributes->{'elokuva-elotuotantoyhtio'})
+                || !empty($attributes->{'elokuva-elorahoitusyhtio'})
+                || !empty($attributes->{'elokuva-elolaboratorio'})
+            ) {
+                return null;
+            }
+            if (!empty($attributes->{'finna-activity-text'})) {
+                $role = (string)$attributes->{'finna-activity-text'};
+                if (isset($this->elonetRoleMap[$role])) {
+                    $role = $this->elonetRoleMap[$role];
+                }
+            }
+        }
+
+        return $role;
     }
 }

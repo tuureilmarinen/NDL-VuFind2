@@ -157,7 +157,21 @@ $config = [
                         'action'     => 'PreviewForm',
                     ]
                 ],
-            ]
+            ],
+            'solrrecord-feedback' => [
+                'type'    => 'Zend\Router\Http\Segment',
+                'options' => [
+                    'route'    => '/Record/[:id]/Feedback',
+                    'constraints' => [
+                        'controller' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                        'action'     => '[a-zA-Z][a-zA-Z0-9_-]*',
+                    ],
+                    'defaults' => [
+                        'controller' => 'Record',
+                        'action'     => 'Feedback',
+                    ]
+                ]
+            ],
         ],
     ],
     'route_manager' => [
@@ -268,6 +282,7 @@ $config = [
             'Finna\RecordTab\PluginManager' => 'VuFind\ServiceManager\AbstractPluginManagerFactory',
             'Finna\Role\PermissionManager' => 'VuFind\Role\PermissionManagerFactory',
             'Finna\Search\Memory' => 'VuFind\Search\MemoryFactory',
+            'Finna\Search\Solr\AuthorityHelper' => 'Finna\Search\Solr\AuthorityHelperFactory',
             'Finna\Search\Solr\HierarchicalFacetHelper' => 'Zend\ServiceManager\Factory\InvokableFactory',
             'Finna\Favorites\FavoritesService' => 'Finna\Favorites\FavoritesServiceFactory',
 
@@ -323,6 +338,8 @@ $config = [
                         'Finna\AjaxHandler\EditListResourceFactory',
                     'Finna\AjaxHandler\GetAuthorityInfo' =>
                         'Finna\AjaxHandler\GetAuthorityInfoFactory',
+                    'Finna\AjaxHandler\GetAuthorityFullInfo' =>
+                        'Finna\AjaxHandler\GetAuthorityFullInfoFactory',
                     'Finna\AjaxHandler\GetACSuggestions' =>
                         'VuFind\AjaxHandler\GetACSuggestionsFactory',
                     'Finna\AjaxHandler\GetContentFeed' =>
@@ -335,6 +352,8 @@ $config = [
                         'Finna\AjaxHandler\GetFacetDataFactory',
                     'Finna\AjaxHandler\GetFeed' =>
                         'Finna\AjaxHandler\GetFeedFactory',
+                    'Finna\AjaxHandler\GetHoldingsDetails' =>
+                        'Finna\AjaxHandler\GetHoldingsDetailsFactory',
                     'Finna\AjaxHandler\GetImageInformation' =>
                         'Finna\AjaxHandler\GetImageInformationFactory',
                     'Finna\AjaxHandler\GetOrganisationInfo' =>
@@ -368,10 +387,12 @@ $config = [
                     'editList' => 'Finna\AjaxHandler\EditList',
                     'editListResource' => 'Finna\AjaxHandler\EditListResource',
                     'getAuthorityInfo' => 'Finna\AjaxHandler\GetAuthorityInfo',
+                    'getAuthorityFullInfo' => 'Finna\AjaxHandler\GetAuthorityFullInfo',
                     'getContentFeed' => 'Finna\AjaxHandler\GetContentFeed',
                     'getDescription' => 'Finna\AjaxHandler\GetDescription',
                     'getDateRangeVisual' => 'Finna\AjaxHandler\GetDateRangeVisual',
                     'getFeed' => 'Finna\AjaxHandler\GetFeed',
+                    'getHoldingsDetails' => 'Finna\AjaxHandler\GetHoldingsDetails',
                     'getImageInformation' => 'Finna\AjaxHandler\GetImageInformation',
                     'getOrganisationPageFeed' => 'Finna\AjaxHandler\GetOrganisationPageFeed',
                     'getMyLists' => 'Finna\AjaxHandler\GetUserLists',
@@ -489,6 +510,7 @@ $config = [
             ],
             'ils_driver' => [
                 'factories' => [
+                    'Finna\ILS\Driver\Alma' => 'VuFind\ILS\Driver\AlmaFactory',
                     'Finna\ILS\Driver\AxiellWebServices' => 'Finna\ILS\Driver\AxiellWebServicesFactory',
                     'Finna\ILS\Driver\Demo' => 'VuFind\ILS\Driver\DemoFactory',
                     'Finna\ILS\Driver\Gemini' => '\VuFind\ILS\Driver\DriverWithDateConverterFactory',
@@ -506,6 +528,7 @@ $config = [
                     // TOOD: remove the following line when KohaRest driver is available upstream:
                     'koharest' => 'Finna\ILS\Driver\KohaRest',
 
+                    'VuFind\ILS\Driver\Alma' => 'Finna\ILS\Driver\Alma',
                     'VuFind\ILS\Driver\Demo' => 'Finna\ILS\Driver\Demo',
                     'VuFind\ILS\Driver\KohaRest' => 'Finna\ILS\Driver\KohaRest',
                     'VuFind\ILS\Driver\MultiBackend' => 'Finna\ILS\Driver\MultiBackend',
@@ -518,9 +541,11 @@ $config = [
                 'factories' => [
                     'VuFind\Recommend\CollectionSideFacets' => 'Finna\Recommend\Factory::getCollectionSideFacets',
                     'VuFind\Recommend\SideFacets' => 'Finna\Recommend\Factory::getSideFacets',
+                    'Finna\Recommend\AuthorityRecommend' => 'Finna\Recommend\AuthorityRecommendFactory',
                     'Finna\Recommend\SideFacetsDeferred' => 'Finna\Recommend\Factory::getSideFacetsDeferred',
                 ],
                 'aliases' => [
+                    'authorityrecommend' => 'Finna\Recommend\AuthorityRecommend',
                     'sidefacetsdeferred' => 'Finna\Recommend\SideFacetsDeferred',
                 ]
             ],
@@ -536,10 +561,13 @@ $config = [
                 'factories' => [
                     'Primo' => 'Finna\Search\Factory\PrimoBackendFactory',
                     'Solr' => 'Finna\Search\Factory\SolrDefaultBackendFactory',
+                    'Blender' => 'Finna\Search\Factory\BlenderBackendFactory',
                 ],
             ],
             'search_options' => [
                 'factories' => [
+                    'Finna\Search\Blender\Options' => 'VuFind\Search\OptionsFactory',
+
                     'Finna\Search\Combined\Options' => 'VuFind\Search\OptionsFactory',
                     'Finna\Search\EDS\Options' => 'VuFind\Search\EDS\OptionsFactory',
                     'Finna\Search\Primo\Options' => 'VuFind\Search\OptionsFactory',
@@ -551,10 +579,14 @@ $config = [
 
                     // Counterpart for EmptySet Params:
                     'Finna\Search\EmptySet\Options' => 'VuFind\Search\EmptySet\Options',
+                    'Finna\Search\MixedList\Options' => 'VuFind\Search\MixedList\Options',
+                    'Blender' => 'Finna\Search\Blender\Options',
                 ]
             ],
             'search_params' => [
                 'factories' => [
+                    'Finna\Search\Blender\Params' => 'Finna\Search\Blender\ParamsFactory',
+
                     'Finna\Search\Combined\Params' => 'Finna\Search\Solr\ParamsFactory',
                     'Finna\Search\EDS\Params' => 'VuFind\Search\Params\ParamsFactory',
                     'Finna\Search\EmptySet\Params' => 'VuFind\Search\Params\ParamsFactory',
@@ -569,10 +601,13 @@ $config = [
                     'VuFind\Search\Favorites\Params' => 'Finna\Search\Favorites\Params',
                     'VuFind\Search\MixedList\Params' => 'Finna\Search\MixedList\Params',
                     'VuFind\Search\Solr\Params' => 'Finna\Search\Solr\Params',
+
+                    'Blender' => 'Finna\Search\Blender\Params',
                 ]
             ],
             'search_results' => [
                 'factories' => [
+                    'Finna\Search\Blender\Results' => 'VuFind\Search\Solr\ResultsFactory',
                     'Finna\Search\Combined\Results' => 'VuFind\Search\Results\ResultsFactory',
                     'Finna\Search\Favorites\Results' => 'Finna\Search\Favorites\ResultsFactory',
                     'Finna\Search\Primo\Results' => 'VuFind\Search\Results\ResultsFactory',
@@ -583,6 +618,8 @@ $config = [
                     'VuFind\Search\Favorites\Results' => 'Finna\Search\Favorites\Results',
                     'VuFind\Search\Primo\Results' => 'Finna\Search\Primo\Results',
                     'VuFind\Search\Solr\Results' => 'Finna\Search\Solr\Results',
+
+                    'Blender' => 'Finna\Search\Blender\Results',
                 ]
             ],
             'content_covers' => [
@@ -609,6 +646,8 @@ $config = [
                         'VuFind\RecordDriver\SolrDefaultFactory',
                     'Finna\RecordDriver\SolrAuthEaccpf' =>
                         'VuFind\RecordDriver\SolrDefaultFactory',
+                    'Finna\RecordDriver\SolrAuthForward' =>
+                        'VuFind\RecordDriver\SolrDefaultFactory',
                     'Finna\RecordDriver\SolrEad' =>
                         'VuFind\RecordDriver\SolrDefaultFactory',
                     'Finna\RecordDriver\SolrEad3' =>
@@ -624,6 +663,7 @@ $config = [
                 ],
                 'aliases' => [
                     'SolrAuthEaccpf' => 'Finna\RecordDriver\SolrAuthEaccpf',
+                    'SolrAuthForwardAuthority' => 'Finna\RecordDriver\SolrAuthForward',
                     'SolrEad' => 'Finna\RecordDriver\SolrEad',
                     'SolrEad3' => 'Finna\RecordDriver\SolrEad3',
                     'SolrForward' => 'Finna\RecordDriver\SolrForward',
@@ -631,6 +671,7 @@ $config = [
                     'SolrQdc' => 'Finna\RecordDriver\SolrQdc',
 
                     'VuFind\RecordDriver\EDS' => 'Finna\RecordDriver\EDS',
+                    'VuFind\RecordDriver\SolrAuthDefault' => 'Finna\RecordDriver\SolrAuthDefault',
                     'VuFind\RecordDriver\SolrDefault' => 'Finna\RecordDriver\SolrDefault',
                     'VuFind\RecordDriver\SolrMarc' => 'Finna\RecordDriver\SolrMarc',
                     'VuFind\RecordDriver\Primo' => 'Finna\RecordDriver\Primo',
@@ -706,7 +747,7 @@ $config = [
 ];
 
 $recordRoutes = [
-   'metalibrecord' => 'MetaLibRecord'
+   'metalibrecord' => 'MetaLibRecord',
 ];
 
 // Define dynamic routes -- controller => [route name => action]
@@ -725,7 +766,7 @@ $staticRoutes = [
     'OrganisationInfo/Home',
     'PCI/Home', 'PCI/Search', 'PCI/Record',
     'Search/StreetSearch',
-    'Barcode/Show', 'Search/MapFacet'
+    'Barcode/Show', 'Search/MapFacet', 'Search/Blended'
 ];
 
 $routeGenerator = new \VuFind\Route\RouteGenerator();
