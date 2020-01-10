@@ -24,6 +24,7 @@ finna.imagePaginator = (function imagePaginator() {
     close: '',
     next_record: '',
     previous_record: '',
+    no_cover: '',
     isSet: false
   };
 
@@ -88,6 +89,7 @@ finna.imagePaginator = (function imagePaginator() {
         close: VuFind.translate('close'),
         next_record: VuFind.translate('Next Record'),
         previous_record: VuFind.translate('Previous Record'),
+        no_cover: VuFind.translate('No Cover Image'),
         isSet: true
       };
     }
@@ -304,10 +306,12 @@ finna.imagePaginator = (function imagePaginator() {
 
     var img = new Image();
     img.src = image.data('largest');
+    $(img).attr('alt', image.data('alt'));
     img.onload = function onLoad() {
       if (this.naturalWidth && this.naturalWidth === 10 && this.naturalHeight === 10) {
         _.nonZoomableHolder.addClass('no-image');
         icon.show();
+        $(this).attr('alt', translations.no_cover);
       } else if (_.nonZoomableHolder.hasClass('no-image')) {
         icon.hide();
       }
@@ -366,9 +370,11 @@ finna.imagePaginator = (function imagePaginator() {
       var w = this.naturalWidth;
       var zoomLevel = 10;
 
+      var alt = h === 10 && w === 10 ? translations.no_cover : image.data('alt');
       var bounds = new L.LatLngBounds(_.leafletHolder.unproject([0, h], zoomLevel), _.leafletHolder.unproject([w, 0], zoomLevel));
+
       _.leafletHolder.flyToBounds(bounds, {animate: false});
-      L.imageOverlay(img.src, bounds).addTo(_.leafletHolder);
+      L.imageOverlay(img.src, bounds, {alt: alt}).addTo(_.leafletHolder);
       _.leafletHolder.invalidateSize(false);
       _.leafletLoader.removeClass('loading');
       _.leafletHolder.setMaxBounds(bounds);
@@ -526,7 +532,7 @@ finna.imagePaginator = (function imagePaginator() {
     var _ = this;
     var img = _.trigger.find('img');
     img.attr('data-src', imagePopup.attr('href'));
-    img.attr('alt', imagePopup.find('img').attr('alt'));
+    img.attr('alt', imagePopup.data('alt'));
 
     if (_.openImageIndex !== imagePopup.attr('index')) {
       img.css('opacity', 0.5);
@@ -537,6 +543,7 @@ finna.imagePaginator = (function imagePaginator() {
       _.setDimensions();
       if (image.naturalWidth && image.naturalWidth === 10 && image.naturalHeight === 10) {
         _.trigger.addClass('no-image');
+        $(image).attr('alt', translations.no_cover);
         if (_.isList) {
           if (_.images.length < 2) {
             _.settings.enableImageZoom = false;
@@ -549,9 +556,10 @@ finna.imagePaginator = (function imagePaginator() {
           $(image).parents('.grid').addClass('no-image');
         }
         if (!_.isList && _.images.length <= 1) {
-          _.root.closest('.media-left').addClass('hidden-xs').find('.organisation-menu').hide();
+          _.root.closest('.media-left').not('.audio').addClass('hidden-xs');
+          _.root.closest('.media-left').find('.organisation-menu').hide();
           _.root.css('display', 'none');
-          _.root.siblings('.image-details-container').hide();
+          _.root.siblings('.image-details-container:not(:has(.image-rights))').hide();
           $('.record.large-image-layout').addClass('no-image-layout').removeClass('large-image-layout');
           $('.large-image-sidebar').addClass('visible-xs visible-sm');
           $('.record-main').addClass('mainbody left');
@@ -759,8 +767,14 @@ finna.imagePaginator = (function imagePaginator() {
         $(this).siblings('i').remove();
       };
     }
-    holder.attr({'index': image.index, 'data-largest': image.largest, 'data-description': image.description});
-    holder.attr('href', (!_.isList && _.settings.enableImageZoom) ? image.largest : image.medium);
+    holder.attr({
+      'index': image.index,
+      'data-largest': image.largest,
+      'data-description': image.description,
+      'href': (!_.isList && _.settings.enableImageZoom) ? image.largest : image.medium,
+      'data-alt': image.alt
+    });
+
     return holder;
   };
 
@@ -849,7 +863,7 @@ finna.imagePaginator = (function imagePaginator() {
     _.setCurrentVisuals();
     var modal = $('#imagepopup-modal').find('.imagepopup-holder').clone();
 
-    _.trigger.magnificPopup({
+    _.trigger.not('[data-disable-modal="1"]').magnificPopup({
       items: {
         src: modal,
         type: 'inline',
@@ -982,7 +996,11 @@ finna.imagePaginator = (function imagePaginator() {
     var _ = this;
     var tmpImg = $(_.imagePopup).clone(true);
     tmpImg.find('img').data('src', image.small);
-    tmpImg.attr({'index': image.index, 'href': image.medium});
+    tmpImg.attr({
+      'index': image.index,
+      'href': image.medium,
+      'data-alt': image.alt
+    });
     tmpImg.click();
   };
 
