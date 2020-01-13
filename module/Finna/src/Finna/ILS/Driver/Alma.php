@@ -28,6 +28,7 @@
 namespace Finna\ILS\Driver;
 
 use VuFind\Exception\ILS as ILSException;
+use VuFind\I18n\Translator\TranslatorAwareInterface;
 
 /**
  * Alma ILS Driver
@@ -38,14 +39,59 @@ use VuFind\Exception\ILS as ILSException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/development:plugins:ils_drivers Wiki
  */
-class Alma extends \VuFind\ILS\Driver\Alma
+class Alma extends \VuFind\ILS\Driver\Alma implements TranslatorAwareInterface
 {
+    use \VuFind\I18n\Translator\TranslatorAwareTrait;
+
     /**
      * Simple cache to avoid repeated requests
      *
      * @var array
      */
     protected $cachedRequest = [];
+
+    /**
+     * Priority settings for the order of locations
+     *
+     * @var array
+     */
+    protected $holdingsLocationOrder = [];
+
+    /**
+     * Whether to sort items by enumchron. Default is true.
+     *
+     * @var bool
+     */
+    protected $sortItemsByEnumChron = true;
+
+    /**
+     * Initialize the driver.
+     *
+     * Validate configuration and perform all resource-intensive tasks needed to
+     * make the driver active.
+     *
+     * @throws ILSException
+     * @return void
+     */
+    public function init()
+    {
+        parent::init();
+
+        if (isset($this->config['Holdings']['holdingsLocationOrder'])) {
+            $values = explode(
+                ':',
+                $this->config['Holdings']['holdingsLocationOrder']
+            );
+            foreach ($values as $i => $value) {
+                $parts = explode('=', $value, 2);
+                $idx = $parts[1] ?? $i;
+                $this->holdingsLocationOrder[$parts[0]] = $idx;
+            }
+        }
+
+        $this->sortItemsByEnumChron
+            = $this->config['Holdings']['sortByEnumChron'] ?? true;
+    }
 
     /**
      * Get Patron Fines
@@ -212,41 +258,42 @@ class Alma extends \VuFind\ILS\Driver\Alma
         $contact = $xml->contact_info;
         if ($contact) {
             if ($contact->addresses) {
-                $address = null;
+                $profile['addresses'] = [];
                 foreach ($contact->addresses->address as $item) {
-                    if ('true' === (string)$item['preferred']) {
-                        $address = $item;
+                    $address = [
+                        'preferred' => 'true' === (string)$item['preferred'],
+                        'types' => [],
+                        'address1' => (string)($item->line1 ?? ''),
+                        'address2' => (string)($item->line2 ?? ''),
+                        'address3' => (string)($item->line3 ?? ''),
+                        'zip' => (string)($item->postal_code ?? ''),
+                        'city' => (string)($item->city ?? ''),
+                    ];
+                    foreach ($item->address_types->address_type as $type) {
+                        $address['types'][] = (string)$type;
+                    }
+                    if (!empty($item->country)) {
+                        $address['country'] = new \VuFind\I18n\TranslatableString(
+                            (string)$item->country,
+                            (string)$item->country->attributes()->desc
+                        );
+                    } else {
+                        $address['country'] = '';
+                    }
+                    $profile['addresses'][] = $address;
+                }
+
+                // Copy preferred address to the basic fields
+                foreach ($profile['addresses'] as $address) {
+                    if (!empty($address['preferred'])) {
+                        foreach ($address as $key => $value) {
+                            $profile[$key] = $value;
+                        }
                         break;
                     }
                 }
-                if (null === $address) {
-                    $address = $contact->addresses[0]->address[0];
-                }
-                $profile['address1'] =  isset($address->line1)
-                                            ? (string)$address->line1
-                                            : null;
-                $profile['address2'] =  isset($address->line2)
-                                            ? (string)$address->line2
-                                            : null;
-                $profile['address3'] =  isset($address->line3)
-                                            ? (string)$address->line3
-                                            : null;
-                $profile['zip']      =  isset($address->postal_code)
-                                            ? (string)$address->postal_code
-                                            : null;
-                $profile['city']     =  isset($address->city)
-                                            ? (string)$address->city
-                                            : null;
-                if (!empty($address->country)) {
-                    $profile['country'] = new \VuFind\I18n\TranslatableString(
-                        (string)$address->country,
-                        (string)$address->country->attributes()->desc
-                    );
-                } else {
-                    $profile['country'] = null;
-                }
 
-                // Check if the user has a work and/or home address
+                // Check if the user has a work and/or home address for hold pickup
                 foreach ($contact->addresses->address as $item) {
                     foreach ($item->address_types->address_type ?? [] as $type) {
                         $parts = [
@@ -309,8 +356,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
         }
 
         // Display '****' as a hint that the field is available to update..
-        $fieldConfig = isset($this->config['updateProfile']['fields'])
-            ? $this->config['updateProfile']['fields'] : [];
+        $fieldConfig = $this->getUpdateProfileFields();
         foreach ($fieldConfig as $field) {
             $parts = explode(':', $field);
             if (($parts[1] ?? '') === 'self_service_pin') {
@@ -415,8 +461,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
         $hasAddress = false;
         $hasPhone = false;
         $hasEmail = false;
-        $fieldConfig = isset($this->config['updateProfile']['fields'])
-            ? $this->config['updateProfile']['fields'] : [];
+        $fieldConfig = $this->getUpdateProfileFields();
         foreach ($fieldConfig as $field) {
             $parts = explode(':', $field);
             if (isset($parts[1])) {
@@ -469,8 +514,58 @@ class Alma extends \VuFind\ILS\Driver\Alma
             $address['preferred'] = 'true';
             foreach ($details as $key => $value) {
                 if (isset($addressMapping[$key])) {
-                    $address->addChild($addressMapping[$key], $value);
+                    $address->addChild($addressMapping[$key], trim($value));
                 }
+            }
+        } else {
+            // Multiple address support
+            $addresses = array_reverse(array_values($details['addresses'] ?? []));
+            // Make sure we only have a single preferred address
+            $hasPreferred = false;
+            foreach ($addresses as &$address) {
+                if (!empty($address['preferred'])) {
+                    if ($hasPreferred) {
+                        $address['preferred'] = false;
+                    } else {
+                        $hasPreferred = true;
+                    }
+                }
+            }
+            unset($address);
+
+            $index = count($addresses);
+            foreach ($addresses as $newAddress) {
+                --$index;
+                if (!($address = $contact->addresses->address[$index] ?? null)) {
+                    $address = $contact->addresses->addChild('address');
+                }
+                $hasData = false;
+                foreach ($newAddress as $key => $value) {
+                    if (isset($addressMapping[$key])) {
+                        $address->addChild($addressMapping[$key], trim($value));
+                        if (!empty(trim($value))) {
+                            $hasData = true;
+                        }
+                    }
+                }
+                if (!$hasData) {
+                    // Empty fields, remove address
+                    unset($address[0]);
+                    continue;
+                }
+                $addressTypes = $address->address_types ??
+                    $address->addChild('address_types');
+
+                foreach ($newAddress['types'] ?? ['home'] as $type) {
+                    foreach ($addressTypes->address_type as $existing) {
+                        if ((string)$existing === $type) {
+                            continue 2;
+                        }
+                    }
+                    $addressTypes->addChild('address_type', (string)$type);
+                }
+                $address['preferred'] = !empty($newAddress['preferred'])
+                    ? 'true' : 'false';
             }
         }
 
@@ -538,7 +633,9 @@ class Alma extends \VuFind\ILS\Driver\Alma
 
         $overrideFields = [];
         foreach ($details as $key => $value) {
-            $value = trim($value);
+            if (!is_array($value)) {
+                $value = trim($value);
+            }
             if (isset($otherMapping[$key])) {
                 $fieldName = $otherMapping[$key];
                 if ('pin_number' === $fieldName) {
@@ -556,13 +653,8 @@ class Alma extends \VuFind\ILS\Driver\Alma
             }
         }
 
-        // Remove list-style data that we don't ever update and is handled by Alma
-        // as complete entities
-        unset($userData->user_identifiers);
+        // Remove user roles as they are the exception that Alma handles differently.
         unset($userData->user_roles);
-        unset($userData->user_blocks);
-        unset($userData->user_statistics);
-        unset($userData->proxy_for_users);
 
         // Update user in Alma
         $queryParams = '';
@@ -762,6 +854,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
         }
         $config = parent::getConfig($function, $params);
         if ('updateProfile' === $function && isset($config['fields'])) {
+            $config['fields'] = $this->getUpdateProfileFields();
             // Allow only a limited set of fields for external users
             if (isset($params['patron'])) {
                 $profile = $this->getMyProfile($params['patron']);
@@ -779,14 +872,16 @@ class Alma extends \VuFind\ILS\Driver\Alma
                     $config['fields'] = $fields;
                 }
             }
-            // Add code tables
+            // Add code tables and choices
             if (!empty($config['fields'])) {
                 foreach ($config['fields'] as &$field) {
                     $parts = explode(':', $field);
                     $fieldId = $parts[1] ?? '';
-                    if ('country' === $fieldId) {
+                    if ('country' === $fieldId
+                        || preg_match('/^addresses\[[0-9]\]\[country\]$/', $fieldId)
+                    ) {
                         $field = [
-                            'field' => 'country',
+                            'field' => $fieldId,
                             'label' => $parts[0],
                             'type' => 'select',
                             'options' => $this->getCodeTableOptions(
@@ -794,8 +889,47 @@ class Alma extends \VuFind\ILS\Driver\Alma
                             ),
                             'required' => ($parts[3] ?? '') === 'required',
                         ];
+                    } elseif (preg_match('/^addresses\[[0-9]\]\[types\]$/', $fieldId)
+                    ) {
+                        // Add address types
+                        $field = [
+                            'field' => $fieldId,
+                            'label' => $parts[0],
+                            'type' => 'multiselect',
+                            'options' => [
+                                'home' => [
+                                    'name' => 'address_type_home',
+                                ],
+                                'work' => [
+                                    'name' => 'address_type_work',
+                                ],
+                                'school' => [
+                                    'name' => 'address_type_school',
+                                ],
+                                'alternative' => [
+                                    'name' => 'address_type_alternative',
+                                ],
+                            ],
+                            'required' => ($parts[3] ?? '') === 'required',
+                        ];
                     }
                 }
+            }
+        }
+        if ($config && 'Holds' === $function) {
+            if (isset($config['titleHoldBibLevels'])
+                && !is_array($config['titleHoldBibLevels'])
+            ) {
+                $config['titleHoldBibLevels']
+                    = explode(':', $config['titleHoldBibLevels']);
+            }
+            if (!empty($params['id']) && !empty($params['patron']['id'])) {
+                // Add a flag so that checkRequestIsValid knows to check valid pickup
+                // locations
+                $config['HMACKeys']
+                    = empty($config['HMACKeys'])
+                        ? '__check_pickup'
+                        : $config['HMACKeys'] . ':__check_pickup';
             }
         }
         return $config;
@@ -833,71 +967,50 @@ class Alma extends \VuFind\ILS\Driver\Alma
             $bibId = $holdDetails['id'];
             $itemId = $holdDetails['item_id'] ?? false;
 
-            $itemLocations = [];
-            $availableLocations = [];
-            $unavailableLocations = [];
+            $allItems = [];
+            $availableItems = [];
+            $unavailableItems = [];
             if ('copy' === $level && $itemId) {
                 $item = $this->makeRequest(
                     '/bibs/' . urlencode($bibId) . '/holdings/ALL/items/'
                     . urlencode($itemId)
                 );
-                if ($item) {
-                    $lib = (string)$item->item_data->library;
-                    $loc = (string)$item->item_data->location;
-                    $libLoc = [
-                        'lib' => $lib,
-                        'loc' => $loc
-                    ];
-                    $itemLocations[] = $libLoc;
-                    $status = (string)$item->item_data->base_status;
-                    if ('0' === $status) {
-                        $unavailableLocations[] = $libLoc;
-                    } else {
-                        $availableLocations[] = $libLoc;
-                    }
-                }
+                $items = [$item];
             } else {
-                $params = [
-                    'mms_id' => $bibId,
-                    'expand' => 'p_avail'
+                $items = $this->makeRequest(
+                    '/bibs/' . urlencode($bibId) . '/holdings/ALL/items'
+                );
+                $items = $items->item;
+            }
+            foreach ($items as $item) {
+                $lib = (string)$item->item_data->library;
+                $loc = (string)$item->item_data->location;
+                $policy = !empty($item->item_data->policy) ?
+                    (string)$item->item_data->policy : '';
+                $entry = [
+                    'lib' => $lib,
+                    'loc' => $loc,
+                    'policy' => $policy
                 ];
-                if ($bibs = $this->makeRequest('/bibs', $params)) {
-                    foreach ($bibs as $bib) {
-                        $marc = new \File_MARCXML(
-                            $bib->record->asXML(),
-                            \File_MARCXML::SOURCE_STRING
-                        );
-                        if ($record = $marc->next()) {
-                            // Physical
-                            $physicalItems = $record->getFields('AVA');
-                            foreach ($physicalItems as $field) {
-                                $lib = $this->getMarcSubfield($field, 'b');
-                                $loc = $this->getMarcSubfield($field, 'j');
-                                $libLoc = [
-                                    'lib' => $lib,
-                                    'loc' => $loc
-                                ];
-                                $itemLocations[] = $libLoc;
-                                $avail = $this->getMarcSubfield($field, 'e');
-                                if (strtolower($avail) === 'available') {
-                                    $availableLocations[] = $libLoc;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                foreach ($itemLocations as $itemLoc) {
-                    foreach ($availableLocations as $availLoc) {
-                        if ($itemLoc['lib'] === $availLoc['lib']
-                            && $itemLoc['loc'] === $availLoc['loc']
-                        ) {
-                            continue 2;
-                        }
-                    }
-                    $unavailableLocations[] = $itemLoc;
+                $allItems[] = $entry;
+                $status = (string)$item->item_data->base_status;
+                if ('1' === $status) {
+                    $availableItems[] = $entry;
                 }
             }
+
+            foreach ($allItems as $item) {
+                foreach ($availableItems as $availItem) {
+                    if ($item['lib'] === $availItem['lib']
+                        && $item['loc'] === $availItem['loc']
+                        && $item['policy'] === $availItem['policy']
+                    ) {
+                        continue 2;
+                    }
+                }
+                $unavailableItems[] = $item;
+            }
+
             $profile = $this->getMyProfile($patron);
             $patronGroup = $profile['group_code'] ?? '';
             $libraryFilter = null;
@@ -909,31 +1022,41 @@ class Alma extends \VuFind\ILS\Driver\Alma
                 ) {
                     continue;
                 }
-                if ((!empty($rule['loc']) || !empty($rule['lib']))
-                    && !$this->compareLocationRule(
-                        $rule['lib'][0] ?? '', $rule['loc'] ?? [], $itemLocations
+
+                if ((!empty($rule['loc']) || !empty($rule['lib'])
+                    || !empty($rule['policy']))
+                    && !$this->compareItemRule(
+                        $rule['lib'][0] ?? '',
+                        $rule['loc'] ?? [],
+                        $rule['policy'] ?? [],
+                        $allItems
                     )
                 ) {
                     continue;
                 }
-                if ((!empty($rule['avail']) || !empty($rule['availlib']))
-                    && !$this->compareLocationRule(
+                if ((!empty($rule['avail']) || !empty($rule['availlib'])
+                    || !empty($rule['availpolicy']))
+                    && !$this->compareItemRule(
                         $rule['availlib'][0] ?? '',
                         $rule['avail'] ?? [],
-                        $availableLocations
+                        $rule['availpolicy'] ?? [],
+                        $availableItems
                     )
                 ) {
                     continue;
                 }
-                if ((!empty($rule['unavail']) || !empty($rule['unavaillib']))
-                    && !$this->compareLocationRule(
+                if ((!empty($rule['unavail']) || !empty($rule['unavaillib'])
+                    || !empty($rule['unavailpolicy']))
+                    && !$this->compareItemRule(
                         $rule['unavaillib'][0] ?? '',
                         $rule['unavail'] ?? [],
-                        $unavailableLocations
+                        $rule['unavailpolicy'] ?? [],
+                        $unavailableItems
                     )
                 ) {
                     continue;
                 }
+
                 if (!empty($rule['group'])) {
                     $match = $this->compareRuleWithArray(
                         $rule['group'], (array)$patronGroup
@@ -949,11 +1072,17 @@ class Alma extends \VuFind\ILS\Driver\Alma
                 }
                 $libraryFilter = array_merge($libraryFilter, $rule['pickup'] ?? []);
 
-                if (!empty($rule['home']) && !empty($profile['homeAddress'])) {
-                    $home = true;
+                if (!empty($rule['home'])) {
+                    $home = !empty($profile['homeAddress'])
+                        && $this->compareRuleWithArray(
+                            $rule['home'], ['true']
+                        );
                 }
-                if (!empty($rule['work']) && !empty($profile['workAddress'])) {
-                    $work = true;
+                if (!empty($rule['work'])) {
+                    $work = !empty($profile['workAddress'])
+                        && $this->compareRuleWithArray(
+                            $rule['work'], ['true']
+                        );
                 }
 
                 if (in_array('stop', $rule['match'] ?? [])) {
@@ -961,7 +1090,9 @@ class Alma extends \VuFind\ILS\Driver\Alma
                 }
             }
 
-            if (null !== $libraryFilter) {
+            if (null === $libraryFilter) {
+                $libraries = [];
+            } else {
                 $libraries = array_filter(
                     $libraries,
                     function ($library) use ($libraryFilter) {
@@ -973,14 +1104,20 @@ class Alma extends \VuFind\ILS\Driver\Alma
             if ($home) {
                 $libraries[] = [
                     'locationID' => '$$HOME',
-                    'locationDisplay' => $profile['homeAddress']
+                    'locationDisplay' => $this->getTranslatableStringForCode(
+                        'pickup_location_home_address',
+                        'pickup_location_home_address'
+                    )
                 ];
             }
             if ($work) {
                 if (!$home || $profile['homeAddress'] !== $profile['workAddress']) {
                     $libraries[] = [
                         'locationID' => '$$WORK',
-                        'locationDisplay' => $profile['workAddress']
+                        'locationDisplay' => $this->getTranslatableStringForCode(
+                            'pickup_location_work_address',
+                            'pickup_location_work_address'
+                        )
                     ];
                 }
             }
@@ -1019,6 +1156,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
      */
     public function checkRequestIsValid($id, $data, $patron)
     {
+        $patronId = $patron['id'];
         $level = $data['level'] ?? 'copy';
         if ('copy' === $level) {
             if (isset($this->config['Holds']['enableItemHolds'])
@@ -1026,8 +1164,51 @@ class Alma extends \VuFind\ILS\Driver\Alma
             ) {
                 return false;
             }
+
+            // Call the request-options API for the logged-in user
+            $requestOptionsPath = '/bibs/' . urlencode($id)
+                . '/holdings/' . urlencode($data['holding_id']) . '/items/'
+                . urlencode($data['item_id']) . '/request-options?user_id='
+                . urlencode($patronId);
+
+            // Make the API request
+            $requestOptions = $this->makeRequest($requestOptionsPath);
+        } elseif ('title' === $level) {
+            $hmac = explode(':', $this->config['Holds']['HMACKeys'] ?? '');
+            if (!in_array('level', $hmac) || !in_array('description', $hmac)) {
+                return false;
+            }
+            // Call the request-options API for the logged-in user
+            $requestOptionsPath = '/bibs/' . urlencode($id)
+                . '/request-options?user_id=' . urlencode($patronId);
+
+            // Make the API request
+            $requestOptions = $this->makeRequest($requestOptionsPath);
+        } else {
+            return false;
         }
-        return parent::checkRequestIsValid($id, $data, $patron);
+
+        $result = false;
+
+        // Check possible request types from the API answer
+        $requestTypes = $requestOptions->xpath(
+            '/request_options/request_option//type'
+        );
+        foreach ($requestTypes as $requestType) {
+            if (in_array((string)$requestType, ['HOLD'])) {
+                $result = true;
+                break;
+            }
+        }
+
+        if ($result && array_key_exists('__check_pickup', $data)) {
+            // Check valid pickup locations
+            if (empty($this->getPickupLocations($patron, $data))) {
+                $result = false;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -1164,10 +1345,28 @@ class Alma extends \VuFind\ILS\Driver\Alma
     }
 
     /**
+     * Get details of a single hold request.
+     *
+     * @param array $holdDetails One of the item arrays returned by the
+     *                           getMyHolds method
+     *
+     * @return string            The Alma request ID
+     */
+    public function getCancelHoldDetails($holdDetails)
+    {
+        return empty($holdDetails['available']) ? $holdDetails['id'] : '';
+    }
+
+    /**
      * Get Holding
      *
      * This is responsible for retrieving the holding information of a certain
      * record.
+     *
+     * Finna:
+     *  - Don't use a running number as item number.
+     *  - Handle suppressed holdings.
+     *  - Add holdings for locations with no items.
      *
      * @param string $id      The record id to retrieve the holdings for
      * @param array  $patron  Patron data
@@ -1181,7 +1380,133 @@ class Alma extends \VuFind\ILS\Driver\Alma
      */
     public function getHolding($id, $patron = null, array $options = [])
     {
-        $results = parent::getHolding($id, $patron, $options);
+        // Prepare result array with default values. If no API result can be received
+        // these will be returned.
+        $results['total'] = 0;
+        $results['holdings'] = [];
+
+        $itemHolds = $this->config['Holds']['enableItemHolds'] ?? null;
+
+        $holdings = [];
+        $records = $this->makeRequest('/bibs/' . urlencode($id) . '/holdings');
+        foreach ($records->holding ?? [] as $record) {
+            $holdings[(string)$record->holding_id] = $record;
+        }
+
+        // Paging parameters for paginated API call. The "limit" tells the API how
+        // many items the call should return at once (e. g. 10). The "offset" defines
+        // the range (e. g. get items 30 to 40). With these parameters we are able to
+        // use a paginator for paging through many items.
+        $apiPagingParams = '';
+        if ($options['itemLimit'] ?? null) {
+            $apiPagingParams = 'limit=' . urlencode($options['itemLimit'])
+                . '&offset=' . urlencode($options['offset'] ?? 0);
+        }
+
+        // The path for the API call. We call "ALL" available items, but not at once
+        // as a pagination mechanism is used. If paging params are not set for some
+        // reason, the first 10 items are called which is the default API behaviour.
+        $itemsPath = '/bibs/' . urlencode($id) . '/holdings/ALL/items?'
+            . $apiPagingParams
+            . '&order_by=library,location,enum_a,enum_b&direction=desc'
+            . '&expand=due_date';
+
+        $sort = 0;
+        if ($items = $this->makeRequest($itemsPath)) {
+            // Get the total number of items returned from the API call and set it to
+            // a class variable. It is then used in VuFind\RecordTab\HoldingsILS for
+            // the items paginator.
+            $results['total'] = (int)$items->attributes()->total_record_count;
+
+            foreach ($items->item as $item) {
+                $holdingId = (string)$item->holding_data->holding_id;
+                if ($holding = $holdings[$holdingId] ?? null) {
+                    if ('true' === (string)$holding->suppress_from_publishing) {
+                        continue;
+                    }
+                }
+
+                $itemId = (string)$item->item_data->pid;
+                $barcode = (string)$item->item_data->barcode;
+                $status = (string)$item->item_data->base_status[0]
+                    ->attributes()['desc'];
+                $duedate = $item->item_data->due_date
+                    ? $this->parseDate((string)$item->item_data->due_date) : null;
+                if ($duedate && 'Item not in place' === $status) {
+                    $status = 'Checked Out';
+                }
+
+                $itemNotes = !empty($item->item_data->public_note)
+                    ? [(string)$item->item_data->public_note] : null;
+
+                $processType = (string)($item->item_data->process_type ?? '');
+                if ($processType && 'LOAN' !== $processType) {
+                    $status = $this->getTranslatableStatusString(
+                        $item->item_data->process_type
+                    );
+                }
+
+                $description = null;
+                $number = null;
+                if (!empty($item->item_data->description)) {
+                    $number = (string)$item->item_data->description;
+                    $description = (string)$item->item_data->description;
+                }
+
+                $addLink = $patron ? 'check' : false;
+                if ($addLink && null !== $itemHolds) {
+                    if ('description' === $itemHolds) {
+                        $addLink = null !== $description;
+                    } elseif (!$itemHolds) {
+                        $addLink = false;
+                    }
+                }
+
+                $results['holdings'][] = [
+                    'id' => $id,
+                    'source' => 'Solr',
+                    'availability' => $this->getAvailabilityFromItem($item),
+                    'status' => $status,
+                    'location' => $this->getItemLocation($item),
+                    'reserve' => 'N',   // TODO: support reserve status
+                    'callnumber' => $this->getTranslatableString(
+                        $item->holding_data->call_number
+                    ),
+                    'duedate' => $duedate,
+                    'returnDate' => false, // TODO: support recent returns
+                    'number' => $number,
+                    'barcode' => empty($barcode) ? 'n/a' : $barcode,
+                    'item_notes' => $itemNotes ?? null,
+                    'item_id' => $itemId,
+                    'holding_id' => $holdingId,
+                    'holdtype' => 'auto',
+                    'addLink' => $addLink,
+                    // For Alma title-level hold requests
+                    'description' => $description ?? null,
+                    'sort' => $sort++
+                ];
+            }
+        }
+
+        // Fetch also digital and/or electronic inventory if configured
+        $types = $this->getInventoryTypes();
+        if (in_array('d_avail', $types) || in_array('e_avail', $types)) {
+            // No need for physical items
+            $key = array_search('p_avail', $types);
+            if (false !== $key) {
+                unset($types[$key]);
+            }
+            $statuses = $this->getStatusesForInventoryTypes((array)$id, $types);
+            $electronic = [];
+            foreach ($statuses as $record) {
+                foreach ($record as $status) {
+                    $electronic[] = $status;
+                }
+            }
+            $results['electronic_holdings'] = $electronic;
+        }
+
+        // The rest is completely Finna-specific:
 
         $itemsTotal = $results['total'];
 
@@ -1191,8 +1516,10 @@ class Alma extends \VuFind\ILS\Driver\Alma
             && $results['total'] > $options['itemLimit'];
         if (!$paged) {
             $noItemsHoldings = [];
-            $records = $this->makeRequest('/bibs/' . urlencode($id) . '/holdings');
-            foreach ($records->holding ?? [] as $record) {
+            foreach ($holdings as $record) {
+                if ('true' === (string)$record->suppress_from_publishing) {
+                    continue;
+                }
                 $itemsFound = false;
                 foreach ($results['holdings'] as &$holding) {
                     if ($holding['holding_id'] === (string)$record->holding_id) {
@@ -1209,19 +1536,10 @@ class Alma extends \VuFind\ILS\Driver\Alma
             foreach ($noItemsHoldings as $record) {
                 $entry = $this->createHoldingEntry($id, $record);
                 $entry['details_ajax'] = $entry['holding_id'];
+                $entry['sort'] = $sort++;
                 $results['holdings'][] = $entry;
                 ++$results['total'];
             }
-        }
-
-        // Clear out hold check flag if item holds are disabled
-        if (isset($this->config['Holds']['enableItemHolds'])
-            && !$this->config['Holds']['enableItemHolds']
-        ) {
-            foreach ($results['holdings'] as &$holding) {
-                $holding['addLink'] = false;
-            }
-            unset($holding);
         }
 
         // Add summary
@@ -1235,6 +1553,8 @@ class Alma extends \VuFind\ILS\Driver\Alma
                 $locations[(string)$item['location']] = true;
             }
         }
+
+        usort($results['holdings'], [$this, 'statusSortFunction']);
 
         // Use a stupid location name to make sure this doesn't get mixed with
         // real items that don't have a proper location.
@@ -1322,7 +1642,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
         $marcDetails = [];
 
         // Get Notes
-        $data = $this->getMFHDData(
+        $data = $this->getHoldingsMarc(
             $marc,
             isset($this->config['Holdings']['notes'])
             ? $this->config['Holdings']['notes']
@@ -1333,7 +1653,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
         }
 
         // Get Summary (may be multiple lines)
-        $data = $this->getMFHDData(
+        $data = $this->getHoldingsMarc(
             $marc,
             isset($this->config['Holdings']['summary'])
             ? $this->config['Holdings']['summary']
@@ -1345,7 +1665,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
 
         // Get Supplements
         if (isset($this->config['Holdings']['supplements'])) {
-            $data = $this->getMFHDData(
+            $data = $this->getHoldingsMarc(
                 $marc,
                 $this->config['Holdings']['supplements']
             );
@@ -1356,7 +1676,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
 
         // Get Indexes
         if (isset($this->config['Holdings']['indexes'])) {
-            $data = $this->getMFHDData(
+            $data = $this->getHoldingsMarc(
                 $marc,
                 $this->config['Holdings']['indexes']
             );
@@ -1367,7 +1687,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
 
         // Get links
         if (isset($this->config['Holdings']['links'])) {
-            $data = $this->getMFHDData(
+            $data = $this->getHoldingsMarc(
                 $marc,
                 $this->config['Holdings']['links']
             );
@@ -1395,7 +1715,8 @@ class Alma extends \VuFind\ILS\Driver\Alma
     protected function createHoldingEntry($id, $holding)
     {
         $location = $this->getTranslatableString($holding->library);
-        $callnumber = $this->getTranslatableString($holding->call_number);
+        $callnumber = $holding->call_number
+            ? $this->getTranslatableString($holding->call_number) : '';
 
         return [
             'id' => $id,
@@ -1413,21 +1734,21 @@ class Alma extends \VuFind\ILS\Driver\Alma
     }
 
     /**
-     * Get specified fields from an MFHD MARC Record
+     * Get specified fields from a Holdings MARC Record
      *
      * @param object       $record     SimpleXMLElement
      * @param array|string $fieldSpecs Array or colon-separated list of
      * field/subfield specifications (3 chars for field code and then subfields,
      * e.g. 866az)
      *
-     * @return string|string[] Results as a string if single, array if multiple
+     * @return array
      */
-    protected function getMFHDData($record, $fieldSpecs)
+    protected function getHoldingsMarc($record, $fieldSpecs)
     {
         if (!is_array($fieldSpecs)) {
             $fieldSpecs = explode(':', $fieldSpecs);
         }
-        $results = '';
+        $results = [];
         foreach ($fieldSpecs as $fieldSpec) {
             $fieldCode = substr($fieldSpec, 0, 3);
             $subfieldCodes = substr($fieldSpec, 3);
@@ -1445,14 +1766,7 @@ class Alma extends \VuFind\ILS\Driver\Alma
                         $line .= (string)$subfield;
                     }
                     if ($line) {
-                        if (!$results) {
-                            $results = $line;
-                        } else {
-                            if (!is_array($results)) {
-                                $results = [$results];
-                            }
-                            $results[] = $line;
-                        }
+                        $results[] = $line;
                     }
                 }
             }
@@ -1512,6 +1826,132 @@ class Alma extends \VuFind\ILS\Driver\Alma
             $this->putCachedData($cacheId, $locations);
         }
         return $locations[$location]['externalName'] ?? null;
+    }
+
+    /**
+     * Get Statuses for inventory types
+     *
+     * This is responsible for retrieving the status information for a
+     * collection of records with specified inventory types.
+     *
+     * Finna:
+     *  - Get location codes too, and sort results
+     *
+     * @param array $ids   The array of record ids to retrieve the status for
+     * @param array $types Inventory types
+     *
+     * @return array An array of getStatus() return values on success.
+     */
+    protected function getStatusesForInventoryTypes($ids, $types)
+    {
+        $results = [];
+        $params = [
+            'mms_id' => implode(',', $ids),
+            'expand' => implode(',', array_unique(array_merge($types, ['requests'])))
+        ];
+        if ($bibs = $this->makeRequest('/bibs', $params)) {
+            foreach ($bibs as $bib) {
+                $marc = new \File_MARCXML(
+                    $bib->record->asXML(),
+                    \File_MARCXML::SOURCE_STRING
+                );
+                $status = [];
+                $tmpl = [
+                    'id' => (string)$bib->mms_id,
+                    'source' => 'Solr',
+                    'callnumber' => '',
+                    'reserve' => 'N',
+                ];
+                $sort = 0;
+                if ($record = $marc->next()) {
+                    // Physical
+                    $physicalItems = $record->getFields('AVA');
+                    foreach ($physicalItems as $field) {
+                        $avail = $this->getMarcSubfield($field, 'e');
+                        $item = $tmpl;
+                        $item['availability'] = strtolower($avail) === 'available';
+                        $item['location'] = $this->getTranslatableStringForCode(
+                            $this->getMarcSubfield($field, 'j'),
+                            $this->getMarcSubfield($field, 'c')
+                        );
+                        $item['callnumber'] = $this->getMarcSubfield($field, 'd');
+                        $item['sort'] = $sort++;
+                        $status[] = $item;
+                    }
+                    // Electronic
+                    $electronicItems = $record->getFields('AVE');
+                    foreach ($electronicItems as $field) {
+                        $avail = $this->getMarcSubfield($field, 'e');
+                        $item = $tmpl;
+                        $item['availability'] = strtolower($avail) === 'available';
+                        // Use the following subfields for location:
+                        // m (Collection name)
+                        // i (Available for library)
+                        // d (Available for library)
+                        // b (Available for library)
+                        $location = [
+                            $this->getMarcSubfield($field, 'm') ?: 'Get full text'
+                        ];
+                        foreach (['i', 'd', 'b'] as $code) {
+                            if ($content = $this->getMarcSubfield($field, $code)) {
+                                $location[] = $content;
+                            }
+                        }
+                        $item['location'] = implode(' - ', $location);
+                        $item['callnumber'] = $this->getMarcSubfield($field, 't');
+                        $url = $this->getMarcSubfield($field, 'u');
+                        if (preg_match('/^https?:\/\//', $url)) {
+                            $item['locationhref'] = $url;
+                        }
+                        $item['status'] = $this->getMarcSubfield($field, 's')
+                            ?: null;
+                        if ($note = $this->getMarcSubfield($field, 'n')) {
+                            $item['item_notes'] = [$note];
+                        }
+                        $item['sort'] = $sort++;
+                        $status[] = $item;
+                    }
+                    // Digital
+                    $deliveryUrl
+                        = $this->config['Holdings']['digitalDeliveryUrl'] ?? '';
+                    $digitalItems = $record->getFields('AVD');
+                    if ($digitalItems && !$deliveryUrl) {
+                        $this->logWarning(
+                            'Digital items exist for ' . (string)$bib->mms_id
+                            . ', but digitalDeliveryUrl not set -- unable to'
+                            . ' generate links'
+                        );
+                    }
+                    foreach ($digitalItems as $field) {
+                        $item = $tmpl;
+                        unset($item['callnumber']);
+                        $item['availability'] = true;
+                        $item['location'] = $this->getMarcSubfield($field, 'e');
+                        // Using subfield 'd' ('Repository Name') as callnumber
+                        $item['callnumber'] = $this->getMarcSubfield($field, 'd');
+                        if ($deliveryUrl) {
+                            $item['locationhref'] = str_replace(
+                                '%%id%%',
+                                $this->getMarcSubfield($field, 'b'),
+                                $deliveryUrl
+                            );
+                        }
+                        $item['sort'] = $sort++;
+                        $status[] = $item;
+                    }
+                }
+                usort($status, [$this, 'statusSortFunction']);
+
+                // Return locations to strings
+                foreach ($status as &$item) {
+                    $item['location'] = $this->translate($item['location']);
+                }
+                unset($item);
+
+                $results[(string)$bib->mms_id] = $status;
+            }
+        }
+        return $results;
     }
 
     /**
@@ -1577,8 +2017,13 @@ class Alma extends \VuFind\ILS\Driver\Alma
             foreach ($items as $item) {
                 $parsed = parse_ini_string($item, false, INI_SCANNER_RAW);
                 foreach ($parsed as $key => $value) {
-                    $ruleParts[$key]
-                        = array_map('trim', str_getcsv($value, ',', "'"));
+                    if (!isset($ruleParts[$key])) {
+                        $ruleParts[$key] = [];
+                    }
+                    $ruleParts[$key] = array_merge(
+                        $ruleParts[$key],
+                        array_map('trim', str_getcsv($value, ',', "'"))
+                    );
                 }
             }
             $rules[] = $ruleParts;
@@ -1596,47 +2041,68 @@ class Alma extends \VuFind\ILS\Driver\Alma
      */
     protected function compareRuleWithArray($rule, $values)
     {
+        $negated = false;
+        $result = false;
+        // First non-negated rules...
         foreach ((array)$rule as $ruleValue) {
+            if (strncmp($ruleValue, '!', 1) === 0) {
+                // We have negated rules, no point in continuing positive matches
+                $negated = true;
+                break;
+            }
             $ruleValue = addcslashes($ruleValue, '\\');
             foreach ($values as $value) {
                 if (preg_match("/^$ruleValue\$/i", $value)) {
-                    return true;
+                    $result = true;
                 }
             }
         }
-        return false;
+        if (!$negated) {
+            return $result;
+        }
+
+        // ... then negated rules
+        foreach ((array)$rule as $ruleValue) {
+            if (strncmp($ruleValue, '!', 1) !== 0) {
+                continue;
+            }
+            $ruleValue = substr($ruleValue, 1);
+            $ruleValue = addcslashes($ruleValue, '\\');
+            foreach ($values as $value) {
+                if (preg_match("/^$ruleValue\$/i", $value)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
-     * Compare a location rule
+     * Compare an item rule
      *
      * @param string       $lib    Library
      * @param string|array $loc    Locations
-     * @param array        $values Values
+     * @param string|array $policy Item policies
+     * @param array        $items  Item information
      *
      * @return bool
      */
-    protected function compareLocationRule($lib, $loc, $values)
+    protected function compareItemRule($lib, $loc, $policy, $items)
     {
-        if (empty($loc)) {
-            foreach ($values as $value) {
-                if ($lib && $value['lib'] !== $lib) {
-                    continue;
-                }
-                return true;
+        foreach ($items as $item) {
+            if ($lib && $item['lib'] !== $lib) {
+                continue;
             }
-            return false;
-        }
-        foreach ((array)$loc as $ruleValue) {
-            $ruleValue = addcslashes($ruleValue, '\\');
-            foreach ($values as $value) {
-                if ($lib && $value['lib'] !== $lib) {
-                    continue;
-                }
-                if (preg_match("/^$ruleValue\$/i", $value['loc'])) {
-                    return true;
-                }
+            if ($loc && !$this->compareRuleWithArray($loc, (array)$item['loc'])) {
+                continue;
             }
+            if ($policy
+                && !$this->compareRuleWithArray($policy, (array)$item['policy'])
+            ) {
+                continue;
+            }
+
+            return true;
         }
         return false;
     }
@@ -1695,5 +2161,78 @@ class Alma extends \VuFind\ILS\Driver\Alma
             ];
         }
         return $result;
+    }
+
+    /**
+     * Status item sort function
+     *
+     * @param array $a First status record to compare
+     * @param array $b Second status record to compare
+     *
+     * @return int
+     */
+    protected function statusSortFunction($a, $b)
+    {
+        $orderA = $this->holdingsLocationOrder[(string)$a['location']] ?? 999;
+        $orderB = $this->holdingsLocationOrder[(string)$b['location']] ?? 999;
+        $result = $orderA - $orderB;
+
+        if (0 === $result) {
+            $result = strcmp(
+                ($a['location'] instanceof \VuFind\I18n\TranslatableString)
+                    ? $a['location']->getDisplayString() : $a['location'],
+                ($b['location'] instanceof \VuFind\I18n\TranslatableString)
+                    ? $b['location']->getDisplayString() : $b['location']
+            );
+        }
+
+        if (0 === $result && $this->sortItemsByEnumChron) {
+            // Reverse chronological order
+            $result = strnatcmp($b['number'] ?? '', $a['number'] ?? '');
+        }
+
+        if (0 === $result) {
+            $result = $a['sort'] - $b['sort'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Gets a translatable string for description and code
+     *
+     * @param string $code        Code
+     * @param string $description Description
+     *
+     * @return \VuFind\I18n\TranslatableString
+     */
+    protected function getTranslatableStringForCode($code, $description)
+    {
+        $value = ($this->config['Catalog']['translationPrefix'] ?? '')
+            . (string)$code;
+        return new \VuFind\I18n\TranslatableString($value, $description);
+    }
+
+    /**
+     * Get fields available for profile update
+     *
+     * @return array
+     */
+    protected function getUpdateProfileFields()
+    {
+        $fieldConfig = isset($this->config['updateProfile']['fields'])
+            ? $this->config['updateProfile']['fields'] : [];
+        if ($disabled = ($this->config['updateProfile']['disabledFields'] ?? '')) {
+            $result = [];
+            $disabled = explode(':', $disabled);
+            foreach ($fieldConfig as $field) {
+                $parts = explode(':', $field);
+                if (!in_array($parts[1] ?? '', $disabled)) {
+                    $result[] = $field;
+                }
+            }
+            return $result;
+        }
+        return $fieldConfig;
     }
 }
