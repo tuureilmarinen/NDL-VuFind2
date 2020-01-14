@@ -75,14 +75,15 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
      */
     public function formAction()
     {
-        $form = $this->_getFrom();
+        $form = $this->getFrom();
+        $formId = $form->getFormId();
         $oneSubmissionPerUser = $form->oneSubmissionPerUser()
             && $form->showOnlyForLoggedUsers();
         $user = $this->getUser();
         if ($oneSubmissionPerUser && $user) {
-            $url = $this->_getViewUrl();
+            $url = $this->getViewUrl();
             $feedback = $this->getTable('Feedback');
-            if ($feedback->userHasFeedbacks($user->id, $form->getFormId(), $url)) {
+            if ($feedback->userHasFeedback($user->id, $formId, $url)) {
                 $this->flashMessenger()
                     ->addErrorMessage('feedback_one_submission_per_user');
                 $errorView = parent::createViewModel(
@@ -160,7 +161,7 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
         $recipientName, $recipientEmail, $senderName, $senderEmail,
         $replyToName, $replyToEmail, $emailSubject, $emailMessage
     ) {
-        $form = $this->_getFrom();
+        $form = $this->getFrom();
         $formId = $form->getFormId();
 
         if ($formId === 'FeedbackRecord') {
@@ -196,7 +197,7 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
         $user = $this->getUser();
         $userId = $user ? $user->id : null;
 
-        $url = $this->_getViewUrl();
+        $url = $this->getViewUrl();
 
         $formFields = $form->getFormFields();
 
@@ -227,7 +228,7 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
      *
      * @return Form
      */
-    private function _getFrom() : Form
+    protected function getFrom() : Form
     {
         $formId = $this->params()->fromRoute('id', $this->params()->fromQuery('id'));
         if (!$formId) {
@@ -243,9 +244,9 @@ class FeedbackController extends \VuFind\Controller\FeedbackController
      *
      * @return string
      */
-    private function _getViewUrl() : string
+    protected function getViewUrl() : string
     {
-        $url = rtrim($this->getServerUrl('home'), '/');
-        return substr($url, strpos($url, '://') + 3);
+        $url = parse_url($this->getServerUrl('home'), PHP_URL_HOST);
+        return $url;
     }
 }

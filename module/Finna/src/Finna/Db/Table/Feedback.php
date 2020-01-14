@@ -91,7 +91,7 @@ class Feedback extends \VuFind\Db\Table\Gateway
      *
      * @return bool
      */
-    public function userHasFeedbacks(
+    public function userHasFeedback(
         int $userId,
         string $form,
         string $url
@@ -103,6 +103,6 @@ class Feedback extends \VuFind\Db\Table\Gateway
             $select->where->equalTo('user_id', $userId);
             $select->limit(1);
         };
-        return count($this->select($callback)) > 0;
+        return $this->select($callback)->count() > 0;
     }
 }
