@@ -186,7 +186,7 @@ class SearchTabs extends \VuFind\View\Helper\Root\SearchTabs
                     foreach ($currentFilters as $key => $filter) {
                         foreach ($filter as $value) {
                             $filterParams[] = urlencode('filter[]') . '='
-                                . urlencode("$key:$value");
+                                . urlencode($value['field'].":".$value['value']);
                         }
                     }
                     $filterQuery .= '&' . implode('&', $filterParams);
