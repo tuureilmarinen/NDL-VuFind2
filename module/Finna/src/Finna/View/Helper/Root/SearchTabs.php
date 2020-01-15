@@ -94,8 +94,14 @@ class SearchTabs extends \VuFind\View\Helper\Root\SearchTabs
      *
      * @return array
      */
-    public function getTabConfig($activeSearchClass, $query, $handler,
-        $type = 'basic', $hiddenFilters = [], $savedSearches = [], $currentFilters = []
+    public function getTabConfig(
+        $activeSearchClass,
+        $query,
+        $handler,
+        $type = 'basic',
+        $hiddenFilters = [],
+        $savedSearches = [],
+        $currentFilters = []
     ) {
         $this->activeSearchClass = $activeSearchClass;
 
@@ -181,12 +187,12 @@ class SearchTabs extends \VuFind\View\Helper\Root\SearchTabs
                             );
                     }
                 }
-                if(!empty($currentFilters)){
+                if (!empty($currentFilters)) {
                     $filterParams = [];
                     foreach ($currentFilters as $key => $filter) {
                         foreach ($filter as $value) {
                             $filterParams[] = urlencode('filter[]') . '='
-                                . urlencode($value['field'].":".$value['value']);
+                                . urlencode($value['field'] . ":" . $value['value']);
                         }
                     }
                     $filterQuery .= '&' . implode('&', $filterParams);
