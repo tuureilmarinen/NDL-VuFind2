@@ -1061,7 +1061,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
             $view->url = $publicUserListUrl;
             $targetListId = $this->params()->fromPost('list');
             $matches = [];
-            $urlValidator = "/^https*:\/\/([a-z]+\.)?finna.fi\/(\w+\/)?List\/(.+)$/";
+            $urlValidator = "/^([a-z]+):\/\/((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9])\/(\w+\/)?List\/(.+)$/";
             preg_match(
                 $urlValidator,
                 $publicUserListUrl,
