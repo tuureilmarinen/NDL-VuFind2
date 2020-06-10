@@ -1081,7 +1081,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 if (!$sourceList->isPublic()) {
                     $this->flashMessenger()
                         ->addErrorMessage(
-                            "import_favorites_error_source_list_not_found"
+                            "import_favorites_error_invalid_url"
                         );
                     return $view;
                 }
@@ -1089,7 +1089,7 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 $this
                     ->flashMessenger()
                     ->addErrorMessage(
-                        "import_favorites_error_source_list_not_found"
+                        "import_favorites_error_invalid_url"
                     );
                 return $view;
             }
