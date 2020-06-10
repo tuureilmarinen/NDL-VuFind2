@@ -1094,20 +1094,10 @@ class MyResearchController extends \VuFind\Controller\MyResearchController
                 return $view;
             }
             $runner = $this->serviceLocator->get(\VuFind\Search\SearchRunner::class);
-            $results = $runner->run(
+            $drivers = $runner->run(
                 ['id' => $sourceListId],
                 'Favorites'
             )->getResults();
-            $ids = array_map(
-                function ($i) {
-                    return sprintf(
-                        "%s|%s",
-                        $i->getSourceIdentifier(),
-                        $i->getUniqueID()
-                    );
-                }, $results
-            );
-            $drivers = $this->loadRecordByIds($ids);
             $favoritesService = $this->serviceLocator
                 ->get(\Finna\Favorites\FavoritesService::class);
             $params = [
